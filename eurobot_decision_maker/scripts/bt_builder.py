@@ -723,7 +723,8 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(a)
             if self.loginfo:
                 rospy.loginfo(mans)
-            # self.add_sleep_time(main_seq_name, 5)
+            self.add_sleep_time(main_seq_name, 5)
+            
             if 1 in mans:
                 if len(mans) != 1:
                     new_mans = []
@@ -742,7 +743,7 @@ class BehaviorTreeBuilder:
                 self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords, **kvargs):
-        delay = 0.3
+        delay = 0.6
         repeat = 1
         if 'repeat' in kvargs:
             repeat = kvargs['repeat']
