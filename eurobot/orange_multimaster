@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source /opt/ros/kinetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+export ROS_IP=192.168.88.242
+roslaunch eurobot secondary_robot_orange.launch
