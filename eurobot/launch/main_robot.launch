@@ -20,10 +20,10 @@
       <param name="frame_id" value="/main_robot_laser"/>
     </node>
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" respawn="true"/>
-
+    <node pkg="eurobot_decision_maker" name="bt_robot_server" type="bt_robot_server.py" respawn="true"/>
     <!--node pkg="eurobot" name="barrier_move_node" type="test_barrier_move_to_heap.py" respawn="true" output="screen"/-->
   </group>
   <node pkg="eurobot_gui" name="display" type="display_node.py" respawn="true"/>
-  <node pkg="rosbag" type="record" name="rosbag_record_main_robot" args="record -o $(rospack find eurobot)/main_robot /tf /main_robot/scan" />
+  <node pkg="rosbag" type="record" name="rosbag_record_main_robot" args="record -o $(find eurobot)/main_robot /tf /main_robot/scan" />
 
 </launch>
