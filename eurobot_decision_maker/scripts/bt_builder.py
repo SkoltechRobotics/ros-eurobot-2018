@@ -376,14 +376,14 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.550, 1.450, 4.71)
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0, 1.5)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.320, 1.450, 0)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.150, 1.450, 0, 0, 1, 1)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.120, 1.880, 0, 0, 0, 0)
-            #self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.35, 0.35, 0)
-            #self.add_command_action(main_seq_name, 162, -0.1, 0.1, 0, 0.15, 0.15, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.320, 1.680, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_odometry", 0.100, 1.900, 0)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.340, 1.880, 0, 0, 1, 1)
-            #self.add_command_action(main_seq_name, 162, 0.2, 0.04, 0, 0.35, 0.07, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.250, 1.880, 0, 0, 1, 1)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.400, 1.880, 0, 0, 1, 1)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.150, 1.880, 0, 1, 0, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.150, 1.700, 0, 1, 1, 0)
 
         else:
             if not self.ok:
