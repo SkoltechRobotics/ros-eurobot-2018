@@ -4,6 +4,7 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 import tf.transformations
 import tf
+import sys
 
 
 def scan_callback(scan):
@@ -27,11 +28,13 @@ if __name__ == '__main__':
     odom_data_full = []
     rate = rospy.Rate(20)
     listener = tf.TransformListener()
-    for i in range(400):
+    time = int(sys.argv[1])
+    k = int(sys.argv[2])
+    for i in range(time * 20):
         rate.sleep()
         lidar_data_full.append(lidar_data)
         odom_data_full.append(get_coords())
 #        rospy.loginfo("add line %d" % i)
 
-    np.save("laser_scans7.npy", np.array(lidar_data_full))
-    np.save("odom_coords7.npy", np.array(odom_data_full))
+    np.save("laser_scans%d.npy" % k, np.array(lidar_data_full))
+    np.save("odom_coords%d.npy" % k, np.array(odom_data_full))
