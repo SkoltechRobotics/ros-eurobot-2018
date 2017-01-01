@@ -24,7 +24,7 @@ CUBES_STRATEGY_FILE = "cubes_paths_beta_3.bin"
 # MAIN ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
-    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps", (0, 1)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps", (0, 1)), ("heaps", (1, 2)), ("alt_disposal", 0)]
     # MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 else:
     # SIMPLE
@@ -273,7 +273,7 @@ class RobotBrain(object):
         self.bt = BehaviorTree("server_" + self.name)
         general = SequenceNode("general")
         self.bt.add_node(general, self.bt.root_node.name)
-        self.bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", None, True), "general")
+        # self.bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", None, True), "general")
         main_cycle_if = TryUntilSuccessNode("main_cycle_if")
         self.bt.add_node(main_cycle_if, "general")
 
@@ -282,7 +282,7 @@ class RobotBrain(object):
         main_cycle_if.set_child(main_cycle)
         self.bt.nodes[main_cycle.name] = main_cycle
         self.bt.add_node(TimeoutNode("half_sec_wait", 0.1), "main_cycle")
-        self.bt.add_node(ActionNode("start_plan_recognition_cycle", camera_cmd_pub, "start", None, True), "main_cycle")
+        self.bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", None, True), "main_cycle")
         self.bt.add_node(ActionFunctionNode("init_robot", self.change_bt), "main_cycle")
         self.bt.add_node(ActionFunctionNode("wait_wire", wait_wire), "main_cycle")
 
