@@ -67,5 +67,6 @@ class BTAction(object):
 
 if __name__ == '__main__':
   rospy.init_node('action')
+  print("123");
   BTAction(rospy.get_name())
   rospy.spin()

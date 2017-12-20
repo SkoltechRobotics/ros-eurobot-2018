@@ -16,6 +16,18 @@
 #include <string>
 
 
+std::string print_status(int status) {
+    switch(status) {
+        case BT::IDLE: return "IDLE";
+        case BT::HALTED: return "HALTED";
+        case BT::RUNNING: return "RUNNING";
+        case BT::SUCCESS: return "SUCCESS";
+        case BT::FAILURE: return "FAILURE";
+        default: return "???STATUS";
+    }
+    return "???STATUS";
+}
+
 BT::SequenceNode::SequenceNode(std::string name) : ControlNode::ControlNode(name) {}
 
 BT::SequenceNode::~SequenceNode() {}
@@ -34,11 +46,13 @@ BT::ReturnStatus BT::SequenceNode::Tick()
                 Hence we cannot just call the method Tick() from the action as doing so will block the execution of the tree.
                 For this reason if a child of this node is an action, then we send the tick using the tick engine. Otherwise we call the method Tick() and wait for the response.
         */
+        
         if (children_nodes_[i]->get_type() == BT::ACTION_NODE)
         {
             // 1) If the child i is an action, read its state.
             child_i_status_ = children_nodes_[i]->get_status();
-
+            std::cout << "CHILD " << i <<  " STATUS " << print_status(child_i_status_) << std::endl;
+            
             if (child_i_status_ == BT::IDLE || child_i_status_ == BT::HALTED)
             {
                 // 1.1) If the action status is not running, the sequence node sends a tick to it.
@@ -69,7 +83,7 @@ BT::ReturnStatus BT::SequenceNode::Tick()
             {
                 children_nodes_[i]->set_status(BT::IDLE);  // the child goes in idle if it has returned failure.
             }
-
+            
             DEBUG_STDOUT(get_name() << " is HALTING children from " << (i+1));
             HaltChildren(i+1);
             set_status(child_i_status_);
@@ -77,7 +91,7 @@ BT::ReturnStatus BT::SequenceNode::Tick()
         }
         else
         {
-            // the child returned success.
+            //the child returned success.
             children_nodes_[i]->set_status(BT::IDLE);
 
             if (i == N_of_children_ - 1)

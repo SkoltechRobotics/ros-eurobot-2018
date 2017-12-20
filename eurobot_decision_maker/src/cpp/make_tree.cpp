@@ -12,7 +12,7 @@ std::map<std::string, int> bt_node_types;
 
 void assign_bt_node_types() {
     int i = 0;
-    for(auto s : {"action", "condition", "sequence"} )
+    for(auto s : {"action", "condition", "sequence", "parallel"} )
         bt_node_types[s] = i++;
     
 }
@@ -20,7 +20,8 @@ void assign_bt_node_types() {
 enum class NODE_TYPE {
     ACTION,
     CONDITION,
-    SEQUENCE
+    SEQUENCE,
+    PARALLEL
 };
 
 
@@ -28,7 +29,8 @@ void* createBTreeNode(std::string node_name, std::string node_type) {
     switch(bt_node_types[node_type]) {
         case (int)NODE_TYPE::ACTION:       return new BT::ROSAction(node_name);    break;
         case (int)NODE_TYPE::CONDITION:    return new BT::ROSCondition(node_name); break;
-        case (int)NODE_TYPE::SEQUENCE:     return new BT::SequenceNode(node_name); break;
+        case (int)NODE_TYPE::SEQUENCE:     return new BT::SequenceNodeWithMemory(node_name); break;
+        //case (int)NODE_TYPE::PARALLEL:     return new BT::ParallelNode(node_name); break;
         //TODO :: other types
     }
         
@@ -62,7 +64,7 @@ createBTree(const std::string& msg) {
                 switch(bt_node_types[node_type]){
                     case (int)NODE_TYPE::ACTION: casted_parent->AddChild((BT::ROSAction*)not_casted_child); break;
                     case (int)NODE_TYPE::CONDITION: casted_parent->AddChild((BT::ROSCondition*)not_casted_child); break;
-                    case (int)NODE_TYPE::SEQUENCE: casted_parent->AddChild((BT::SequenceNode*)not_casted_child); break;
+                    case (int)NODE_TYPE::SEQUENCE: casted_parent->AddChild((BT::SequenceNodeWithMemory*)not_casted_child); break;
                 }
                 //TODO :: other types, proper C++ cast
             }
@@ -81,7 +83,7 @@ void startBTree(const std_msgs::String::ConstPtr& msg) {
     auto tree = createBTree(msg->data);
     std::cout << "I've done the tree" << std::endl;
     std::cout << tree.second << std::endl;
-    int TickPeriod_milliseconds = 1000;
+    int TickPeriod_milliseconds = 100;
     if(tree.second != "NOT FOUND" && tree.second != "ERRORS FOUND") {
         Execute((BT::ControlNode*)tree.first[tree.second], TickPeriod_milliseconds); // from BehaviorTree.cpp
     }
@@ -91,11 +93,11 @@ int main(int argc, char **argv){
     
     assign_bt_node_types();
 
-    ros::init(argc, argv, "TreeMaker");
+    ros::init(argc, argv, "tree_maker");
     
     ros::NodeHandle n;
     
-    ros::Subscriber sub = n.subscribe("bt_maker", 1000, startBTree);
+    ros::Subscriber sub = n.subscribe("behavior_tree_description", 1000, startBTree);
     
     ros::spin();
     return 0;

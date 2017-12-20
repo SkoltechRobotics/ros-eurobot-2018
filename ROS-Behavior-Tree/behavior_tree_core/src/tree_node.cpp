@@ -42,7 +42,7 @@ void BT::TreeNode::set_status(ReturnStatus new_status)
 BT::ReturnStatus BT::TreeNode::get_status()
 {
     // Lock acquistion
-    DEBUG_STDOUT(get_name() << " is setting its status to " << status_);
+    //DEBUG_STDOUT(get_name() << " is setting its status to " << status_);
 
     std::lock_guard<std::mutex> LockGuard(state_mutex_);
 
