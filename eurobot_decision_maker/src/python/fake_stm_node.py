@@ -25,7 +25,7 @@ if __name__  == '__main__':
     rospy.init_node('fake_stm', anonymous =True)
     
     pub = rospy.Publisher('stm_response', String, queue_size = 10)
-    sub = rospy.Subscriber('stm_command', String, fake_response)
+    sub = rospy.Subscriber('robot_command', String, fake_response)
     rospy.loginfo('Started')
     
     rospy.spin()

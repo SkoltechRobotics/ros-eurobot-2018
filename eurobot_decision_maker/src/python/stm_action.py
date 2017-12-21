@@ -151,7 +151,7 @@ if __name__ == '__main__':
     rospy.init_node("mover")
     
     #global stm_command
-    stm_command  = rospy.Publisher('stm_command',String,queue_size = 10)
+    stm_command  = rospy.Publisher('robot_command',String,queue_size = 10)
     
     stm_commander = rospy.Subscriber('commander', String, create_action_cb)
 
