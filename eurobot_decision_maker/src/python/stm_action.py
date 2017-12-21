@@ -5,7 +5,7 @@ import rospy
 
 import actionlib
 
-import behavior_tree_core.msg
+import eurobot_decision_maker.msg 
 
 import sys
 
@@ -14,12 +14,12 @@ import re
 
 class BTAction(object):
     # create messages that are used to publish feedback/result
-    _feedback = behavior_tree_core.msg.BTFeedback()
-    _result   = behavior_tree_core.msg.BTResult()
+    _feedback = eurobot_decision_maker.msg.BTFeedback()
+    _result   = eurobot_decision_maker.msg.BTResult()
 
     def __init__(self, name):
         self._action_name = name
-        self._as = actionlib.SimpleActionServer(self._action_name, behavior_tree_core.msg.BTAction, execute_cb=self.execute_cb, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, eurobot_decision_maker.msg.BTAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
                 
     def execute_cb(self, goal):
@@ -77,15 +77,16 @@ stm_command = None
 stm_response = None
 
 class STMAction(BTAction):
-    _feedback = behavior_tree_core.msg.BTFeedback()
-    _result   = behavior_tree_core.msg.BTResult()
+    _feedback = eurobot_decision_maker.msg.BTFeedback()
+    _result   = eurobot_decision_maker.msg.BTResult()
 
 
     def __init__(self, name, message , stm_pub):
         self._action_name = name
-        self._as = actionlib.SimpleActionServer(self._action_name, behavior_tree_core.msg.BTAction, execute_cb=self.execute_cb, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, eurobot_decision_maker.msg.BTAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
         self.stm_command = stm_pub
+	rospy.loginfo("EE")
         self.stm_response = rospy.Subscriber('stm_response',String, self.on_response)
         self.moving_finished = False
         self.message = message #previously sys.argv
@@ -142,6 +143,7 @@ stm_actions = []
 def create_action_cb(msg):
     global stm_command
     global stm_actions
+    rospy.loginfo(msg.data)
     action_name = re.match("(\S*)\s([\s\S]*)",msg.data).group(1)
     stm_actions.append(STMAction(action_name, msg.data, stm_command))
     
@@ -151,7 +153,7 @@ if __name__ == '__main__':
     rospy.init_node("mover")
     
     #global stm_command
-    stm_command  = rospy.Publisher('stm_command',String,queue_size = 10)
+    stm_command  = rospy.Publisher('robot_command',String,queue_size = 10)
     
     stm_commander = rospy.Subscriber('commander', String, create_action_cb)
 
