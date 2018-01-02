@@ -4,13 +4,10 @@ from std_msgs.msg import String
 from TrackRegulator import TrackRegulator
 import numpy as np
 
-# global
-c_p = np.array([0,0,0])
-
 
 def particle_filter_callback(data):
     data_splitted = str(data)[6:].split()
-    global c_p = np.array([float(data_splitted[i]) for i in range(3)])
+    c_p = np.array([float(data_splitted[i]) for i in range(3)])
 
 def command_callback(data):
     # parse name,type
@@ -25,13 +22,13 @@ def command_callback(data):
         t_p = np.array(args)
 
         # start movement
-        regulator.start_move(t_p, global c_p)
+        regulator.start_move(t_p, c_p)
         rate.sleep()
         
         # regulation
         while regulator.is_moving: 
-            global c_p = integrator.integrate(dpoint)
-            speeds = regulator.regulate(global c_p)
+            c_p = integrator.integrate(dpoint)
+            speeds = regulator.regulate(c_p)
             speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
             pub_response.publish("set_speed 0x06 " + speeds)
             rate.sleep()
@@ -41,6 +38,7 @@ def command_callback(data):
 
 if __name__ == '__main__':
     try:
+        c_p = np.array([0,0,0])
         regulator = TrackRegulator()
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(100)
