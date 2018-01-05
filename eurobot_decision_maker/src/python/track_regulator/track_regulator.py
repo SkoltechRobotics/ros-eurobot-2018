@@ -8,7 +8,7 @@ import numpy as np
 c_p = np.array([0,0,0])
 
 
-def particle_filter_callback(data):
+def coordinates_callback(data):
     data_splitted = str(data)[6:].split()
     global c_p = np.array([float(data_splitted[i]) for i in range(3)])
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(100)
         rospy.Subscriber("robot_command", String, command_callback)
-        rospy.Subscriber("particle_filter_coordinates", String, particle_filter_callback)
+        rospy.Subscriber("coordinates", String, coordinates_callback)
         pub_response = rospy.Publisher("command_response", String, queue_size=10) 
         pub_command = rospy.Publisher("robot_command", String, queue_size=10) 
 
