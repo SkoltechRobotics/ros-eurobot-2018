@@ -18,7 +18,7 @@ class stm_node(STMprotocol):
         self.pub_response = rospy.Publisher("command_response", String, queue_size=10) 
 
         # rate of publishing
-        self.rate = rospy.Rate(100)
+        self.rate = rospy.Rate(40)
 
         # high-level commands info (for handling response)
         #self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
@@ -63,7 +63,7 @@ class stm_node(STMprotocol):
         while not rospy.is_shutdown():
             status,x,y,a = self.send_command(0xA0, [0, 0, 0])
             status = str(status)
-            self.pub_odometry.publish("{} {} {}".format(x,y,a))
+            self.pub_odometry.publish(' '.join(map(str, [x,y,a])))
             self.handle_response(status) # it will publish responce where needed
             self.rate.sleep()
 

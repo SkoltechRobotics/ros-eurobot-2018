@@ -1,33 +1,49 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
+from sensor_msgs.msg import LaserScan
 from EncoderIntegrator import EncoderIntegrator
 import numpy as np
+from npParticle import ParticleFilter
 
+# Storage for the latest scan
+scan = LaserScan()
+coords = np.array([0,0,0]) # set initial coordinates
 
 def odometry_callback(data):
     # parse name,type
-    dpoint = str(data)[6:].split()
-    dpoint = np.array([float(dpoint[i]) for i in range(3)])
+    odometry_coords = str(data)[6:].split()
+    odometry_coords = np.array(map(float, dpoint))
 
     # calculate coordinates
-    # for now it's just odometry, actual filter + lidar are TBD
-    integrator.integrate(dpoint)
+    lidar_data = np.array([scan.ranges, scan.intensities]).T
+    coords = particle_filter.localisation(coords, odometry_coords, lidar_data) # TBD: check if input is correct
 
     # publish calculated coordinates
-    pub_response.publish(str(integrator.last_point[0])+' '+str(integrator.last_point[1])+' '+str(integrator.last_point[2]))
+    pub.publish(' '.join(map(str, coords)))
     
     rate.sleep()
 
+def scan_callback(data):
+    scan = data
+
 if __name__ == '__main__':
     try:
-        start_point = np.array([0.,0.,0.])
-        integrator = EncoderIntegrator(start_point)
+        # ROS entities
         rospy.init_node('particle_filter_node', anonymous=True)
-        rate = rospy.Rate(100)
-        pub_response = rospy.Publisher("particle_filter_coordinates", String, queue_size=10)
-        rospy.Subscriber("odometry_coordinates", String, odometry_callback)
-        #rospy.Subscriber("slice", String, slice_callback) # lidar data 
+        rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
+        rospy.Subscriber("odometry_coordinates", String, odometry_callback) # stm data
+        pub = rospy.Publisher('coordinates', String, queue_size=1)
+
+        color = "orange"
+        particle_filter = ParticleFilter(particles=2000, sense_noise=25, distance_noise=25, angle_noise=0.1, color = color)
+
+        ## Simulate
+        #start_point = np.array([0.,0.,0.])
+        #integrator = EncoderIntegrator(start_point)
+        ## usage: 
+        ## integrator.integrate(dpoint)
+        ## print integrator.last_point
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
