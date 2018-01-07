@@ -4,15 +4,16 @@ from std_msgs.msg import String
 from TrackRegulator import TrackRegulator
 import numpy as np
 
-# global
 c_p = np.array([0,0,0])
 
 
 def coordinates_callback(data):
     data_splitted = str(data)[6:].split()
-    global c_p = np.array([float(data_splitted[i]) for i in range(3)])
+    global c_p
+    c_p = np.array([float(data_splitted[i]) for i in range(3)])
 
 def command_callback(data):
+    global c_p
     # parse name,type
     data_splitted = str(data)[6:].split()
     action_name = data_splitted[0]
@@ -25,13 +26,13 @@ def command_callback(data):
         t_p = np.array(args)
 
         # start movement
-        regulator.start_move(t_p, global c_p)
+        regulator.start_move(t_p, c_p)
         rate.sleep()
         
         # regulation
         while regulator.is_moving: 
-            global c_p = integrator.integrate(dpoint)
-            speeds = regulator.regulate(global c_p)
+            c_p = integrator.integrate(dpoint)
+            speeds = regulator.regulate(c_p)
             speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
             pub_response.publish("set_speed 0x06 " + speeds)
             rate.sleep()

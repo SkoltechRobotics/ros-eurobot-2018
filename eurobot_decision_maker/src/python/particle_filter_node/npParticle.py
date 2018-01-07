@@ -108,8 +108,8 @@ class ParticleFilter:
 
     def particle_sense(self, scan):
         stamp = time.time()
-        angle, distance = get_landmarks(scan)
-        x_coords, y_coords = p_trans(angle,distance)
+        angle, distance = self.get_landmarks(scan)
+        x_coords, y_coords = self.p_trans(angle,distance)
         weights = self.weights(x_coords,y_coords)
         if self.warning:
             return
@@ -215,22 +215,22 @@ class ParticleFilter:
 
 # help functions
 
-def get_landmarks(scan):
-    """Returns filtrated lidar data"""
-    stamp = time.time()
-    # array of indexes, where condition is met:
-    ind = np.where(np.logical_and(scan[:, 1] > MAX_ITENS, scan[:, 0] < MAX_DIST))[0]
-    # array of angles/distances, for which condition is met
-    angles = np.pi / 4 / 180 * ind
-    distances = scan[ind, 0]
-    #logging.info('scan preproccesing time: ' + str(time.time() - stamp))
-    return (angles + np.pi / 4) % (2 * np.pi), distances  # delete +np.pi for our robot ANDREW you NEED return (angles + np.pi / 4 + np.pi) % (2 * np.pi), distances
+    def get_landmarks(self, scan):
+        """Returns filtrated lidar data"""
+        stamp = time.time()
+        # array of indexes, where condition is met:
+        ind = np.where(np.logical_and(scan[:, 1] > MAX_ITENS, scan[:, 0] < MAX_DIST))[0]
+        # array of angles/distances, for which condition is met
+        angles = np.pi / 4 / 180 * ind
+        distances = scan[ind, 0]
+        #logging.info('scan preproccesing time: ' + str(time.time() - stamp))
+        return (angles + np.pi / 4) % (2 * np.pi), distances  # delete +np.pi for our robot ANDREW you NEED return (angles + np.pi / 4 + np.pi) % (2 * np.pi), distances
 
 
-def p_trans(agl, pit):
-    x_beac = pit*np.cos(agl) # multiply by minus in our robot
-    y_beac = pit*np.sin(agl)
-    return x_beac,y_beac
+    def p_trans(self, agl, pit):
+        x_beac = pit*np.cos(agl) # multiply by minus in our robot
+        y_beac = pit*np.sin(agl)
+        return x_beac,y_beac
 
 
 

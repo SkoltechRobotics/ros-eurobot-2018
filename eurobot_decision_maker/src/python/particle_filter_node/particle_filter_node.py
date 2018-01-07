@@ -8,24 +8,36 @@ from npParticle import ParticleFilter
 
 # Storage for the latest scan
 scan = LaserScan()
-coords = np.array([0,0,0]) # set initial coordinates
+coords = np.array([0.383, 0.220,-np.pi/2]) # set initial coordinates
 
 def odometry_callback(data):
     # parse name,type
     odometry_coords = str(data)[6:].split()
-    odometry_coords = np.array(map(float, dpoint))
+    odometry_coords = np.array(map(float, odometry_coords))
 
     # calculate coordinates
     lidar_data = np.array([scan.ranges, scan.intensities]).T
+    global coords
     coords = particle_filter.localisation(coords, odometry_coords, lidar_data) # TBD: check if input is correct
+    coords[0] = coords[0]/1000
+    coords[1] = coords[1]/1000 # TBD: check division by 1000
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
     
-    rate.sleep()
-
+    # DEBUG
+    #print odometry_coords
+    
 def scan_callback(data):
+    global scan
     scan = data
+    
+    ## DEBUG: pring coordinates of the beacons
+    #angle, distance = particle_filter.get_landmarks(lidar_data)
+    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
+    #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
+    #print np.array([x_coords, y_coords]).T * 1000
+    #print "------------------------------------------"
 
 if __name__ == '__main__':
     try:
