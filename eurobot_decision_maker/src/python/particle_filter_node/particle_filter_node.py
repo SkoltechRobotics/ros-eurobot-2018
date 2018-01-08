@@ -5,10 +5,11 @@ from sensor_msgs.msg import LaserScan
 from EncoderIntegrator import EncoderIntegrator
 import numpy as np
 from npParticle import ParticleFilter
+import matplotlib.pyplot as plt # for DEBUG
 
 # Storage for the latest scan
 scan = LaserScan()
-coords = np.array([0.383, 0.220,-np.pi/2]) # set initial coordinates
+coords = np.array([220,383,-np.pi/2]) # set initial coordinates
 
 def odometry_callback(data):
     # parse name,type
@@ -19,20 +20,31 @@ def odometry_callback(data):
     lidar_data = np.array([scan.ranges, scan.intensities]).T
     global coords
     coords = particle_filter.localisation(coords, odometry_coords, lidar_data) # TBD: check if input is correct
-    coords[0] = coords[0]/1000
-    coords[1] = coords[1]/1000 # TBD: check division by 1000
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
     
     # DEBUG
-    #print odometry_coords
+    # visualise landmarks
+    #angle, distance = particle_filter.get_landmarks(lidar_data)
+    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
+    #plt.plot(x_coords, y_coords, 'r.')
+    #plt.xlim(-3, 3)
+    #plt.ylim(-3, 3)
+    #plt.gca().set_aspect('equal', adjustable='box')
+    #plt.show()
+    
+    # DEBUG
+    print "odometry_coords:\t", odometry_coords
+    print "coords:\t\t", coords
+    print "---------"
     
 def scan_callback(data):
     global scan
     scan = data
-    
+
     ## DEBUG: pring coordinates of the beacons
+    #lidar_data = np.array([scan.ranges, scan.intensities]).T
     #angle, distance = particle_filter.get_landmarks(lidar_data)
     #x_coords, y_coords = particle_filter.p_trans(angle,distance)
     #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})

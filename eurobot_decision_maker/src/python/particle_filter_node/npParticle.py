@@ -23,7 +23,7 @@ MAX_DIST = 3700
 BEAC_DIST_THRES = 200
 
 class ParticleFilter:
-    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=383, in_y=220, in_angle=-np.pi/2, color='green'):
+    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=220, in_y=383, in_angle=-np.pi/2, color='green'):
         global BEACONS
         if(color == 'green'):
             BEACONS = np.array([[-(WORLD_BORDER+BEAC_BORDER+BEAC_L/2.), WORLD_Y/2.], 
@@ -194,8 +194,6 @@ class ParticleFilter:
 
     def localisation(self, shared_coords, current_coords, lidar_data):
         tmstmp = time.time() - self.start_time
-        current_coords[0] = current_coords[0]*1000
-        current_coords[1] = current_coords[1]*1000
         self.move_particles([current_coords[0] - shared_coords[0], current_coords[1] - shared_coords[1], current_coords[2] - shared_coords[2]])
         # add aproximation
         self.particle_sense(lidar_data)
@@ -228,8 +226,10 @@ class ParticleFilter:
 
 
     def p_trans(self, agl, pit):
-        x_beac = pit*np.cos(agl) # multiply by minus in our robot
-        y_beac = pit*np.sin(agl)
+        #x_beac = pit*np.cos(agl) # multiply by minus in our robot
+        #y_beac = pit*np.sin(agl)
+        x_beac = pit*np.sin(agl)
+        y_beac = -pit*np.cos(agl)
         return x_beac,y_beac
 
 
