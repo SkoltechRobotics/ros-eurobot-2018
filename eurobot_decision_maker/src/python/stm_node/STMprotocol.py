@@ -11,6 +11,7 @@ class STMprotocol(object):
             0x03: "=Bf",
             0x04: "=B",
             0x05: "=B",
+            0x08: "=fff",
             0x09: "=Bf",
             0x0a: "=Bffff",
             0x0b: "=BH",
@@ -24,6 +25,7 @@ class STMprotocol(object):
             0x03: "=BB",
             0x04: "=BB",
             0x05: "=BB",
+            0x08: "=BB",
             0x09: "=BB",
             0x0a: "=BB",
             0x0b: "=BB",
@@ -33,32 +35,35 @@ class STMprotocol(object):
         }
 
     def send_command(self, cmd, args):
-        parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
-        #print(parameters)
-        msg_len = len(parameters) + 5
-        msg = bytearray([0xfa, 0xaf, msg_len, cmd]) + parameters
-        crc = sum(msg) % 256
-        msg += bytearray([crc])
+        try:
+            parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
+            #print(parameters)
+            msg_len = len(parameters) + 5
+            msg = bytearray([0xfa, 0xaf, msg_len, cmd]) + parameters
+            crc = sum(msg) % 256
+            msg += bytearray([crc])
 
-        #print("send ", repr(msg))
-        self.ser.write(msg)
+            #print("send ", repr(msg))
+            self.ser.write(msg)
 
-        start_time = datetime.datetime.now()
-        time_threshold = datetime.timedelta(seconds=1)
-        dt = start_time - start_time
+            start_time = datetime.datetime.now()
+            time_threshold = datetime.timedelta(seconds=1)
+            dt = start_time - start_time
 
-        data = ord(self.ser.read()[0])
-        while (data != 0xFA) and (dt < time_threshold):
             data = ord(self.ser.read()[0])
+            while (data != 0xFA) and (dt < time_threshold):
+                data = ord(self.ser.read()[0])
 
-            current_time = datetime.datetime.now()
-            dt = start_time - current_time
+                current_time = datetime.datetime.now()
+                dt = start_time - current_time
 
-        adr = ord(self.ser.read()[0])
-        answer_len = ord(self.ser.read()[0])
-        answer = bytearray(self.ser.read(answer_len - 3))
-        #print("answer ", repr(bytearray([data, adr, answer_len]) + answer))
+            adr = ord(self.ser.read()[0])
+            answer_len = ord(self.ser.read()[0])
+            answer = bytearray(self.ser.read(answer_len - 3))
+            #print("answer ", repr(bytearray([data, adr, answer_len]) + answer))
 
-        args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
-        return args
-
+            args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
+            return args
+        except Exception:
+            print "Exception in STMprotocol"
+            return

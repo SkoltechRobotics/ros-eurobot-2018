@@ -21,22 +21,23 @@ class stm_node(STMprotocol):
         self.rate = rospy.Rate(40)
 
         # high-level commands info (for handling response)
-        #self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
-        #self.action_types = {0xa1:0} # dictionary of action_types by indeces
+        self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
+        self.action_types = [] # list of high-level action types only
 
     def parse_data(self, data):
         data_splitted = str(data)[6:].split()
         action_name = data_splitted[0]
         action_type = int(data_splitted[1])
         args_str = data_splitted[2:]
-        action_args_dict = {'B':int, 'H':int, 'f':float}
+        # TBD: split any chars in Strings like 'ECHO'->['E','C','H','O']
+
+        action_args_dict = {'B':ord, 'H':int, 'f':float}
         args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name,action_type,args
 
     def command_callback(self, data):
         # parse data
         action_name,action_type,args = self.parse_data(data)
-
         ## Command handling
         # send command to STM32
         self.send_command(action_type, args)
