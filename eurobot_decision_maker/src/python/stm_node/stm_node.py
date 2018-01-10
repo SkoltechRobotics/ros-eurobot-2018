@@ -32,22 +32,24 @@ class stm_node(STMprotocol):
         # TBD: split any chars in Strings like 'ECHO'->['E','C','H','O']
 
         action_args_dict = {'B':ord, 'H':int, 'f':float}
-        print args_str
         args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name,action_type,args
 
     def command_callback(self, data):
         # parse data
-        print 'data: ', data
         action_name,action_type,args = self.parse_data(data)
+
         ## Command handling
         # send command to STM32
-        print args
-        self.send_command(action_type, args)
+        successfuly, args_response = self.send_command(action_type, args)
+        if successfuly:
+            print args_response
+
         # high-level commands handling
         if action_type in self.action_types:
             # store action_name
             self.actions_in_progress[self.action_types[action_type]] = action_name
+
         # low-level commands handling        
         else:
             self.pub_response.publish(action_name + " ok")
@@ -65,10 +67,11 @@ class stm_node(STMprotocol):
     # infinite publishing cycle
     def publish_infinitely(self):
         while not rospy.is_shutdown():
-            status,x,y,a = self.send_command(0xA0, [0, 0, 0])
-            status = str(status)
-            self.pub_odometry.publish(' '.join(map(str, [x,y,a])))
-            self.handle_response(status) # it will publish responce where needed
+            # TBD
+            #status,x,y,a = self.send_command(0xA0, [0, 0, 0])
+            #status = str(status)
+            #self.pub_odometry.publish(' '.join(map(str, [x,y,a])))
+            #self.handle_response(status) # it will publish responce where needed
             self.rate.sleep()
 
     # timers for manipulator movements
