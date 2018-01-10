@@ -32,14 +32,17 @@ class stm_node(STMprotocol):
         # TBD: split any chars in Strings like 'ECHO'->['E','C','H','O']
 
         action_args_dict = {'B':ord, 'H':int, 'f':float}
+        print args_str
         args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name,action_type,args
 
     def command_callback(self, data):
         # parse data
+        print 'data: ', data
         action_name,action_type,args = self.parse_data(data)
         ## Command handling
         # send command to STM32
+        print args
         self.send_command(action_type, args)
         # high-level commands handling
         if action_type in self.action_types:
