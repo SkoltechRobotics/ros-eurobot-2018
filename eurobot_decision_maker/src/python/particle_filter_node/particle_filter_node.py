@@ -5,7 +5,7 @@ from sensor_msgs.msg import LaserScan
 from EncoderIntegrator import EncoderIntegrator
 import numpy as np
 from npParticle import ParticleFilter
-import matplotlib.pyplot as plt # for DEBUG
+#import matplotlib.pyplot as plt # for DEBUG
 
 # Storage for the latest scan
 scan = LaserScan()
@@ -35,7 +35,7 @@ def delta_callback(data): # TBD: recieve coords, not delta_coords
     #plt.show()
     
     # DEBUG
-    print "odometry_coords:\t", odometry_coords
+    print "delta_coords:\t", delta_coords
     print "coords:\t\t", coords
     print "---------"
     
