@@ -14,7 +14,7 @@ class stm_node(STMprotocol):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("robot_command", String, self.command_callback)
-        self.pub_odometry = rospy.Publisher('odometry_coordinates', String, queue_size=10)
+        self.pub_delta = rospy.Publisher('delta_coordinates', String, queue_size=10)
         self.pub_response = rospy.Publisher("command_response", String, queue_size=10) 
 
         # rate of publishing
@@ -54,6 +54,12 @@ class stm_node(STMprotocol):
         else:
             self.pub_response.publish(action_name + " ok")
 
+        # PF DEBUG:
+        if action_type == "10":
+            successfuly, args_response = self.send_command(action_type, args)
+            if successfuly:
+                 self.pub_delta.publish(' '.join(map(str, args_response)))
+
     def handle_response(self, status):
         """Handles response for high-lvl commands (only)."""
         l = len(status)
@@ -70,7 +76,7 @@ class stm_node(STMprotocol):
             # TBD
             #status,x,y,a = self.send_command(0xA0, [0, 0, 0])
             #status = str(status)
-            #self.pub_odometry.publish(' '.join(map(str, [x,y,a])))
+            #self.pub_delta.publish(' '.join(map(str, [x,y,a])))
             #self.handle_response(status) # it will publish responce where needed
             self.rate.sleep()
 

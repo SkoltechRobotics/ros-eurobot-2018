@@ -192,9 +192,9 @@ class ParticleFilter:
         # TODO try use median instead mean
         # TODO if odometry works very bad and weights are small use only lidar
 
-    def localisation(self, shared_coords, current_coords, lidar_data):
+    def localisation(self, delta_coords, lidar_data):
         tmstmp = time.time() - self.start_time
-        self.move_particles([current_coords[0] - shared_coords[0], current_coords[1] - shared_coords[1], current_coords[2] - shared_coords[2]])
+        self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
         # add aproximation
         self.particle_sense(lidar_data)
         if self.warning:

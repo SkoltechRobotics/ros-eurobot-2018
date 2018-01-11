@@ -11,15 +11,15 @@ import matplotlib.pyplot as plt # for DEBUG
 scan = LaserScan()
 coords = np.array([220,383,-np.pi/2]) # set initial coordinates
 
-def odometry_callback(data):
+def delta_callback(data): # TBD: recieve coords, not delta_coords
     # parse name,type
-    odometry_coords = str(data)[6:].split()
-    odometry_coords = np.array(map(float, odometry_coords))
+    delta_coords = str(data)[6:].split()
+    delta_coords = np.array(map(float, delta_coords))
 
     # calculate coordinates
     lidar_data = np.array([scan.ranges, scan.intensities]).T
     global coords
-    coords = particle_filter.localisation(coords, odometry_coords, lidar_data) # TBD: check if input is correct
+    coords = particle_filter.localisation(delta_coords, lidar_data)
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         # ROS entities
         rospy.init_node('particle_filter_node', anonymous=True)
         rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
-        rospy.Subscriber("odometry_coordinates", String, odometry_callback) # stm data
+        rospy.Subscriber("delta_coordinates", String, delta_callback) # stm data
         pub = rospy.Publisher('coordinates', String, queue_size=1)
 
         color = "orange"
