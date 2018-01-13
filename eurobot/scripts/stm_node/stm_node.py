@@ -57,7 +57,7 @@ class stm_node(STMprotocol):
         # PF DEBUG:
         if action_type == 8:
             successfuly, args_response = self.send_command(9, [])
-            args_response = [args_response[i]*800 for i in range(3)]
+            args_response = [args_response[0]*1000, args_response[1]*1000, args_response[2]]
             print 'DELTA == ', args_response
             if successfuly:
                  self.pub_delta.publish(' '.join(map(str, args_response)))

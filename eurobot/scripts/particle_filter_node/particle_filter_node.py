@@ -16,6 +16,13 @@ def delta_callback(data): # TBD: recieve coords, not delta_coords
     delta_coords = str(data)[6:].split()
     delta_coords = np.array(map(float, delta_coords))
 
+    # transform into field coordinate system
+    tmp = []
+    tmp.append(delta_coords[0]*np.cos(coords[2]) - delta_coords[1]*np.sin(coords[2]))
+    tmp.append(delta_coords[1]*np.cos(coords[2]) + delta_coords[0]*np.sin(coords[2]))
+    tmp.append(delta_coords[2])
+    delta_coords = tmp
+
     # calculate coordinates
     lidar_data = np.array([scan.ranges, scan.intensities]).T
     global coords
@@ -37,6 +44,9 @@ def delta_callback(data): # TBD: recieve coords, not delta_coords
     # DEBUG
     print "delta_coords:\t", delta_coords
     print "coords:\t\t", coords
+    #print "Landmarks:"
+    #landm = particle_filter.get_landmarks(lidar_data)
+    #print particle_filter.p_trans(landm[0],landm[1])
     print "---------"
     
 def scan_callback(data):
