@@ -23,7 +23,7 @@ MAX_DIST = 3700
 BEAC_DIST_THRES = 200
 
 class ParticleFilter:
-    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=220, in_y=383, in_angle=-np.pi/2, color='green'):
+    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=220, in_y=383, in_angle=3*np.pi/2, color='orange'):
         global BEACONS
         if(color == 'green'):
             BEACONS = np.array([[-(WORLD_BORDER+BEAC_BORDER+BEAC_L/2.), WORLD_Y/2.], 
@@ -102,14 +102,14 @@ class ParticleFilter:
         temporary = ((self.particles[:, 2]-zero_elem+np.pi) % (2.0 * np.pi))+zero_elem-np.pi
         orient = np.mean(temporary)
         answer = (x, y, orient)
-        #logging.info('main_calculation time' + str(time.time() - stamp))
-        #logging.info("Particle Filter coordinates: "+str(answer))
+        logging.info('main_calculation time' + str(time.time() - stamp))
+        logging.info("Particle Filter coordinates: "+str(answer))
         return answer
 
     def particle_sense(self, scan):
         stamp = time.time()
-        angle, distance = self.get_landmarks(scan)
-        x_coords, y_coords = self.p_trans(angle,distance)
+        angle, distance = get_landmarks(scan)
+        x_coords, y_coords = p_trans(angle,distance)
         weights = self.weights(x_coords,y_coords)
         if self.warning:
             return
@@ -179,7 +179,7 @@ class ParticleFilter:
         # mean version
         weights = self.gaus(np.mean(beacon_error_sum, axis=1),mu=0, sigma=self.sense_noise)
         # check weights
-        if np.sum(weights)<self.gaus(self.sense_noise*5.0,mu =0,sigma= self.sense_noise)*self.particles_num:
+        if self.warning == False and np.sum(weights)<self.gaus(self.sense_noise*15.0,mu =0,sigma= self.sense_noise)*self.particles_num:
             logging.info("Dangerous Situation")
             #self.warning = True
 
@@ -199,15 +199,37 @@ class ParticleFilter:
         # add aproximation
         self.particle_sense(lidar_data)
         if self.warning:
-            x = np.random.normal(self.last[0], 200, self.particles_num)
-            y = np.random.normal(self.last[1], 200, self.particles_num)
-            orient = np.random.normal(self.last[2], np.pi, self.particles_num) % (2 * np.pi)
+            print "Finding place"
+            temp_num = self.particles_num
+            self.particles_num = 5000
+            x = np.random.uniform(self.last[0]-200,self.last[0]+ 200, self.particles_num)
+            y = np.random.uniform(self.last[1]-200,self.last[1]+ 200, self.particles_num)
+            orient = np.random.uniform(self.last[2]-np.pi/2,self.last[2]+ np.pi/2, self.particles_num) % (2 * np.pi)
             self.particles = np.array([x, y, orient]).T  # instead of np.vstack((x,y,orient)).T
+            temp_sense = self.sense_noise
+            self.sense_noise = 25
+            lidar_data = get_raw()
+            self.particle_sense(lidar_data)
+            lidar_data = get_raw()
+            self.particle_sense(lidar_data)
+            self.move_particles([0, 0, 0])
+            lidar_data = get_raw()
+            self.particle_sense(lidar_data)
+            self.move_particles([0, 0, 0])
+            self.sense_noise = temp_sense
+            lidar_data = get_raw()
+            self.particle_sense(lidar_data)
             self.warning = False
+
+            main_robot = self.calculate_main()
+            self.particles_num = temp_num
+            x = np.random.normal(main_robot[0], 100, self.particles_num)
+            y = np.random.normal(main_robot[1], 100, self.particles_num)
+            orient = np.random.normal(main_robot[2], np.pi/2, self.particles_num)
+            self.particles = np.array([x, y, orient]).T
+            lidar_data = get_raw()
             self.particle_sense(lidar_data)
-            self.move_particles([0, 0, 0])
-            self.particle_sense(lidar_data)
-            self.move_particles([0, 0, 0])
+
         main_robot = self.calculate_main()
         self.last = main_robot
         return np.array(main_robot)
