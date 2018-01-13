@@ -55,8 +55,10 @@ class stm_node(STMprotocol):
             self.pub_response.publish(action_name + " ok")
 
         # PF DEBUG:
-        if action_type == 10:
-            successfuly, args_response = self.send_command(action_type, args)
+        if action_type == 8:
+            successfuly, args_response = self.send_command(9, [])
+            args_response = [args_response[i]*800 for i in range(3)]
+            print 'DELTA == ', args_response
             if successfuly:
                  self.pub_delta.publish(' '.join(map(str, args_response)))
 
