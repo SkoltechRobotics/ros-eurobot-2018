@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- COMMON PARAMS -->
-  <param name="color" value="orange" />
+  <param name="color" type="string" value="orange" />
 
   <group ns="main_robot">
     <!-- NODES -->
@@ -17,10 +17,19 @@
     <param name="start_y" type="double" value="425.0" />
     <param name="start_a" type="double" value="4.71" />
 
-    <!-- TBD robot size -->
+    <!-- robot size -->
     <param name="dim_x" type="double" value="420" />
     <param name="dim_y" type="double" value="190" />
     <param name="dim_z" type="double" value="350" />
+
+    <!-- particle filter params -->
+    <param name="particles" type="double" value="2000" />
+    <param name="sense_noise" type="double" value="25" />
+    <param name="distance_noise" type="double" value="25" />
+    <param name="angle_noise" type="double" value="0.1" />
+    <param name="max_itens" type="double" value="3500" />
+    <param name="max_dist" type="double" value="3700" />
+
   </group>
 
 </launch>

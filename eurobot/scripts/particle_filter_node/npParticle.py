@@ -18,12 +18,10 @@ BEACONS = np.array([[WORLD_X+WORLD_BORDER+BEAC_BORDER+BEAC_L/2., WORLD_Y/2.],
                 [-(WORLD_BORDER+BEAC_BORDER+BEAC_L/2.), BEAC_L/2.]])
 
 # parametres of lidar
-MAX_ITENS = 3500  # MAX_ITENS 2600
-MAX_DIST = 3700
 BEAC_DIST_THRES = 200
 
 class ParticleFilter:
-    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=220, in_y=383, in_angle=3*np.pi/2, color='orange'):
+    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=220, in_y=383, in_angle=3*np.pi/2, color='orange', max_itens=3500.0, max_dist=3700.0):
         global BEACONS
         if(color == 'green'):
             BEACONS = np.array([[-(WORLD_BORDER+BEAC_BORDER+BEAC_L/2.), WORLD_Y/2.], 
@@ -46,6 +44,9 @@ class ParticleFilter:
         # Added Andrei for debug
         self.debug_info = []
         self.start_time = time.time()
+
+        self.max_itens=max_itens
+        self.max_dist=max_dist
         
     def gaus(self, x, mu=0, sigma=1):
         """calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma"""
@@ -240,7 +241,7 @@ class ParticleFilter:
         """Returns filtrated lidar data"""
         stamp = time.time()
         # array of indexes, where condition is met:
-        ind = np.where(np.logical_and(scan[:, 1] > MAX_ITENS, scan[:, 0] < MAX_DIST))[0]
+        ind = np.where(np.logical_and(scan[:, 1] > self.max_itens, scan[:, 0] < self.max_dist))[0]
         # array of angles/distances, for which condition is met
         angles = np.pi / 4 / 180 * ind
         distances = scan[ind, 0]
