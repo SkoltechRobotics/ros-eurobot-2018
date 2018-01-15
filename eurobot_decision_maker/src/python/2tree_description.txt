@@ -1,0 +1,4 @@
+tree
+root sequence __ROOT__
+photo action root
+

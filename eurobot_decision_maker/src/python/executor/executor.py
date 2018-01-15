@@ -97,7 +97,6 @@ class ActionNode(TreeNode):
 
     def finish():
         TreeNode.finish(self)
-        self.status = "finished"
         self.sub.unregister()
 	
     def tick():
@@ -108,10 +107,10 @@ class ActionNode(TreeNode):
 class ControlNode(TreeNode):
     def __init__(self, name):
     	TreeNode.__init__(self, name)
-        child_list = []
+        children_list = []
         
     def append_child(self, child):
-        child_list.append(child)
+        children_list.append(child)
 
     
 class SequenceNode(ControlNode):
@@ -121,20 +120,44 @@ class SequenceNode(ControlNode):
     def tick(self):
         if self.status is "not started":
             self.start()
+            self.status = "active"
         
-        child_iter = iter(child_list)
+        child_iter = iter(children_list)
+        child = None
+        try:
+            child = it.next()
+        except StopIteration:
+            # empty list!
+            print "Empty children list in " + self.name + " !"
+            self.finish()
+            self.status = "error"
+            raise
+        except:
+            print "Unexpected error in " + self.name
+            raise
         
+        while child.check_status() == "finished":
+            try:
+                child = it.next()
+            except StopIteration:
+                # all children finished
+                self.finish()
+                self.status = "finished"
+                return self.status
+            except:
+                print "Unexpected error in " + self.name
+                raise
+        
+        current_child_status = child.check_status()
+        
+        if current_child_status in ["active", "not started"]:
+            child.tick()
+            return self.status
+
         
 
 
 if __name__  == '__main__':
-    rospy.init_node('fake_stm', anonymous =True)
+    rospy.init_node('executor', anonymous =True)
     
-    pub = rospy.Publisher('bt_maker', String, queue_size = 10)
-    #sub = rospy.Subscriber('robot_command', String, fake_response)
-    data = ""
-    with open("tree_description.txt") as btf:
-        data = btf.read().replace('\n',' ')
-    rospy.loginfo(data)
-    pub.publish(data)
-    rospy.spin()
+    

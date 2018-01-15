@@ -93,11 +93,11 @@ int main(int argc, char **argv){
     
     assign_bt_node_types();
 
-    ros::init(argc, argv, "tree_maker");
+    ros::init(argc, argv, "tree_maker",ros::init_options::AnonymousName);
     
     ros::NodeHandle n;
     
-    ros::Subscriber sub = n.subscribe("behavior_tree_description", 1000, startBTree);
+    ros::Subscriber sub = n.subscribe("bt_maker", 1000, startBTree);
     
     ros::spin();
     return 0;
