@@ -67,8 +67,15 @@ if __name__ == '__main__':
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
 
-        color = "orange"
-        particle_filter = ParticleFilter(particles=2000, sense_noise=25, distance_noise=25, angle_noise=0.1, color = color)
+        # create a PF object with params from ROS
+        color = rospy.get_param("color")
+        particles = rospy.get_param("particles")
+        sense_noise = rospy.get_param("sense_noise")
+        distance_noise = rospy.get_param("distance_noise")
+        angle_noise = rospy.get_param("angle_noise")
+        max_itens = rospy.get_param("max_itens")
+        max_dist = rospy.get_param("max_dist")
+        particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, color = color, max_itens=max_itens, max_dist=max_dist)
 
         ## Simulate
         #start_point = np.array([0.,0.,0.])
