@@ -9,12 +9,11 @@ from npParticle import ParticleFilter
 
 # Storage for the latest scan
 scan = LaserScan()
-coords = np.array([220,383,-np.pi/2]) # set initial coordinates
 
 def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
     # parse name,type
-    delta_coords = str(data)[6:].split()
-    delta_coords = np.array(map(float, delta_coords))
+    coords = str(data)[6:].split()
+    coords = np.array(map(float, delta_coords))
 
     # transform into field coordinate system
     tmp = []
@@ -64,6 +63,8 @@ def scan_callback(data):
 if __name__ == '__main__':
     try:
         # ROS entities
+        global coords
+        coords = [rospy.get_param('/main_robot/start_x'), rospy.get_param('/main_robot/start_y'), rospy.get_param('/main_robot/start_a')]
         rospy.init_node('particle_filter_node', anonymous=True)
         rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data

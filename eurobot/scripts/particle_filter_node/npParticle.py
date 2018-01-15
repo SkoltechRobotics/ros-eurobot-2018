@@ -108,8 +108,8 @@ class ParticleFilter:
 
     def particle_sense(self, scan):
         stamp = time.time()
-        angle, distance = get_landmarks(scan)
-        x_coords, y_coords = p_trans(angle,distance)
+        angle, distance = self.get_landmarks(scan)
+        x_coords, y_coords = self.p_trans(angle,distance)
         weights = self.weights(x_coords,y_coords)
         if self.warning:
             return
