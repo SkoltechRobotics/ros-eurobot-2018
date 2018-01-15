@@ -2,8 +2,6 @@
 import rospy
 from std_msgs.msg import String
 import serial
-import struct
-import datetime
 from STMprotocol import STMprotocol
 
 
@@ -16,9 +14,6 @@ class stm_node(STMprotocol):
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
         self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=10)
         self.pub_response = rospy.Publisher("response", String, queue_size=10) 
-
-        # rate of publishing
-        self.rate = rospy.Rate(40)
 
         # high-level commands info (for handling response)
         self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
@@ -57,8 +52,9 @@ class stm_node(STMprotocol):
         if action_type == 0x0f:
             if successfuly:
                  self.pub_stm_coords.publish(' '.join(map(str, [args_response[0]*1000, args_response[1]*1000, args_response[2]])))
+            #self.handle_response()
 
-    def handle_response(self, status):
+    def handle_response(self, status): # TBD
         """Handles response for high-lvl commands (only)."""
         l = len(status)
         for i in range(l):
@@ -66,23 +62,13 @@ class stm_node(STMprotocol):
             if status[i] == '0' and len(self.actions_in_progress[i]) > 0:
                 self.actions_in_progress[i] = ''                                    # stop storing this action_name
                 self.pub_response.publish(self.actions_in_progress[i] + " done")    # publish responce
-        
-        
-    # infinite publishing cycle
-    def publish_infinitely(self):
-        while not rospy.is_shutdown():
-            # TBD
-            #status,x,y,a = self.send_command(0xA0, [0, 0, 0])
-            #status = str(status)
-            #self.pub_delta.publish(' '.join(map(str, [x,y,a])))
-            #self.handle_response(status) # it will publish responce where needed
-            self.rate.sleep()
 
 if __name__ == '__main__':
     try:
         serial_port = "/dev/ttyUSB0"
-
         stm = stm_node(serial_port)
-        stm.publish_infinitely()
+
+        # spin() simply keeps python from exiting until this node is stopped
+        rospy.spin()
     except rospy.ROSInterruptException:
         pass
