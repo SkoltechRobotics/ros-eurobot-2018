@@ -55,10 +55,8 @@ class stm_node(STMprotocol):
 
         # pub stm/coordinates whenever stm status is requested
         if action_type == 0x0f:
-            successfuly, args_response = self.send_command(9, []) # ask STM it's coords
-            args_response = [args_response[0]*1000, args_response[1]*1000, args_response[2]]
             if successfuly:
-                 self.pub_stm_coords.publish(' '.join(map(str, args_response)))
+                 self.pub_stm_coords.publish(' '.join(map(str, [args_response[0]*1000, args_response[1]*1000, args_response[2]])))
 
     def handle_response(self, status):
         """Handles response for high-lvl commands (only)."""

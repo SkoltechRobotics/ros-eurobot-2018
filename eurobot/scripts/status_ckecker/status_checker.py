@@ -7,7 +7,8 @@ def checker():
     rospy.init_node('status_checker', anonymous=True)
 
     # set initial coords in STM
-    initial_coords = [rospy.get_param('/main_robot/start_x'), rospy.get_param('/main_robot/start_y'), rospy.get_param('/main_robot/start_a')]
+    rospy.sleep(1)
+    initial_coords = [rospy.get_param('/main_robot/start_x')/1000.0, rospy.get_param('/main_robot/start_y')/1000.0, rospy.get_param('/main_robot/start_a')]
     pub.publish("set_initial_coords 14 " + ' '.join(map(str, initial_coords)))
     # TBD: make sure STM recieves this command, it may miss it if
 

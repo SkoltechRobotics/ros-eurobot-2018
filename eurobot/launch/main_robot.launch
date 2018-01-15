@@ -13,8 +13,8 @@
 
     <!-- PARAMS -->
     <!-- initial coordinates -->
-    <param name="start_x" type="double" value="220.0" />
-    <param name="start_y" type="double" value="383.0" />
+    <param name="start_x" type="double" value="293.0" />
+    <param name="start_y" type="double" value="425.0" />
     <param name="start_a" type="double" value="4.71" />
 
     <!-- TBD robot size -->
