@@ -14,7 +14,7 @@ class stm_node(STMprotocol):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        self.pub_delta = rospy.Publisher('stm/coordinates', String, queue_size=10)
+        self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=10)
         self.pub_response = rospy.Publisher("response", String, queue_size=10) 
 
         # rate of publishing
@@ -25,12 +25,11 @@ class stm_node(STMprotocol):
         self.action_types = [] # list of high-level action types only
 
     def parse_data(self, data):
-        data_splitted = str(data)[6:].split()
+        data_splitted = data.data.split()
         action_name = data_splitted[0]
         action_type = int(data_splitted[1])
         args_str = data_splitted[2:]
         # TBD: split any chars in Strings like 'ECHO'->['E','C','H','O']
-
         action_args_dict = {'B':ord, 'H':int, 'f':float}
         args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name,action_type,args
@@ -43,24 +42,23 @@ class stm_node(STMprotocol):
         # send command to STM32
         successfuly, args_response = self.send_command(action_type, args)
         if successfuly:
-            print args_response
+            print 'STM responded to cmd', action_name, '\twith args:', args_response
 
         # high-level commands handling
         if action_type in self.action_types:
             # store action_name
             self.actions_in_progress[self.action_types[action_type]] = action_name
 
-        # low-level commands handling        
-        else:
-            self.pub_response.publish(action_name + " ok")
+        # low-level commands handling - not required
+        #else:
+        #    self.pub_response.publish(action_name + " ok")
 
-        # PF DEBUG:
-        if action_type == 8:
-            successfuly, args_response = self.send_command(9, [])
+        # pub stm/coordinates whenever stm status is requested
+        if action_type == 0x0f:
+            successfuly, args_response = self.send_command(9, []) # ask STM it's coords
             args_response = [args_response[0]*1000, args_response[1]*1000, args_response[2]]
-            print 'DELTA == ', args_response
             if successfuly:
-                 self.pub_delta.publish(' '.join(map(str, args_response)))
+                 self.pub_stm_coords.publish(' '.join(map(str, args_response)))
 
     def handle_response(self, status):
         """Handles response for high-lvl commands (only)."""

@@ -7,25 +7,21 @@ import numpy as np
 from npParticle import ParticleFilter
 #import matplotlib.pyplot as plt # for DEBUG
 
-# Storage for the latest scan
+# Storage
 scan = LaserScan()
 
 def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
     # parse name,type
-    coords = str(data)[6:].split()
-    coords = np.array(map(float, delta_coords))
-
-    # transform into field coordinate system
-    tmp = []
-    tmp.append(delta_coords[0]*np.cos(coords[2]) - delta_coords[1]*np.sin(coords[2]))
-    tmp.append(delta_coords[1]*np.cos(coords[2]) + delta_coords[0]*np.sin(coords[2]))
-    tmp.append(delta_coords[2])
-    delta_coords = tmp
+    stm_coords = data.data.split()
+    stm_coords = np.array(map(float, stm_coords))
 
     # calculate coordinates
     lidar_data = np.array([scan.ranges, scan.intensities]).T
-    global coords
-    coords = particle_filter.localisation(delta_coords, lidar_data)
+    global coords, prev_stm_coords
+    coords = particle_filter.localisation(stm_coords - prev_stm_coords, lidar_data)
+
+    # store stm_coords
+    prev_stm_coords = stm_coords
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
@@ -41,12 +37,10 @@ def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
     #plt.show()
     
     # DEBUG
-    print "delta_coords:\t", delta_coords
-    print "coords:\t\t", coords
     #print "Landmarks:"
     #landm = particle_filter.get_landmarks(lidar_data)
     #print particle_filter.p_trans(landm[0],landm[1])
-    print "---------"
+    #print "---------"
     
 def scan_callback(data):
     global scan
@@ -63,8 +57,11 @@ def scan_callback(data):
 if __name__ == '__main__':
     try:
         # ROS entities
-        global coords
-        coords = [rospy.get_param('/main_robot/start_x'), rospy.get_param('/main_robot/start_y'), rospy.get_param('/main_robot/start_a')]
+        # Set initial coords and previous STM coords
+        global coords, prev_stm_coords
+        coords = np.array([rospy.get_param('/main_robot/start_x'), rospy.get_param('/main_robot/start_y'), rospy.get_param('/main_robot/start_a')])
+        prev_stm_coords = coords.copy()
+
         rospy.init_node('particle_filter_node', anonymous=True)
         rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data

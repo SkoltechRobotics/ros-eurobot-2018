@@ -195,7 +195,7 @@ class ParticleFilter:
     def localisation(self, delta_coords, lidar_data):
         tmstmp = time.time() - self.start_time
         self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
-        print self.particles
+        #print self.particles
         # add aproximation
         self.particle_sense(lidar_data)
         if self.warning:
