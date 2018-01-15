@@ -13,9 +13,9 @@ class stm_node(STMprotocol):
         
         # ROS
         rospy.init_node('stm_node', anonymous=True)
-        rospy.Subscriber("robot_command", String, self.command_callback)
-        self.pub_delta = rospy.Publisher('delta_coordinates', String, queue_size=10)
-        self.pub_response = rospy.Publisher("command_response", String, queue_size=10) 
+        rospy.Subscriber("stm_command", String, self.stm_command_callback)
+        self.pub_delta = rospy.Publisher('stm/coordinates', String, queue_size=10)
+        self.pub_response = rospy.Publisher("response", String, queue_size=10) 
 
         # rate of publishing
         self.rate = rospy.Rate(40)
@@ -35,7 +35,7 @@ class stm_node(STMprotocol):
         args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name,action_type,args
 
-    def command_callback(self, data):
+    def stm_command_callback(self, data):
         # parse data
         action_name,action_type,args = self.parse_data(data)
 
@@ -81,23 +81,6 @@ class stm_node(STMprotocol):
             #self.pub_delta.publish(' '.join(map(str, [x,y,a])))
             #self.handle_response(status) # it will publish responce where needed
             self.rate.sleep()
-
-    # timers for manipulator movements
-    #def timer1_callback(event):
-    #    for i in range(4):
-    #        if self.status_m[0][i] == 1:
-    #            self.pub_response.publish(self.actions_in_progress_m[0][i] + " done") # publish responce
-    #    self.status_m[0] = '0000'
-    #def timer2_callback(event):
-    #    for i in range(4):
-    #        if self.status_m[1][i] == 1:
-    #            self.pub_response.publish(self.actions_in_progress_m[1][i] + " done") # publish responce
-    #    self.status_m[1] = '0000'
-    #def timer3_callback(event):
-    #    for i in range(4):
-    #        if self.status_m[2][i] == 1:
-    #            self.pub_response.publish(self.actions_in_progress_m[2][i] + " done") # publish responce
-    #    self.status_m[2] = '0000'
 
 if __name__ == '__main__':
     try:

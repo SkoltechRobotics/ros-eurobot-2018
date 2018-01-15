@@ -11,7 +11,7 @@ from npParticle import ParticleFilter
 scan = LaserScan()
 coords = np.array([220,383,-np.pi/2]) # set initial coordinates
 
-def delta_callback(data): # TBD: recieve coords, not delta_coords
+def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
     # parse name,type
     delta_coords = str(data)[6:].split()
     delta_coords = np.array(map(float, delta_coords))
@@ -66,8 +66,8 @@ if __name__ == '__main__':
         # ROS entities
         rospy.init_node('particle_filter_node', anonymous=True)
         rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
-        rospy.Subscriber("delta_coordinates", String, delta_callback) # stm data
-        pub = rospy.Publisher('coordinates', String, queue_size=1)
+        rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data
+        pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
 
         color = "orange"
         particle_filter = ParticleFilter(particles=2000, sense_noise=25, distance_noise=25, angle_noise=0.1, color = color)
