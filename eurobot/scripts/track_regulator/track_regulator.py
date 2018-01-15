@@ -16,10 +16,10 @@ def command_callback(data):
     global c_p
     # parse name,type
     data_splitted = str(data)[6:].split()
-    action_name = data_splitted[0]
-    action_type = int(data_splitted[1])
+	cmd_id = data_splitted[0]
+    action_name = data_splitted[1]
 
-    if action_type == 0xA1:
+    if action_type == "MOVE":
         # parse args
         args = data_splitted[2:]
         args = [float(args[i]) for i in range(3)]
@@ -31,24 +31,23 @@ def command_callback(data):
         
         # regulation
         while regulator.is_moving: 
-            c_p = integrator.integrate(dpoint)
             speeds = regulator.regulate(c_p)
             speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
             pub_response.publish("set_speed 0x06 " + speeds)
             rate.sleep()
         
         # publish response
-        pub_response.publish(action_name + " done")
+        pub_response.publish(cmd_id + " DONE")
 
 if __name__ == '__main__':
     try:
         regulator = TrackRegulator()
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(100)
-        rospy.Subscriber("robot_command", String, command_callback)
-        rospy.Subscriber("coordinates", String, coordinates_callback)
-        pub_response = rospy.Publisher("command_response", String, queue_size=10) 
-        pub_command = rospy.Publisher("robot_command", String, queue_size=10) 
+        rospy.Subscriber("move_command", String, command_callback)
+        rospy.Subscriber("/particle_filter/coordinates", String, coordinates_callback)
+        pub_response = rospy.Publisher("response", String, queue_size=10) 
+        pub_command = rospy.Publisher("action_command", String, queue_size=10) 
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
