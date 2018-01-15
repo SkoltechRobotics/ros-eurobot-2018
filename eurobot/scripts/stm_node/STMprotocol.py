@@ -22,6 +22,8 @@ class STMprotocol(object):
             0xb0: "=B",
             0xc0: "=BB",
             0xb1: "=B",
+            0x0e: "=fff",
+            0x0f: "=",
         }
 
         self.unpack_format = {
@@ -40,6 +42,8 @@ class STMprotocol(object):
             0xb0: "=BB",
             0xc0: "=BB",
             0xb1: "=BB",
+            0x0e: "=BB",
+            0x0f: "=fff",
         }
 
     def send_command(self, cmd, args):
