@@ -68,14 +68,17 @@ if __name__ == '__main__':
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
 
         # create a PF object with params from ROS
-        color = rospy.get_param("color")
-        particles = rospy.get_param("particles")
-        sense_noise = rospy.get_param("sense_noise")
-        distance_noise = rospy.get_param("distance_noise")
-        angle_noise = rospy.get_param("angle_noise")
-        max_itens = rospy.get_param("max_itens")
-        max_dist = rospy.get_param("max_dist")
-        particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, color = color, max_itens=max_itens, max_dist=max_dist)
+        color = rospy.get_param("/color")
+        particles = rospy.get_param("/main_robot/particles")
+        sense_noise = rospy.get_param("/main_robot/sense_noise")
+        distance_noise = rospy.get_param("/main_robot/distance_noise")
+        angle_noise = rospy.get_param("/main_robot/angle_noise")
+        in_x = rospy.get_param("/main_robot/start_x")
+        in_y = rospy.get_param("/main_robot/start_y")
+        in_angle = rospy.get_param("/main_robot/start_a")
+        max_itens = rospy.get_param("/main_robot/max_itens")
+        max_dist = rospy.get_param("/main_robot/max_dist")
+        particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
 
         ## Simulate
         #start_point = np.array([0.,0.,0.])

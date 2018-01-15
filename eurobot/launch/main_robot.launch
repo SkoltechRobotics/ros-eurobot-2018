@@ -23,7 +23,7 @@
     <param name="dim_z" type="double" value="350" />
 
     <!-- particle filter params -->
-    <param name="particles" type="double" value="2000" />
+    <param name="particles" type="int" value="2000" />
     <param name="sense_noise" type="double" value="25" />
     <param name="distance_noise" type="double" value="25" />
     <param name="angle_noise" type="double" value="0.1" />
