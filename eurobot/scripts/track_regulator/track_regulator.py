@@ -33,7 +33,7 @@ def command_callback(data):
         while regulator.is_moving:
             speeds = regulator.regulate(c_p)
             speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
-            pub_command.publish("0x06 " + speeds)
+            pub_command.publish("SETSPEED 8 " + speeds)
             rate.sleep()
         
         # publish response
@@ -45,9 +45,9 @@ if __name__ == '__main__':
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(100)
         rospy.Subscriber("move_command", String, command_callback)
-        rospy.Subscriber("/particle_filter/coordinates", String, coordinates_callback)
+        rospy.Subscriber("stm/coordinates", String, coordinates_callback)
         pub_response = rospy.Publisher("response", String, queue_size=10) 
-        pub_command = rospy.Publisher("action_command", String, queue_size=10) 
+        pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
