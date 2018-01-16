@@ -133,29 +133,6 @@
      </collision>
     </link>
 
-    <link name="main_robot">
-     <visual>
-       <origin xyz=".293 .425 .18" rpy="0 0 4.71" />
-       <geometry>
-         <box size="0.42 0.19 0.35" />
-       </geometry>
-       <material name="yellow">
-         <color rgba=".2 0 .8 1"/>
-       </material>
-     </visual>
-     <collision>
-       <origin xyz=".293 .425 .18" rpy="0 0 4.71"/>
-       <geometry>
-         <box size="0.42 0.19 0.35" />
-       </geometry>
-     </collision>
-    </link>
-
-    <joint name="table_to_main_robot" type="floating">
-      <parent link="table"/>
-      <child link="main_robot"/>
-    </joint>
-
     <joint name="table_to_beacons" type="fixed">
       <parent link="table"/>
       <child link="beacons"/>
