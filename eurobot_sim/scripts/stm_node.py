@@ -3,7 +3,6 @@ import rospy
 from std_msgs.msg import String
 import datetime
 import numpy as np
-import tf
 
 class stm_node():
     def __init__(self):
@@ -63,7 +62,6 @@ class stm_node():
         self.coords = np.array([0.0, 0.0, 0.0])
         self.vel = np.array([0.0, 0.0, 0.0])
 
-        self.tf_broadcaster = tf.TransformBroadcaster()
 
     def parse_data(self, data):
         data_splitted = data.data.split()
@@ -110,17 +108,6 @@ class stm_node():
         if action_type == 0x0f:
             if successfuly:
                  self.pub_stm_coords.publish(' '.join(map(str, [args_response[0]*1000, args_response[1]*1000, args_response[2]])))
-                 # publish tf's for visualization
-                 self.tf_broadcaster.sendTransform((args_response[0], args_response[1], 0),
-                         tf.transformations.quaternion_from_euler(0, 0, args_response[2]),
-                         rospy.Time.now(),
-                         "stm",
-                         "world")
-                 self.tf_broadcaster.sendTransform((.0, .0, .40),
-                         tf.transformations.quaternion_from_euler(0, 0, 0),
-                         rospy.Time.now(),
-                         "laser",
-                         "stm")
             #self.handle_response()
 
     def handle_response(self, status):

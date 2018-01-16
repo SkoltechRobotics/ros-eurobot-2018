@@ -17,7 +17,7 @@ def broadcast_robot_tf(msg, robot_name):
     br.sendTransform((.0, .0, .40),
                      tf.transformations.quaternion_from_euler(0, 0, 0),
                      rospy.Time.now(),
-                     "%s/scan" % robot_name,
+                     "%s_lidar" % robot_name,
                      robot_name)
 
 def broadcast_stm_tf(msg, robot_name):
@@ -31,8 +31,14 @@ def broadcast_stm_tf(msg, robot_name):
     br.sendTransform((.0, .0, .40),
                      tf.transformations.quaternion_from_euler(0, 0, 0),
                      rospy.Time.now(),
-                     "%s_stm/scan" % robot_name,
+                     "%s_stm_lidar" % robot_name,
                      "%s_stm" % robot_name)
+    # for visualizing LIDAR laserscan
+    br.sendTransform((.0, .0, .0),
+                     tf.transformations.quaternion_from_euler(0, 0, 1.571),
+                     rospy.Time.now(),
+                     "laser",
+                     "%s_stm_lidar" % robot_name)
 
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
