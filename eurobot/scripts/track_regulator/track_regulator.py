@@ -14,11 +14,12 @@ def coordinates_callback(data):
 
 def command_callback(data):
     global c_p
+    global pub_command
     # parse name,type
     data_splitted = data.data.split()
     cmd_id = data_splitted[0]
     action_type = data_splitted[1]
-
+    print("Receive command " + data.data) 
     if action_type == "MOVE":
         # parse args
         args = data_splitted[2:]
@@ -37,17 +38,17 @@ def command_callback(data):
             rate.sleep()
         
         # publish response
-        pub_response.publish(cmd_id + " DONE")
+        pub_response.publish(cmd_id + " finished")
 
 if __name__ == '__main__':
     try:
         regulator = TrackRegulator()
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(100)
-        rospy.Subscriber("move_command", String, command_callback)
-        rospy.Subscriber("stm/coordinates", String, coordinates_callback)
-        pub_response = rospy.Publisher("response", String, queue_size=10) 
-        pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
+        pub_command = rospy.Publisher("main_robot/stm_command", String, queue_size=10) 
+        pub_response = rospy.Publisher("main_robot/response", String, queue_size=10) 
+        rospy.Subscriber("main_robot/move_command", String, command_callback)
+        rospy.Subscriber("main_robot/stm/coordinates", String, coordinates_callback)
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()

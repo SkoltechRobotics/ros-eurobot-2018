@@ -23,12 +23,12 @@ def cvt_global2local(global_point, sc_point):
 
 class TrackRegulator(object):
     def __init__(self):
-        self.MAX_VELOCITY = 0.57
+        self.MAX_VELOCITY = 0.4
         self.MAX_ROTATION = 3.14
         self.MIN_VELOCITY = 0.03
         self.MIN_ROTATION = 0.15
         self.NORM_ANGLE = 3.14 / 4
-        self.NORM_DISTANCE = 0.1
+        self.NORM_DISTANCE = 30
         self.target_point = np.zeros(3)
         self.is_rotate = False
         self.is_move_forward = False
@@ -65,7 +65,6 @@ class TrackRegulator(object):
 
     def rotate(self, point):
         da = (point[2] - self.start_angle) * self.rotation_diraction
-
         if da >= self.dangle:
             print("Stop rotate")
             self.start_move_forward(point)
@@ -76,7 +75,7 @@ class TrackRegulator(object):
             v_angle = da / self.NORM_ANGLE * self.MAX_ROTATION / 2
         else:
             v_angle = self.MAX_ROTATION / 2
-#        print("v_angle", v_angle + self.MIN_ROTATION)
+        print("ROTATE v_angle = %f da = %f" % (v_angle, da))
         return np.array([0, 0, self.rotation_diraction * (v_angle + self.MIN_ROTATION)])
 
     def move(self, point):
@@ -92,11 +91,15 @@ class TrackRegulator(object):
             v = (self.distance - dx) / self.NORM_DISTANCE * self.MAX_VELOCITY / 2 + self.MIN_VELOCITY
         elif dx < self.NORM_DISTANCE:
             v = dx / self.NORM_DISTANCE * self.MAX_VELOCITY / 2
+        elif dx < 0:
+            v = 0
         else:
             v = self.MAX_VELOCITY / 2
         v += self.MIN_VELOCITY
         v_x = v * np.cos(self.start_to_target_point[2] - point[2])
         v_y = v * np.sin(self.start_to_target_point[2] - point[2])
+        print("MOVE FORWARD v_x, v_y = (%f, %f) dist = %f target_dist = %f" % (v_x, v_y, dx, self.distance))
+        v_x, v_y, _ = cvt_global2local((v_x, v_y, 0), (0, 0, point[2]))
         return np.array([v_x, v_y, 0])
 
     def regulate(self, point):

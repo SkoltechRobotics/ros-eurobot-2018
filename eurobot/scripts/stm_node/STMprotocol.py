@@ -45,7 +45,9 @@ class STMprotocol(object):
             0x0e: "=BB",
             0x0f: "=fff",
         }
-
+    def confident_send_command(self, cmd, args, n_repeats):
+        for i in range(n_repeats):
+            pass
     def send_command(self, cmd, args):
         try:
             parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
