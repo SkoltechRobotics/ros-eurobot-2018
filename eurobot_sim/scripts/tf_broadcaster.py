@@ -17,7 +17,7 @@ def broadcast_robot_tf(msg, robot_name):
     br.sendTransform((.0, .0, .40),
                      tf.transformations.quaternion_from_euler(0, 0, 0),
                      rospy.Time.now(),
-                     "%s_laser" % robot_name,
+                     "%s/scan" % robot_name,
                      robot_name)
 
 def broadcast_stm_tf(msg, robot_name):
@@ -31,7 +31,7 @@ def broadcast_stm_tf(msg, robot_name):
     br.sendTransform((.0, .0, .40),
                      tf.transformations.quaternion_from_euler(0, 0, 0),
                      rospy.Time.now(),
-                     "%s_stm_laser" % robot_name,
+                     "%s_stm/scan" % robot_name,
                      "%s_stm" % robot_name)
 
 if __name__ == '__main__':
