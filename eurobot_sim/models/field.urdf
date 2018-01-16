@@ -85,7 +85,7 @@
 
    <link name="beacons">
      <visual>
-       <origin xyz="-.094 .05 .3" rpy="0 0 0" />
+       <origin xyz="-.094 .05 .4" rpy="0 0 0" />
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
@@ -94,14 +94,14 @@
        </material>
      </visual>
      <collision>
-       <origin xyz="-.094 .05 .3" rpy="0 0 0"/>
+       <origin xyz="-.094 .05 .4" rpy="0 0 0"/>
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
      </collision>
 
      <visual>
-       <origin xyz="-.094 1.95 .3" rpy="0 0 0" />
+       <origin xyz="-.094 1.95 .4" rpy="0 0 0" />
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
@@ -110,14 +110,14 @@
        </material>
      </visual>
      <collision>
-       <origin xyz="-.094 1.95 .3" rpy="0 0 0"/>
+       <origin xyz="-.094 1.95 .4" rpy="0 0 0"/>
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
      </collision>
 
      <visual>
-       <origin xyz="3.094 1 .3" rpy="0 0 0" />
+       <origin xyz="3.094 1 .4" rpy="0 0 0" />
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
@@ -126,7 +126,7 @@
        </material>
      </visual>
      <collision>
-       <origin xyz="3.094 .5 .3" rpy="0 0 0"/>
+       <origin xyz="3.094 .5 .4" rpy="0 0 0"/>
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
