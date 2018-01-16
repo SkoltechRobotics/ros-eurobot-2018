@@ -11,6 +11,7 @@
     <param name="robot_name" type="string" value="main_robot" />
     <param name="robot_description" command="cat $(find eurobot_sim)/models/field.urdf" />
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false"/>
 
     <!-- initial coordinates -->
     <param name="start_x" type="double" value="293.0" />
