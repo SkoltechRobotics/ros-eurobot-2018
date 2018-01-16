@@ -32,7 +32,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -110,15 +110,14 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          main_robot:
-            main_robot_lidar:
-              {}
-          main_robot_stm:
-            main_robot_stm_lidar:
-              laser:
-                {}
           table:
-            {}
+            main_robot:
+              main_robot_lidar:
+                {}
+            main_robot_stm:
+              main_robot_stm_lidar:
+                laser:
+                  {}
       Update Interval: 0
       Value: true
     - Attached Body Color: 150; 50; 150
@@ -152,14 +151,14 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        shell:
+        main_robot:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -170,7 +169,7 @@ Visualization Manager:
       Robot State Topic: display_robot_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -182,7 +181,7 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        shell:
+        main_robot_stm:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -220,25 +219,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.17418814
+      Distance: 2.42269468
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.228328407
-        Y: 0.644845247
-        Z: 0.752131641
+        X: 0.0960470811
+        Y: 0.4677867
+        Z: 0.492698133
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.434797317
+      Pitch: 0.599797189
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.06494617
+      Yaw: 3.78994036
     Saved: ~
 Window Geometry:
   Displays:
