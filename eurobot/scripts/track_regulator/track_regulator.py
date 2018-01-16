@@ -33,6 +33,7 @@ def command_callback(data):
         # regulation
         while regulator.is_moving:
             speeds = regulator.regulate(c_p)
+            print("speeds", speeds)
             speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
             pub_command.publish("SETSPEED 8 " + speeds)
             rate.sleep()

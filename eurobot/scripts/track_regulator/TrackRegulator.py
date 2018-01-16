@@ -23,12 +23,14 @@ def cvt_global2local(global_point, sc_point):
 
 class TrackRegulator(object):
     def __init__(self):
-        self.MAX_VELOCITY = 0.4
+        self.MAX_VELOCITY = 0.8
         self.MAX_ROTATION = 3.14
         self.MIN_VELOCITY = 0.03
         self.MIN_ROTATION = 0.15
         self.NORM_ANGLE = 3.14 / 4
         self.NORM_DISTANCE = 30
+        self.PERP_NORM_DISTANCE = 10
+        self.PERP_MAX_RATE = 1
         self.target_point = np.zeros(3)
         self.is_rotate = False
         self.is_move_forward = False
@@ -96,10 +98,13 @@ class TrackRegulator(object):
         else:
             v = self.MAX_VELOCITY / 2
         v += self.MIN_VELOCITY
-        v_x = v * np.cos(self.start_to_target_point[2] - point[2])
-        v_y = v * np.sin(self.start_to_target_point[2] - point[2])
+        
+        dy = point_in_target_system[1]
+        v_perp = - v * dy / self.PERP_NORM_DISTANCE * self.PERP_MAX_RATE
+        v_x, v_y, _ = cvt_local2global((v, v_perp, 0), (0, 0, self.start_to_target_point[2] - point[2]))
+        # v_x = v * np.cos(self.start_to_target_point[2] - point[2])
+        # v_y = v * np.sin(self.start_to_target_point[2] - point[2])
         print("MOVE FORWARD v_x, v_y = (%f, %f) dist = %f target_dist = %f" % (v_x, v_y, dx, self.distance))
-        v_x, v_y, _ = cvt_global2local((v_x, v_y, 0), (0, 0, point[2]))
         return np.array([v_x, v_y, 0])
 
     def regulate(self, point):
