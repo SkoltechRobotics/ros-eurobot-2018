@@ -82,7 +82,10 @@ class stm_node():
         successfuly = True
         args_response = "Ok"
         if action_type == 0x08:
-            self.vel = np.array(args)
+            vel = np.array(args)
+            self.vel[0] = vel[0]*np.cos(self.coords[2]) - vel[1]*np.sin(self.coords[2]
+            self.vel[1] = vel[1]*np.cos(self.coords[2]) + vel[0]*np.sin(self.coords[2]
+            self.vel[2] = vel[2]
         elif action_type == 0x09:
             args_response = self.vel
         elif action_type == 0x0E:
