@@ -36,16 +36,18 @@ class TreeNode:
         self.name = name
 
     def start(self):
+        rospy.loginfo( self.name + ' started!' )
         self.time_start = rospy.get_time()
 
     def finish(self):
         self.time_finish = rospy.get_time()
+        rospy.loginfo( self.name + ' finished! time ' + str(self.time_finish - self.time_start))
 
     def check_status(self):
         return self.status
 
     def time_worked(self):
-        if not self.time_finish is 0:
+        if self.time_finish != 0:
             return self.time_finish - self.time_start
         else:
             return rospy.get_time() - self.time_start
@@ -62,7 +64,7 @@ class ActionNode(TreeNode):
 
         TODO: rewrite this docs in approtiate way
     """
-    def __init__(self,command_id, command_topic, message, request_topic_name):
+    def __init__(self,command_id, command_publisher, message, request_topic_name):
         
         # super(ActionNode, self).__init__()
         # doesn't work ??!! -> replaced with
@@ -72,7 +74,7 @@ class ActionNode(TreeNode):
         # unique command id
         # it's also $self.name
 
-        self.command_pub = command_topic 	        
+        self.command_pub = command_publisher     
         # this is ros publisher
 
         self.request_topic_name = request_topic_name    
@@ -84,33 +86,36 @@ class ActionNode(TreeNode):
     def callback_for_terminating(self):
         def cb(msg):
             action_id, action_status = re.match("(\S*)\s(\S*)",msg.data).group(1,2) # finish it!
-            if action_id == self.command_id:
+            if action_id == self.id:
                 self.status = action_status
+                if self.status == "finished":
+                    self.finish()
         return cb
 
-    def start():
-        if not self.status is "not started": # do we need some mutex here?
+    def start(self):
+        if self.status == "not started": # do we need some mutex here?
             TreeNode.start(self)
             self.status = "active"
-            self.command_pub.publish(self.command_id + ' ' + self.message)
+            self.command_pub.publish(self.id + ' ' + self.message)
             self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
 
-    def finish():
+    def finish(self):
         TreeNode.finish(self)
         self.sub.unregister()
 	
-    def tick():
-        if self.status is "not started":
+    def tick(self):
+        if self.status == "not started":
             self.start()
+        
         return self.status
 		
 class ControlNode(TreeNode):
     def __init__(self, name):
     	TreeNode.__init__(self, name)
-        children_list = []
+        self.children_list = []
         
     def append_child(self, child):
-        children_list.append(child)
+        self.children_list.append(child)
 
     
 class SequenceNode(ControlNode):
@@ -118,14 +123,14 @@ class SequenceNode(ControlNode):
         ControlNode.__init__(self, name)
         
     def tick(self):
-        if self.status is "not started":
+        if self.status == "not started":
             self.start()
             self.status = "active"
         
-        child_iter = iter(children_list)
+        child_iter = iter(self.children_list)
         child = None
         try:
-            child = it.next()
+            child = child_iter.next()
         except StopIteration:
             # empty list!
             print "Empty children list in " + self.name + " !"
@@ -138,7 +143,7 @@ class SequenceNode(ControlNode):
         
         while child.check_status() == "finished":
             try:
-                child = it.next()
+                child = child_iter.next()
             except StopIteration:
                 # all children finished
                 self.finish()
@@ -149,7 +154,6 @@ class SequenceNode(ControlNode):
                 raise
         
         current_child_status = child.check_status()
-        
         if current_child_status in ["active", "not started"]:
             child.tick()
             return self.status
@@ -158,6 +162,32 @@ class SequenceNode(ControlNode):
 
 
 if __name__  == '__main__':
-    rospy.init_node('executor', anonymous =True)
+    rospy.init_node('executor', anonymous=True)
+    
+    pub = rospy.Publisher("fake_stm_command", String, queue_size=100)
+    a1 = ActionNode("a1", pub, "move 0 0 0", "fake_stm_response")
+    a2 = ActionNode("a2", pub, "move 0 0 1", "fake_stm_response")
+    a3 = ActionNode("a3", pub, "move 0 0 2", "fake_stm_response")
+
+    s0 = SequenceNode("s0")
+    s1 = SequenceNode("s1")
+    s0.append_child(a1)
+    s0.append_child(s1)
+    s1.append_child(a2)
+    s1.append_child(a3)
+    rospy.sleep(0.2)
     
     
+    r = rospy.Rate(100)
+    while s0.status != "finished":
+        s0.tick()
+        r.sleep()
+        
+    
+    rospy.loginfo("a1 time " + str(a1.time_worked()))
+    rospy.loginfo("a2 time " + str(a2.time_worked()))
+    rospy.loginfo("s0 time " + str(s0.time_worked())) 
+    rospy.loginfo("a3 time " + str(a3.time_worked()))
+    rospy.loginfo("s1 time " + str(s1.time_worked()))
+    
+
