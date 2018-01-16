@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<robot name="field">
+  <link name="table">
+     <visual>
+       <origin xyz="1.5 1.0 -0.011" rpy="0 0 0" />
+       <geometry>
+         <box size="3.044 2.044 0.022" />
+       </geometry>
+       <material name="yellow">
+         <color rgba=".99 .98 .88 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="1.5 1.0 -0.01" rpy="0 0 0"/>
+       <geometry>
+         <box size="3.044 2.044 0.02" />
+       </geometry>
+     </collision>
+
+     <visual>
+       <origin xyz="-0.011 1.0 0.035" rpy="0 0 0" />
+       <geometry>
+         <box size="0.022 2.044 0.070" />
+       </geometry>
+       <material name="yellow">
+         <color rgba=".99 .98 .88 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="-0.011 1.0 0.035" rpy="0 0 0"/>
+       <geometry>
+         <box size="0.022 2.044 0.070" />
+       </geometry>
+     </collision>
+
+     <visual>
+       <origin xyz="3.011 1.0 0.035" rpy="0 0 0" />
+       <geometry>
+         <box size="0.022 2.044 0.070" />
+       </geometry>
+       <material name="yellow">
+         <color rgba=".99 .98 .88 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="3.011 1.0 0.035" rpy="0 0 0"/>
+       <geometry>
+         <box size="0.022 2.044 0.070" />
+       </geometry>
+     </collision>
+
+     <visual>
+       <origin xyz="1.5 -0.011 0.035" rpy="0 0 0" />
+       <geometry>
+         <box size="3.0 0.022 0.070" />
+       </geometry>
+       <material name="yellow">
+         <color rgba=".99 .98 .88 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="1.5 -0.011 0.035" rpy="0 0 0"/>
+       <geometry>
+         <box size="3.0 0.022 0.070" />
+       </geometry>
+     </collision>
+
+     <visual>
+       <origin xyz="1.5 2.011 0.035" rpy="0 0 0" />
+       <geometry>
+         <box size="3.0 0.022 0.070" />
+       </geometry>
+       <material name="yellow">
+         <color rgba=".99 .98 .88 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="1.5 2.011 0.035" rpy="0 0 0"/>
+       <geometry>
+         <box size="3.0 0.022 0.070" />
+       </geometry>
+     </collision>
+
+   </link>
+
+   <link name="beacons">
+     <visual>
+       <origin xyz="-.094 .05 .4" rpy="0 0 0" />
+       <geometry>
+         <cylinder length="0.1" radius="0.04"/>
+       </geometry>
+       <material name="white">
+         <color rgba="1 1 1 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="-.094 .05 .4" rpy="0 0 0"/>
+       <geometry>
+         <cylinder length="0.1" radius="0.04"/>
+       </geometry>
+     </collision>
+
+     <visual>
+       <origin xyz="-.094 1.95 .4" rpy="0 0 0" />
+       <geometry>
+         <cylinder length="0.1" radius="0.04"/>
+       </geometry>
+       <material name="white">
+         <color rgba="1 1 1 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="-.094 1.95 .4" rpy="0 0 0"/>
+       <geometry>
+         <cylinder length="0.1" radius="0.04"/>
+       </geometry>
+     </collision>
+
+     <visual>
+       <origin xyz="3.094 1 .4" rpy="0 0 0" />
+       <geometry>
+         <cylinder length="0.1" radius="0.04"/>
+       </geometry>
+       <material name="white">
+         <color rgba="1 1 1 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz="3.094 .5 .4" rpy="0 0 0"/>
+       <geometry>
+         <cylinder length="0.1" radius="0.04"/>
+       </geometry>
+     </collision>
+    </link>
+
+    <link name="main_robot">
+     <visual>
+       <origin xyz=".293 .425 .18" rpy="0 0 4.71" />
+       <geometry>
+         <box size="0.42 0.19 0.35" />
+       </geometry>
+       <material name="yellow">
+         <color rgba=".2 0 .8 1"/>
+       </material>
+     </visual>
+     <collision>
+       <origin xyz=".293 .425 .18" rpy="0 0 4.71"/>
+       <geometry>
+         <box size="0.42 0.19 0.35" />
+       </geometry>
+     </collision>
+    </link>
+
+    <joint name="table_to_main_robot" type="floating">
+      <parent link="table"/>
+      <child link="main_robot"/>
+    </joint>
+
+    <joint name="table_to_beacons" type="fixed">
+      <parent link="table"/>
+      <child link="beacons"/>
+    </joint>
+</robot>

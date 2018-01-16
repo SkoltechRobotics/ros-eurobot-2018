@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="main_robot">
+    <!-- NODES -->
+    <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen"/>
+
+    <!-- PARAMS -->
+    <!-- robot name -->
+    <param name="robot_name" type="string" value="main_robot" />
+
+    <!-- initial coordinates -->
+    <param name="start_x" type="double" value="293.0" />
+    <param name="start_y" type="double" value="425.0" />
+    <param name="start_a" type="double" value="4.71" />
+
+  </group>
+
+</launch>

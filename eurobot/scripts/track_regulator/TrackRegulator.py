@@ -58,6 +58,7 @@ class TrackRegulator(object):
         self.start_to_target_point[2] = np.arctan2(dp[1], dp[0])
 
     def start_move(self, target_point, point):
+        self.is_moving = True
         print("Start move")
         self.target_point = target_point
         self.start_rotate(point)
@@ -65,7 +66,8 @@ class TrackRegulator(object):
     def rotate(self, point):
         da = (point[2] - self.start_angle) * self.rotation_diraction
 
-        if da > self.dangle:
+        if da >= self.dangle:
+            print("Stop rotate")
             self.start_move_forward(point)
             return np.zeros(3)
         elif da > self.dangle - self.NORM_ANGLE:
@@ -74,13 +76,15 @@ class TrackRegulator(object):
             v_angle = da / self.NORM_ANGLE * self.MAX_ROTATION / 2
         else:
             v_angle = self.MAX_ROTATION / 2
-        print("v_angle", v_angle + self.MIN_ROTATION)
+#        print("v_angle", v_angle + self.MIN_ROTATION)
         return np.array([0, 0, self.rotation_diraction * (v_angle + self.MIN_ROTATION)])
 
     def move(self, point):
         point_in_target_system = cvt_global2local(point, self.start_to_target_point)
         dx = point_in_target_system[0]
         if dx > self.distance:
+            print("Stop move forward")
+            print("Stop move")
             self.is_move_forward = False
             self.is_moving = False
             return np.zeros(3)
