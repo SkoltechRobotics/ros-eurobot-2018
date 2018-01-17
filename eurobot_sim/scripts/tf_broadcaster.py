@@ -13,7 +13,7 @@ def broadcast_robot_tf(msg, robot_name):
                      tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                      rospy.Time.now(),
                      robot_name,
-                     "world")
+                     "table")
     br.sendTransform((.0, .0, .40),
                      tf.transformations.quaternion_from_euler(0, 0, 0),
                      rospy.Time.now(),
@@ -27,15 +27,15 @@ def broadcast_stm_tf(msg, robot_name):
                      tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                      rospy.Time.now(),
                      "%s_stm" % robot_name,
-                     "world")
+                     "table")
     br.sendTransform((.0, .0, .40),
                      tf.transformations.quaternion_from_euler(0, 0, 0),
                      rospy.Time.now(),
                      "%s_stm_lidar" % robot_name,
                      "%s_stm" % robot_name)
-    # for visualizing LIDAR laserscan
+    # for visualizing LIDAR scan from stm_coords prospective
     br.sendTransform((.0, .0, .0),
-                     tf.transformations.quaternion_from_euler(0, 0, 1.571),
+                     tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                      rospy.Time.now(),
                      "laser",
                      "%s_stm_lidar" % robot_name)

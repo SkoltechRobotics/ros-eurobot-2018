@@ -82,7 +82,10 @@ class stm_node():
         successfuly = True
         args_response = "Ok"
         if action_type == 0x08:
-            self.vel = np.array(args)
+            vel = np.array(args)
+            self.vel[0] = vel[0]*np.cos(self.coords[2]) - vel[1]*np.sin(self.coords[2])
+            self.vel[1] = vel[1]*np.cos(self.coords[2]) + vel[0]*np.sin(self.coords[2])
+            self.vel[2] = vel[2]
         elif action_type == 0x09:
             args_response = self.vel
         elif action_type == 0x0E:
@@ -125,8 +128,9 @@ class stm_node():
         while not rospy.is_shutdown():
             noise = np.random.normal(size=3)
             noise *= 0.1 * self.vel / self.freq
-            noise *= 0.94
+            noise *= 0.96
             self.coords = self.coords + self.vel / self.freq + noise
+            self.coords = self.coords % (2 * np.pi)
             self.rate.sleep()
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ class STMprotocol(object):
             0x03: "=Bf",
             0x04: "=B",
             0x05: "=B",
+            0x06: "=Bffff",
             0x08: "=fff",
             0x09: "=",
             0x0a: "=",
@@ -31,6 +32,7 @@ class STMprotocol(object):
             0x03: "=BB",
             0x04: "=BB",
             0x05: "=BB",
+            0x06: "=BB",
             0x08: "=BB",
             0x09: "=fff",
             0x0a: "=fff",
@@ -45,46 +47,46 @@ class STMprotocol(object):
             0x0e: "=BB",
             0x0f: "=fff",
         }
+    def pure_send_command(self, cmd, args):
+        # Clear buffer
+        self.ser.reset_output_buffer()
+        self.ser.reset_input_buffer()
+        # Sending command
+        parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
+        msg_len = len(parameters) + 5
+        msg = bytearray([0xfa, 0xaf, msg_len, cmd]) + parameters
+        crc = sum(msg) % 256
+        msg += bytearray([crc])
+        self.ser.write(msg)
+        #Receiving data
+        data = self.ser.read()
+        if len(data) == 0:
+            raise Exception("No data received")
 
-    def send_command(self, cmd, args):
-        try:
-            parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
-            #print(parameters)
-            msg_len = len(parameters) + 5
-            msg = bytearray([0xfa, 0xaf, msg_len, cmd]) + parameters
-            crc = sum(msg) % 256
-            msg += bytearray([crc])
-
-            #print("send ", repr(msg))
-            self.ser.write(msg)
-
-            start_time = datetime.datetime.now()
-            time_threshold = datetime.timedelta(seconds=1)
-            dt = start_time - start_time
-
-            data = ord(self.ser.read()[0])
-            while data != 0xFA:
-                if dt > time_threshold:
-                    raise Exception('dt > threshold')
-                data = ord(self.ser.read()[0])
-
-                current_time = datetime.datetime.now()
-                dt = start_time - current_time
-
-            adr = ord(self.ser.read()[0])
-            answer_len = ord(self.ser.read()[0])
-            answer = bytearray(self.ser.read(answer_len - 3))
-            #print("answer ", repr(bytearray([data, adr, answer_len]) + answer))
-
-            args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
-            #print 'SUCCESS'
-            #print '-------------------------------'
-            return True, args
-        except Exception as exc:
-            print 'Exception:\t', exc
-            print 'Of type:\t', type(exc)
-            print 'At time:\t', datetime.datetime.now()
-            print("send ", repr(msg))
-            print("answer ", repr(bytearray([data, adr, answer_len]) + answer))
-            print '--------'
-            return False, 0
+        sync = data[0]
+        if sync != 0xfa:
+            raise Exception("Incorrect byte of syncronization", sync)
+        
+        data = self.ser.read()
+        if len(data) == 0:
+            raise Exception("No adress received")
+        adr = data[0]
+        
+        if adr != 0xfa:
+            raise Exception("Incorrect adress", adr)
+        answer_len = self.ser.read()[0]
+        answer = bytearray(self.ser.read(answer_len - 3))
+        
+        if (sync + adr + answer_len + sum(answer[:-1])) % 256 != answer[-1]:
+            raise Exception("Error with check sum", sync, adr, answer_len, answer)
+        args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
+        return True, args
+    def send_command(self, cmd, args, n_repeats = 2):
+        for i in range(n_repeats):
+            try:
+                return self.pure_send_command(cmd, args)
+            except Exception as exc:
+                print('Exception:\t', exc)
+                print('Of type:\t', type(exc))
+                print('At time:\t', datetime.datetime.now())
+        return False, None
