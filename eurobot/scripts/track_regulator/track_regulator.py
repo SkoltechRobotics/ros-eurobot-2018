@@ -45,7 +45,7 @@ if __name__ == '__main__':
     try:
         regulator = TrackRegulator()
         rospy.init_node('track_regulator', anonymous=True)
-        rate = rospy.Rate(100)
+        rate = rospy.Rate(10)
         pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
         pub_response = rospy.Publisher("response", String, queue_size=10) 
         rospy.Subscriber("move_command", String, command_callback)
