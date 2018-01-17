@@ -117,16 +117,20 @@ class ControlNode(TreeNode):
     def append_child(self, child):
         self.children_list.append(child)
 
+    def tick(self):
+        if self.status == "not started":
+            self.start()
+            self.status = "active"
+
     
 class SequenceNode(ControlNode):
     def __init__(self, name):
         ControlNode.__init__(self, name)
         
     def tick(self):
-        if self.status == "not started":
-            self.start()
-            self.status = "active"
         
+        ControlNode.tick(self) # set status="active"
+
         child_iter = iter(self.children_list)
         child = None
         try:
@@ -158,7 +162,38 @@ class SequenceNode(ControlNode):
             child.tick()
             return self.status
 
+class ParallelNode(ControlNode):
+    def __init__(self, name, maximum_failed = 0):
+        ControlNode.__init__(self, name)
+        self.maximum_failed = maximum_failed
+
+    def tick(self):
+        ControlNode.tick(self) # set status="active"
         
+        children_status = [child.tick() for child in self.children_list]
+        
+        if not "active" in children_status and not "running" in children_status:
+            N_failed = sum([1 if ch_status == "error" else 0 for ch_status in children_status])
+            if N_failed <= self.maximum_failed:
+                self.status = "finished"
+            else:
+                self.status = "error"
+
+        return self.status
+
+class TimeoutNode(TreeNode):
+    def __init__(self, name, sleep_time):
+        TreeNode.__init__(self, name)
+        self.sleep_time = sleep_time
+
+    def tick(self):
+        if self.status == "not started":
+            self.start()
+            self.status = "active"
+
+        
+        if self.status == "active" and self.time_worked() >= sleep_time:
+            self.finish()
 
 
 if __name__  == '__main__':
@@ -170,11 +205,12 @@ if __name__  == '__main__':
     a3 = ActionNode("a3", pub, "move 0 0 2", "fake_stm_response")
 
     s0 = SequenceNode("s0")
-    s1 = SequenceNode("s1")
+    # s1 = SequenceNode("s1")
+    p0 = ParallelNode("p0")
     s0.append_child(a1)
-    s0.append_child(s1)
-    s1.append_child(a2)
-    s1.append_child(a3)
+    s0.append_child(p0)
+    p0.append_child(a2)
+    p0.append_child(a3)
     rospy.sleep(0.2)
     
     
@@ -188,6 +224,6 @@ if __name__  == '__main__':
     rospy.loginfo("a2 time " + str(a2.time_worked()))
     rospy.loginfo("s0 time " + str(s0.time_worked())) 
     rospy.loginfo("a3 time " + str(a3.time_worked()))
-    rospy.loginfo("s1 time " + str(s1.time_worked()))
+    rospy.loginfo("p0 time " + str(p0.time_worked()))
     
 

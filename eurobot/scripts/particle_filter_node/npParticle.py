@@ -47,6 +47,8 @@ class ParticleFilter:
 
         self.max_itens=max_itens
         self.max_dist=max_dist
+
+        self.landmarks = [[],[]]
         
     def gaus(self, x, mu=0, sigma=1):
         """calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma"""
@@ -111,6 +113,7 @@ class ParticleFilter:
         stamp = time.time()
         angle, distance = self.get_landmarks(scan)
         x_coords, y_coords = self.p_trans(angle,distance)
+        self.landmarks = np.array([x_coords,y_coords])
         weights = self.weights(x_coords,y_coords)
         if self.warning:
             return
@@ -233,7 +236,7 @@ class ParticleFilter:
 
         main_robot = self.calculate_main()
         self.last = main_robot
-        return np.array(main_robot)
+        return main_robot
 
 # help functions
 
@@ -246,17 +249,15 @@ class ParticleFilter:
         angles = np.pi / 4 / 180 * ind
         distances = scan[ind, 0]
         #logging.info('scan preproccesing time: ' + str(time.time() - stamp))
-        return (angles + np.pi / 4) % (2 * np.pi), distances  # delete +np.pi for our robot ANDREW you NEED return (angles + np.pi / 4 + np.pi) % (2 * np.pi), distances
+        return (angles + np.pi * 5/ 4) % (2 * np.pi), distances
 
 
     def p_trans(self, agl, pit):
         #x_beac = pit*np.cos(agl) # multiply by minus in our robot
         #y_beac = pit*np.sin(agl)
-        x_beac = pit*np.sin(agl)
-        y_beac = -pit*np.cos(agl)
+        x_beac = pit*np.cos(agl)
+        y_beac = pit*np.sin(agl)
         return x_beac,y_beac
-
-
 
 
 
