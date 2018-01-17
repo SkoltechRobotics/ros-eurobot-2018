@@ -10,7 +10,7 @@
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/>
     <node pkg="eurobot" name="track_regulator" type="track_regulator.py" output="screen"/>
     <node pkg="eurobot" name="status_checker" type="status_checker.py" output="screen" />
-    <node pkg="rosbag" type="record" args="-a" output="screen"/>
+    <node pkg="rosbag" name="rosbag_record" type="record" args="-a" output="screen"/>
 
     <!-- PARAMS -->
     <!-- initial coordinates -->
