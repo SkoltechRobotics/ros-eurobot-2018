@@ -66,7 +66,10 @@ class TrackRegulator(object):
         self.start_rotate(point)
 
     def rotate(self, point):
-        da = (point[2] - self.start_angle) * self.rotation_diraction
+        da = (point[2] - self.start_angle) % (2 * np.pi)
+        if da > np.pi:
+            da = 2 * np.pi - da
+
         if da >= self.dangle:
             print("Stop rotate")
             self.start_move_forward(point)
