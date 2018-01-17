@@ -47,6 +47,8 @@ class ParticleFilter:
 
         self.max_itens=max_itens
         self.max_dist=max_dist
+
+        self.landmarks = [[],[]]
         
     def gaus(self, x, mu=0, sigma=1):
         """calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma"""
@@ -111,6 +113,7 @@ class ParticleFilter:
         stamp = time.time()
         angle, distance = self.get_landmarks(scan)
         x_coords, y_coords = self.p_trans(angle,distance)
+        self.landmarks = np.array([x_coords,y_coords])
         weights = self.weights(x_coords,y_coords)
         if self.warning:
             return

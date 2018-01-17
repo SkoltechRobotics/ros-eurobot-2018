@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String, Header
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import LaserScan, PointCloud
 from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
 from EncoderIntegrator import EncoderIntegrator
 import numpy as np
@@ -27,11 +27,18 @@ def stm_coordinates_callback(data):
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
 
-    poses = [Pose(position=Point(x=particle_filter.particles[i,0], y=particle_filter.particles[i,1]), orientation=Quaternion(w=particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
-    particles = PoseArray(header=Header(frame_id="particles"), poses=PoseArray(header=Header(frame_id="main_robot_stm"), poses=poses))
+    # create and pub PointArray with particles    
+    poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.5), Quaternion(w=particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
+    header = Header(frame_id="main_robot_stm")
+    particles = PoseArray(header=header, poses=poses)
     pub_particles.publish(particles)
-    #filtered_scan = PointCloud2(header=Header(frame_id="laser"))
-    #pub_filtered.publish(filtered_scan)
+    
+    # create and pub PointArray with landmarks
+    print particle_filter.landmarks
+    points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.45) for i in range(len(particle_filter.landmarks[0]))]
+    header = Header(frame_id="world")
+    landmarks = PointCloud(header=header, points=points)
+    pub_landmarks.publish(landmarks)
     
     # DEBUG
     # visualise landmarks
@@ -75,7 +82,7 @@ if __name__ == '__main__':
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
         # for vizualization, can be commented before competition
         pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
-        pub_filtered = rospy.Publisher("particle_filter/filtered_scan", PoseArray, queue_size=1)
+        pub_landmarks = rospy.Publisher("particle_filter/filtered_scan", PointCloud, queue_size=1)
 
         # create a PF object with params from ROS
         color = rospy.get_param("/color")
