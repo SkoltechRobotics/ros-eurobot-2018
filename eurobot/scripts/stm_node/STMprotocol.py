@@ -11,6 +11,7 @@ class STMprotocol(object):
             0x03: "=Bf",
             0x04: "=B",
             0x05: "=B",
+            0x06: "=Bffff",
             0x08: "=fff",
             0x09: "=",
             0x0a: "=",
@@ -31,6 +32,7 @@ class STMprotocol(object):
             0x03: "=BB",
             0x04: "=BB",
             0x05: "=BB",
+            0x06: "=BB",
             0x08: "=BB",
             0x09: "=fff",
             0x0a: "=fff",
@@ -48,7 +50,7 @@ class STMprotocol(object):
     def pure_send_command(self, cmd, args):
         # Clear buffer
         self.ser.reset_output_buffer()
-
+        self.ser.reset_input_buffer()
         # Sending command
         parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
         msg_len = len(parameters) + 5
@@ -61,20 +63,18 @@ class STMprotocol(object):
         if len(data) == 0:
             raise Exception("No data received")
 
-        sync = ord(data[0])
-        print sync
+        sync = data[0]
         if sync != 0xfa:
             raise Exception("Incorrect byte of syncronization", sync)
         
         data = self.ser.read()
-
-        if len(data) != 0:
+        if len(data) == 0:
             raise Exception("No adress received")
-        adr = ord(self.ser.read()[0])
+        adr = data[0]
         
         if adr != 0xfa:
             raise Exception("Incorrect adress", adr)
-        answer_len = ord(self.ser.read()[0])
+        answer_len = self.ser.read()[0]
         answer = bytearray(self.ser.read(answer_len - 3))
         
         if (sync + adr + answer_len + sum(answer[:-1])) % 256 != answer[-1]:
