@@ -28,7 +28,7 @@ def stm_coordinates_callback(data):
     pub.publish(' '.join(map(str, coords)))
 
     poses = [Pose(position=Point(x=particle_filter.particles[i,0], y=particle_filter.particles[i,1]), orientation=Quaternion(w=particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
-    particles = PoseArray(header=Header(frame_id="particles"), poses=np.swapaxes(particle_filter.particles[:2],0,1).tolist())
+    particles = PoseArray(header=Header(frame_id="particles"), poses=PoseArray(header=Header(frame_id="main_robot_stm"), poses=poses))
     pub_particles.publish(particles)
     #filtered_scan = PointCloud2(header=Header(frame_id="laser"))
     #pub_filtered.publish(filtered_scan)
