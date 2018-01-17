@@ -27,9 +27,9 @@ class TrackRegulator(object):
         self.MAX_ROTATION = 1
         self.MIN_VELOCITY = 0.03
         self.MIN_ROTATION = 0.15
-        self.NORM_ANGLE = 3.14 / 4
+        self.NORM_ANGLE = 3.14 / 8
         self.NORM_DISTANCE = 30
-        self.PERP_NORM_DISTANCE = 10
+        self.PERP_NORM_DISTANCE = 20
         self.PERP_MAX_RATE = 1
         self.target_point = np.zeros(3)
         self.is_rotate = False
@@ -66,7 +66,10 @@ class TrackRegulator(object):
         self.start_rotate(point)
 
     def rotate(self, point):
-        da = (point[2] - self.start_angle) * self.rotation_diraction
+        da = (point[2] - self.start_angle) % (2 * np.pi)
+        if da > np.pi:
+            da = 2 * np.pi - da
+
         if da >= self.dangle:
             print("Stop rotate")
             self.start_move_forward(point)
