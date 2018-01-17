@@ -46,7 +46,9 @@ class STMprotocol(object):
             0x0f: "=fff",
         }
     def pure_send_command(self, cmd, args):
-        
+        # Clear buffer
+        self.ser.reset_output_buffer()
+
         # Sending command
         parameters = bytearray(struct.pack(self.pack_format[cmd], *args))
         msg_len = len(parameters) + 5
@@ -60,22 +62,23 @@ class STMprotocol(object):
             raise Exception("No data received")
 
         sync = ord(data[0])
+        print sync
         if sync != 0xfa:
-            raise Exception("Incorrect byte of syncronization")
+            raise Exception("Incorrect byte of syncronization", sync)
         
         data = self.ser.read()
 
-        if len(data):
+        if len(data) != 0:
             raise Exception("No adress received")
         adr = ord(self.ser.read()[0])
         
         if adr != 0xfa:
-            raise Exception("Incorrect adress")
+            raise Exception("Incorrect adress", adr)
         answer_len = ord(self.ser.read()[0])
         answer = bytearray(self.ser.read(answer_len - 3))
         
         if (sync + adr + answer_len + sum(answer[:-1])) % 256 != answer[-1]:
-            raise Exception("Error with check sum")
+            raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
         return True, args
     def send_command(self, cmd, args, n_repeats = 2):
