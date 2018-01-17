@@ -12,8 +12,14 @@ def fake_response(msg):
     action_id = re.match('(\S*)\s([\S\s]*)',msg.data).group(1)
     global pub
     pub.publish(action_id + ' running')
-    rospy.sleep(0.1)
-    pub.publish(action_id + ' finished')
+    
+    def timed_callback(e):
+        pub.publish(action_id + ' finished')
+
+    t = rospy.Timer(rospy.Duration(0.5), timed_callback)
+
+    #pub.publish(action_id + ' finished')
+    
 
 if __name__ == '__main__':
     rospy.init_node('fake_stm', anonymous=True)

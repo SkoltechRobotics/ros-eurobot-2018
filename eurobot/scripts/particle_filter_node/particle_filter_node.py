@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Header
 from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
 from EncoderIntegrator import EncoderIntegrator
 import numpy as np
 from npParticle import ParticleFilter
@@ -10,7 +11,7 @@ from npParticle import ParticleFilter
 # Storage
 scan = LaserScan()
 
-def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
+def stm_coordinates_callback(data):
     # parse name,type
     stm_coords = data.data.split()
     stm_coords = np.array(map(float, stm_coords))
@@ -25,6 +26,12 @@ def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
+
+    poses = [Pose(position=Point(x=particle_filter.particles[i,0], y=particle_filter.particles[i,1]), orientation=Quaternion(w=particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
+    particles = PoseArray(header=Header(frame_id="particles"), poses=np.swapaxes(particle_filter.particles[:2],0,1).tolist())
+    pub_particles.publish(particles)
+    #filtered_scan = PointCloud2(header=Header(frame_id="laser"))
+    #pub_filtered.publish(filtered_scan)
     
     # DEBUG
     # visualise landmarks
@@ -66,6 +73,9 @@ if __name__ == '__main__':
         rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
+        # for vizualization, can be commented before competition
+        pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
+        pub_filtered = rospy.Publisher("particle_filter/filtered_scan", PoseArray, queue_size=1)
 
         # create a PF object with params from ROS
         color = rospy.get_param("/color")
