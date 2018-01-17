@@ -39,6 +39,12 @@ def broadcast_stm_tf(msg, robot_name):
                      rospy.Time.now(),
                      "laser",
                      "%s_stm_lidar" % robot_name)
+    # for visualizing particles
+    br.sendTransform((.0, .0, .0),
+                     tf.transformations.quaternion_from_euler(0, 0, 0),
+                     rospy.Time.now(),
+                     "particles",
+                     "world")
 
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
