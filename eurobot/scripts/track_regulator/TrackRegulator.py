@@ -23,8 +23,8 @@ def cvt_global2local(global_point, sc_point):
 
 class TrackRegulator(object):
     def __init__(self):
-        self.MAX_VELOCITY = 0.8
-        self.MAX_ROTATION = 3.14
+        self.MAX_VELOCITY = 0.2
+        self.MAX_ROTATION = 1
         self.MIN_VELOCITY = 0.03
         self.MIN_ROTATION = 0.15
         self.NORM_ANGLE = 3.14 / 4
