@@ -36,8 +36,8 @@ class stm_node(STMprotocol):
         ## Command handling
         # send command to STM32
         successfuly, args_response = self.send_command(action_type, args)
-        if successfuly:
-            print 'STM responded to cmd', action_name, '\twith args:', args_response
+        #if successfuly:
+        #    print 'STM responded to cmd', action_name, '\twith args:', args_response
 
         # high-level commands handling
         if action_type in self.action_types:
