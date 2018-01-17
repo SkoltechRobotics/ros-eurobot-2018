@@ -46,10 +46,10 @@ if __name__ == '__main__':
         regulator = TrackRegulator()
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(100)
-        pub_command = rospy.Publisher("main_robot/stm_command", String, queue_size=10) 
-        pub_response = rospy.Publisher("main_robot/response", String, queue_size=10) 
-        rospy.Subscriber("main_robot/move_command", String, command_callback)
-        rospy.Subscriber("main_robot/stm/coordinates", String, coordinates_callback)
+        pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
+        pub_response = rospy.Publisher("response", String, queue_size=10) 
+        rospy.Subscriber("move_command", String, command_callback)
+        rospy.Subscriber("stm/coordinates", String, coordinates_callback)
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
