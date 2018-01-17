@@ -34,9 +34,8 @@ def stm_coordinates_callback(data):
     pub_particles.publish(particles)
     
     # create and pub PointArray with landmarks
-    print particle_filter.landmarks
-    points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.45) for i in range(len(particle_filter.landmarks[0]))]
-    header = Header(frame_id="world")
+    points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.0) for i in range(len(particle_filter.landmarks[0]))]
+    header = Header(frame_id="laser")
     landmarks = PointCloud(header=header, points=points)
     pub_landmarks.publish(landmarks)
     

@@ -236,7 +236,7 @@ class ParticleFilter:
 
         main_robot = self.calculate_main()
         self.last = main_robot
-        return np.array(main_robot)
+        return main_robot
 
 # help functions
 
@@ -249,14 +249,14 @@ class ParticleFilter:
         angles = np.pi / 4 / 180 * ind
         distances = scan[ind, 0]
         #logging.info('scan preproccesing time: ' + str(time.time() - stamp))
-        return (angles + np.pi / 4) % (2 * np.pi), distances  # delete +np.pi for our robot ANDREW you NEED return (angles + np.pi / 4 + np.pi) % (2 * np.pi), distances
+        return (angles + np.pi * 5/ 4) % (2 * np.pi), distances
 
 
     def p_trans(self, agl, pit):
         #x_beac = pit*np.cos(agl) # multiply by minus in our robot
         #y_beac = pit*np.sin(agl)
-        x_beac = pit*np.sin(agl)
-        y_beac = -pit*np.cos(agl)
+        x_beac = pit*np.cos(agl)
+        y_beac = pit*np.sin(agl)
         return x_beac,y_beac
 
 
