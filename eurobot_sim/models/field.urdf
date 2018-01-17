@@ -1,14 +1,19 @@
 <?xml version="1.0"?>
 <robot name="field">
+  <material name="Grey">
+    <color rgba=".99 .98 .88 1"/>
+  </material>
+  <material name="White">
+    <color rgba="1 1 1 1"/>
+  </material>
+
   <link name="table">
      <visual>
        <origin xyz="1.5 1.0 -0.011" rpy="0 0 0" />
        <geometry>
          <box size="3.044 2.044 0.022" />
        </geometry>
-       <material name="yellow">
-         <color rgba=".99 .98 .88 1"/>
-       </material>
+       <material name="Grey"/>
      </visual>
      <collision>
        <origin xyz="1.5 1.0 -0.01" rpy="0 0 0"/>
@@ -22,9 +27,7 @@
        <geometry>
          <box size="0.022 2.044 0.070" />
        </geometry>
-       <material name="yellow">
-         <color rgba=".99 .98 .88 1"/>
-       </material>
+       <material name="Grey"/>
      </visual>
      <collision>
        <origin xyz="-0.011 1.0 0.035" rpy="0 0 0"/>
@@ -38,9 +41,7 @@
        <geometry>
          <box size="0.022 2.044 0.070" />
        </geometry>
-       <material name="yellow">
-         <color rgba=".99 .98 .88 1"/>
-       </material>
+       <material name="Grey"/>
      </visual>
      <collision>
        <origin xyz="3.011 1.0 0.035" rpy="0 0 0"/>
@@ -54,9 +55,7 @@
        <geometry>
          <box size="3.0 0.022 0.070" />
        </geometry>
-       <material name="yellow">
-         <color rgba=".99 .98 .88 1"/>
-       </material>
+       <material name="Grey"/>
      </visual>
      <collision>
        <origin xyz="1.5 -0.011 0.035" rpy="0 0 0"/>
@@ -70,9 +69,7 @@
        <geometry>
          <box size="3.0 0.022 0.070" />
        </geometry>
-       <material name="yellow">
-         <color rgba=".99 .98 .88 1"/>
-       </material>
+       <material name="Grey"/>
      </visual>
      <collision>
        <origin xyz="1.5 2.011 0.035" rpy="0 0 0"/>
@@ -89,9 +86,7 @@
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
-       <material name="white">
-         <color rgba="1 1 1 1"/>
-       </material>
+       <material name="White"/>
      </visual>
      <collision>
        <origin xyz="-.094 .05 .4" rpy="0 0 0"/>
@@ -105,9 +100,7 @@
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
-       <material name="white">
-         <color rgba="1 1 1 1"/>
-       </material>
+       <material name="white"/>
      </visual>
      <collision>
        <origin xyz="-.094 1.95 .4" rpy="0 0 0"/>
@@ -121,9 +114,7 @@
        <geometry>
          <cylinder length="0.1" radius="0.04"/>
        </geometry>
-       <material name="white">
-         <color rgba="1 1 1 1"/>
-       </material>
+       <material name="white"/>
      </visual>
      <collision>
        <origin xyz="3.094 .5 .4" rpy="0 0 0"/>
