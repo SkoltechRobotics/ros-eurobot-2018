@@ -54,7 +54,6 @@ class STMprotocol(object):
         crc = sum(msg) % 256
         msg += bytearray([crc])
         self.ser.write(msg)
-
         #Receiving data
         data = self.ser.read()
         if len(data) == 0:
