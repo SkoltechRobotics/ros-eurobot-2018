@@ -21,7 +21,7 @@ BEACONS = np.array([[WORLD_X+WORLD_BORDER+BEAC_BORDER+BEAC_L/2., WORLD_Y/2.],
 BEAC_DIST_THRES = 200
 
 class ParticleFilter:
-    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=220, in_y=383, in_angle=3*np.pi/2, color='orange', max_itens=3500.0, max_dist=3700.0):
+    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=293, in_y=425, in_angle=3*np.pi/2, color='orange', max_itens=3500.0, max_dist=3700.0):
         global BEACONS
         if(color == 'green'):
             BEACONS = np.array([[-(WORLD_BORDER+BEAC_BORDER+BEAC_L/2.), WORLD_Y/2.], 
@@ -77,6 +77,7 @@ class ParticleFilter:
         #logging.info('Particle Move time: ' + str(time.time() - stamp))
 
     def resample(self, weights):
+        """ according to weights """
         # OLD START
         # n = self.particles_num
         # indices = []
@@ -102,6 +103,7 @@ class ParticleFilter:
         x = np.mean(self.particles[:, 0])
         y = np.mean(self.particles[:, 1])
         zero_elem = self.particles[0, 2]
+        # this helps if particles angles are close to 0 or 2*pi
         temporary = ((self.particles[:, 2]-zero_elem+np.pi) % (2.0 * np.pi))+zero_elem-np.pi
         orient = np.mean(temporary)
         answer = (x, y, orient)
@@ -115,6 +117,7 @@ class ParticleFilter:
         x_coords, y_coords = self.p_trans(angle,distance)
         self.landmarks = np.array([x_coords,y_coords])
         weights = self.weights(x_coords,y_coords)
+        # correct if lost:
         if self.warning:
             return
             x = np.random.normal(self.last[0], 150, self.particles_num)
@@ -131,7 +134,8 @@ class ParticleFilter:
     def weights(self, x_beac, y_beac):
         """Calculate particle weight based on its pose and lidar data"""
         # TODO check ICP implementation
-        # BEACONS: from global BEACONS to particles local: (X, Y) - Nx3x2 matrices
+        # BEACONS: from global BEACONS to particles local: (X, Y) - Nx3x2 matrices, N - number of particles
+        # determines 3 beacon positions (x,y) for every particle in it's local coords
         res = BEACONS[np.newaxis, :, :] - self.particles[:, np.newaxis, :2]
         X = ( res[:,:,0]*np.cos(self.particles[:,2])[:, np.newaxis] 
               + res[:,:,1]*np.sin(self.particles[:,2])[:, np.newaxis])
@@ -199,7 +203,6 @@ class ParticleFilter:
     def localisation(self, delta_coords, lidar_data):
         tmstmp = time.time() - self.start_time
         self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
-        #print self.particles
         # add aproximation
         self.particle_sense(lidar_data)
         if self.warning:

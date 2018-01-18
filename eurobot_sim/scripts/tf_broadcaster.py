@@ -2,6 +2,8 @@
 import rospy
 import tf
 from std_msgs.msg import String
+from sensor_msgs.msg import PointCloud
+from geometry_msgs.msg import Point
 
 def parse(msg):
     return map(float, msg.data.split())
@@ -45,6 +47,8 @@ def broadcast_stm_tf(msg, robot_name):
                      rospy.Time.now(),
                      "particles",
                      "world")
+    # TBD transfer to another node
+    # pub cubes
 
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
@@ -57,4 +61,10 @@ if __name__ == '__main__':
                      String,
                      broadcast_robot_tf,
                      robot_name)
+
+    # initial position of cubes
+    #points = [Point(x=x, y=y, z=.029) for i in range(len(0))]
+    #header = Header(frame_id="table")
+    #cubes = PointCloud(header=header, points=points)
+    #pub_cubes = rospy.Publisher("cubes", PintCloud, queue_size=1)
     rospy.spin()

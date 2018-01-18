@@ -29,7 +29,7 @@ def stm_coordinates_callback(data):
 
     # create and pub PointArray with particles    
     poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.5), Quaternion(w=particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
-    header = Header(frame_id="main_robot_stm")
+    header = Header(frame_id="table")
     particles = PoseArray(header=header, poses=poses)
     pub_particles.publish(particles)
     
@@ -94,6 +94,7 @@ if __name__ == '__main__':
         in_angle = rospy.get_param("/main_robot/start_a")
         max_itens = rospy.get_param("/main_robot/max_itens")
         max_dist = rospy.get_param("/main_robot/max_dist")
+        print in_x, in_y, in_angle
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
 
         ## Simulate
