@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import String
-from sensor_msgs.msg import LaserScan
+from std_msgs.msg import String, Header
+from sensor_msgs.msg import LaserScan, PointCloud
+from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
 from EncoderIntegrator import EncoderIntegrator
 import numpy as np
 from npParticle import ParticleFilter
@@ -10,31 +11,33 @@ from npParticle import ParticleFilter
 # Storage
 scan = LaserScan()
 
-def stm_coordinates_callback(data): # TBD: recieve coords, not delta_coords
+def stm_coordinates_callback(data):
     # parse name,type
     stm_coords = data.data.split()
     stm_coords = np.array(map(float, stm_coords))
 
     # calculate coordinates
-    lidar_data = np.array([scan.ranges, scan.intensities]).T
+    lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
     global coords, prev_stm_coords
     coords = particle_filter.localisation(stm_coords - prev_stm_coords, lidar_data)
 
     # store stm_coords
-    prev_stm_coords = stm_coords
+    prev_stm_coords = stm_coords.copy()
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
+
+    # create and pub PointArray with particles    
+    poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.5), Quaternion(w=particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
+    header = Header(frame_id="table")
+    particles = PoseArray(header=header, poses=poses)
+    pub_particles.publish(particles)
     
-    # DEBUG
-    # visualise landmarks
-    #angle, distance = particle_filter.get_landmarks(lidar_data)
-    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
-    #plt.plot(x_coords, y_coords, 'r.')
-    #plt.xlim(-3, 3)
-    #plt.ylim(-3, 3)
-    #plt.gca().set_aspect('equal', adjustable='box')
-    #plt.show()
+    # create and pub PointArray with landmarks
+    points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.0) for i in range(len(particle_filter.landmarks[0]))]
+    header = Header(frame_id="laser")
+    landmarks = PointCloud(header=header, points=points)
+    pub_landmarks.publish(landmarks)
     
     # DEBUG
     #print "Landmarks:"
@@ -66,6 +69,9 @@ if __name__ == '__main__':
         rospy.Subscriber("scan", LaserScan, scan_callback) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
+        # for vizualization, can be commented before competition
+        pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
+        pub_landmarks = rospy.Publisher("particle_filter/filtered_scan", PointCloud, queue_size=1)
 
         # create a PF object with params from ROS
         color = rospy.get_param("/color")
