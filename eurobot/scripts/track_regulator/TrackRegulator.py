@@ -25,11 +25,11 @@ class TrackRegulator(object):
     def __init__(self):
         self.MAX_VELOCITY = 0.2
         self.MAX_ROTATION = 1
-        self.MIN_VELOCITY = 0.03
-        self.MIN_ROTATION = 0.15
-        self.NORM_ANGLE = 3.14 / 8
+        self.MIN_VELOCITY = 0.02
+        self.MIN_ROTATION = 0.10
+        self.NORM_ANGLE = 3.14 / 10
         self.NORM_DISTANCE = 30
-        self.PERP_NORM_DISTANCE = 20
+        self.PERP_NORM_DISTANCE = 50
         self.PERP_MAX_RATE = 1
         self.target_point = np.zeros(3)
         self.is_rotate = False
@@ -75,11 +75,12 @@ class TrackRegulator(object):
             self.start_move_forward(point)
             return np.zeros(3)
         elif da > self.dangle - self.NORM_ANGLE:
-            v_angle = (self.dangle - da) / self.NORM_ANGLE * self.MAX_ROTATION / 2 + self.MIN_ROTATION
+            v_angle = (self.dangle - da) / self.NORM_ANGLE * self.MAX_ROTATION
         elif da < self.NORM_ANGLE:
-            v_angle = da / self.NORM_ANGLE * self.MAX_ROTATION / 2
+            v_angle = da / self.NORM_ANGLE * self.MAX_ROTATION
         else:
-            v_angle = self.MAX_ROTATION / 2
+            v_angle = self.MAX_ROTATION
+        v_angle += self.MIN_ROTATION
         print("ROTATE v_angle = %f da = %f" % (v_angle, da))
         return np.array([0, 0, self.rotation_diraction * (v_angle + self.MIN_ROTATION)])
 
@@ -93,13 +94,13 @@ class TrackRegulator(object):
             self.is_moving = False
             return np.zeros(3)
         elif dx > self.distance - self.NORM_DISTANCE:
-            v = (self.distance - dx) / self.NORM_DISTANCE * self.MAX_VELOCITY / 2 + self.MIN_VELOCITY
-        elif dx < self.NORM_DISTANCE:
-            v = dx / self.NORM_DISTANCE * self.MAX_VELOCITY / 2
+            v = (self.distance - dx) / self.NORM_DISTANCE * self.MAX_VELOCITY
+        elif dx < self.NORM_DISTANCE and dx > 0:
+            v = dx / self.NORM_DISTANCE * self.MAX_VELOCITY
         elif dx < 0:
             v = 0
         else:
-            v = self.MAX_VELOCITY / 2
+            v = self.MAX_VELOCITY
         v += self.MIN_VELOCITY
         
         dy = point_in_target_system[1]
