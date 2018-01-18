@@ -17,12 +17,12 @@ def stm_coordinates_callback(data):
     stm_coords = np.array(map(float, stm_coords))
 
     # calculate coordinates
-    lidar_data = np.array([scan.ranges, scan.intensities]).T
+    lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
     global coords, prev_stm_coords
     coords = particle_filter.localisation(stm_coords - prev_stm_coords, lidar_data)
 
     # store stm_coords
-    prev_stm_coords = stm_coords
+    prev_stm_coords = stm_coords.copy()
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
@@ -38,16 +38,6 @@ def stm_coordinates_callback(data):
     header = Header(frame_id="laser")
     landmarks = PointCloud(header=header, points=points)
     pub_landmarks.publish(landmarks)
-    
-    # DEBUG
-    # visualise landmarks
-    #angle, distance = particle_filter.get_landmarks(lidar_data)
-    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
-    #plt.plot(x_coords, y_coords, 'r.')
-    #plt.xlim(-3, 3)
-    #plt.ylim(-3, 3)
-    #plt.gca().set_aspect('equal', adjustable='box')
-    #plt.show()
     
     # DEBUG
     #print "Landmarks:"
@@ -94,7 +84,6 @@ if __name__ == '__main__':
         in_angle = rospy.get_param("/main_robot/start_a")
         max_itens = rospy.get_param("/main_robot/max_itens")
         max_dist = rospy.get_param("/main_robot/max_dist")
-        print in_x, in_y, in_angle
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
 
         ## Simulate
