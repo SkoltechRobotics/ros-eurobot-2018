@@ -7,20 +7,6 @@ import re
 
 pub = None
 
-
-	
-
-class TickEngine:
-    def __init__(self, initial_state):
-        self.state = initial_state
-    
-    def tick(self):
-        pass
-    
-    def wait(self):
-        pass
-
-
 class TreeNode:
     """
         Base class for all possible nodes in tree.
@@ -54,7 +40,7 @@ class TreeNode:
 
 class ActionNode(TreeNode):
     """
-        This class stands for simple executable action.
+        This class stands for simple executable Eurobot action.
         By .start() it sends specific message of format:
             $command_id + ' ' + $message
         into topic $command_topic, then 
@@ -88,7 +74,7 @@ class ActionNode(TreeNode):
             action_id, action_status = re.match("(\S*)\s(\S*)",msg.data).group(1,2) # finish it!
             if action_id == self.id:
                 self.status = action_status
-                if self.status == "finished":
+                if self.status in ["finished", "failed"]:
                     self.finish()
         return cb
 
@@ -195,6 +181,30 @@ class TimeoutNode(TreeNode):
         if self.status == "active" and self.time_worked() >= sleep_time:
             self.finish()
 
+class SelectorNode(ControlNode):
+    def __init__(self, name):
+        ControlNode.__init__(self, name)
+        
+    def tick(self):
+        
+        ControlNode.tick(self)
+
+        child_iter = iter(self.children_list)
+        child = None
+
+        try:
+            child = child_iter.next()
+        except StopIteration:
+            # empty list!
+            print "Empty children list in " + self.name + " !"
+            self.finish()
+            self.status = "error"
+            raise
+        except:
+            print "Unexpected error in " + self.name
+            raise
+        
+        while child.check_status() in ["failed", "error"]
 
 if __name__  == '__main__':
     rospy.init_node('executor', anonymous=True)
