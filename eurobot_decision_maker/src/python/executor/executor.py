@@ -204,8 +204,169 @@ class SelectorNode(ControlNode):
             print "Unexpected error in " + self.name
             raise
         
-        while child.check_status() in ["failed", "error"]
+        # find first not executed child
+        # previous are all failed
 
+        while child.check_status() == "failed":
+            try:
+                child = child_iter.next()
+            except StopIteration:
+                # all children finished
+                self.finish()
+                self.status = "failed"
+                return self.status
+            except:
+                print "Unexpected error in " + self.name
+                raise
+
+        current_child_status = child.check_status()
+
+        # continue execution
+        if current_child_status in ["active", "not started"]:
+            child.tick()
+            
+        # finish execution
+        if current_child_status in ["error", "finished"]:
+            self.status = current_child_status
+            
+        return self.status
+   
+
+
+class RootNode(TreeNode):
+    def __init__(self, name, execution_rate = 100):
+        # execution rate is 100Hz by default
+        
+        ControlNode.__init__(self, name)
+
+        self.child = None
+        self.execution_rate = execution_rate
+        self.looped = loop_execution
+        self.timer = None
+        
+    def set_child(self, child):
+        self.child = child
+    
+    def tick(self):
+        self.child.tick()
+        
+        child_status = child.check_status()
+
+        if child_status in ["failed", "finished", "error"]:
+            self.status = child_status
+            self.finish()
+
+    def start(self):
+        if self.status == "active":
+            return
+
+        TreeNode.start(self)
+        
+        self.timer = rospy.Timer(rospy.Duration(1.0/self.execution_rate, self.tick)
+
+        self.status == "active"
+        
+
+    def finish(self):
+        TreeNode.finish(self)
+
+        if self.timer != None:
+            self.timer.shutdown()
+        
+
+        
+class BehaviorTree:
+    def __init__(self, name,  execution_rate = 100):
+        self.name = name
+        self.root_node = RootNode("root", execution_rate)
+        self.nodes = {"root": self.root_node}
+        self.node_types = { 
+            "action":   ActionNode,
+            "sequence": SequenceNode,
+            "parallel": ParallelNode,
+            "selector": SelectorNode,
+            "wait":     TimeoutNode,
+            "timeout":  TimeoutNode
+            }
+
+        self.pubs = {}
+
+    def add_publisher(self, pub_name, pub):
+        self.pubs[pub_name] = pub
+
+    
+    
+
+    def add_node(self, node, parent_name):
+        
+        parent_node = None
+        
+        try:
+            parent_node = self.nodes[parent_name]
+        except KeyError:
+            print "Error: no such parent node in BT"
+            raise
+        except:
+            raise
+
+        try:
+            parent_node.append_child(node)
+        except: # type of exception ?
+            print "Error: parent_node is not a ControlNode"
+            raise
+        else:
+            self.nodes[node.name] = node
+
+    def add_node_by_string(self, node_string):
+        
+        # first substring       parent name
+        # second substring      node type
+        # third substring       node name
+        # rest                  node parameters
+
+        # TODO: add constructors from parameters string!
+
+        try:
+            parent_name, node_type, node_name, node_params = re.match("(\S*)\s(\S*)\s(\S*)\s([\S\s]*)", node_string).group(1,2,3,4)
+        except:
+            print "Error: wrong string description"
+            raise
+
+
+        try:
+            NodeClass = self.node_types[node_type]
+        except KeyError:
+            print "Error: no such node type!"
+            raise
+        except:
+            raise
+        
+        node = None
+
+        if node_type == "action":
+            publisher_name, request_topic_name, message = re.match("\(S*)\s(\S*)\s([\S\s]*)", node_params).group(1,2,3)
+            node = ActionNode(node_name, self.pubs[publisher_name], message, request_topic_name)
+
+        # elif node_type == "parallel":
+            # add parameter about n_failed
+        elif node_type in ["wait", "timeout"]:
+            try:
+                sleep_time = float(node_params)
+            except:
+                print "Error: wrong string description"
+            else:
+                node = TimeoutNode(node_name, sleep_time)
+        else:
+            node = NodeClass(node_name)
+
+        self.add_node(node, parent_name)
+
+
+        
+        
+            
+
+        
 if __name__  == '__main__':
     rospy.init_node('executor', anonymous=True)
     
