@@ -60,6 +60,19 @@ def scan_callback(data):
 
 if __name__ == '__main__':
     try:
+        # create a PF object with params from ROS
+        color = rospy.get_param("/color")
+        particles = rospy.get_param("/main_robot/particles")
+        sense_noise = rospy.get_param("/main_robot/sense_noise")
+        distance_noise = rospy.get_param("/main_robot/distance_noise")
+        angle_noise = rospy.get_param("/main_robot/angle_noise")
+        in_x = rospy.get_param("/main_robot/start_x")
+        in_y = rospy.get_param("/main_robot/start_y")
+        in_angle = rospy.get_param("/main_robot/start_a")
+        max_itens = rospy.get_param("/main_robot/max_itens")
+        max_dist = rospy.get_param("/main_robot/max_dist")
+        particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
+
         # ROS entities
         # Set initial coords and previous STM coords
         global coords, prev_stm_coords
@@ -74,18 +87,6 @@ if __name__ == '__main__':
         pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
         pub_landmarks = rospy.Publisher("particle_filter/filtered_scan", PointCloud, queue_size=1)
 
-        # create a PF object with params from ROS
-        color = rospy.get_param("/color")
-        particles = rospy.get_param("/main_robot/particles")
-        sense_noise = rospy.get_param("/main_robot/sense_noise")
-        distance_noise = rospy.get_param("/main_robot/distance_noise")
-        angle_noise = rospy.get_param("/main_robot/angle_noise")
-        in_x = rospy.get_param("/main_robot/start_x")
-        in_y = rospy.get_param("/main_robot/start_y")
-        in_angle = rospy.get_param("/main_robot/start_a")
-        max_itens = rospy.get_param("/main_robot/max_itens")
-        max_dist = rospy.get_param("/main_robot/max_dist")
-        particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
 
         ## Simulate
         #start_point = np.array([0.,0.,0.])

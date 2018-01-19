@@ -81,12 +81,13 @@ class STMprotocol(object):
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
         return True, args
-    def send_command(self, cmd, args, n_repeats = 2):
+    def send_command(self, cmd, args, n_repeats = 5):
         for i in range(n_repeats):
             try:
                 return self.pure_send_command(cmd, args)
             except Exception as exc:
-                print('Exception:\t', exc)
-                print('Of type:\t', type(exc))
-                print('At time:\t', datetime.datetime.now())
+                if i == n_repeats-1:
+                    print('Exception:\t', exc)
+                    print('At time:\t', datetime.datetime.now())
+                    print('--------------------------')
         return False, None
