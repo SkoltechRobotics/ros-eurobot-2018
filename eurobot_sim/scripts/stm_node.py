@@ -130,7 +130,7 @@ class stm_node():
             noise *= 0.1 * self.vel / self.freq
             noise *= 0.96
             self.coords = self.coords + self.vel / self.freq + noise
-            self.coords = self.coords % (2 * np.pi)
+            self.coords[2] = self.coords[2] % (2 * np.pi)
             self.rate.sleep()
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@
     <!-- PARAMS -->
     <!-- robot -->
     <param name="robot_name" type="string" value="main_robot" />
-    <param name="field_description" command="cat $(find eurobot_sim)/models/field.urdf" />
+    <param name="field_description" textfile="$(find eurobot_sim)/models/field.urdf" />
     <param name="robot_by_stm_description" command="cat $(find eurobot_sim)/models/main_robot_by_stm.urdf" />
     <param name="robot_description" command="cat $(find eurobot_sim)/models/main_robot.urdf" />
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />

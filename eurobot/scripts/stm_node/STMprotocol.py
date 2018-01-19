@@ -63,30 +63,31 @@ class STMprotocol(object):
         if len(data) == 0:
             raise Exception("No data received")
 
-        sync = data[0]
+        sync = ord(data[0])
         if sync != 0xfa:
             raise Exception("Incorrect byte of syncronization", sync)
         
         data = self.ser.read()
         if len(data) == 0:
             raise Exception("No adress received")
-        adr = data[0]
+        adr = ord(data[0])
         
         if adr != 0xfa:
             raise Exception("Incorrect adress", adr)
-        answer_len = self.ser.read()[0]
+        answer_len = ord(self.ser.read()[0])
         answer = bytearray(self.ser.read(answer_len - 3))
         
         if (sync + adr + answer_len + sum(answer[:-1])) % 256 != answer[-1]:
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
         return True, args
-    def send_command(self, cmd, args, n_repeats = 2):
+    def send_command(self, cmd, args, n_repeats = 5):
         for i in range(n_repeats):
             try:
                 return self.pure_send_command(cmd, args)
             except Exception as exc:
-                print('Exception:\t', exc)
-                print('Of type:\t', type(exc))
-                print('At time:\t', datetime.datetime.now())
+                if i == n_repeats-1:
+                    print('Exception:\t', exc)
+                    print('At time:\t', datetime.datetime.now())
+                    print('--------------------------')
         return False, None
