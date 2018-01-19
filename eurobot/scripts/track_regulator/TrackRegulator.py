@@ -27,8 +27,8 @@ class TrackRegulator(object):
         self.MAX_ROTATION = 1
         self.MIN_VELOCITY = 0.02
         self.MIN_ROTATION = 0.10
-        self.NORM_ANGLE = 3.14 / 10
-        self.NORM_DISTANCE = 30
+        self.NORM_ANGLE = 3.14 / 8
+        self.NORM_DISTANCE = 50
         self.PERP_NORM_DISTANCE = 50
         self.PERP_MAX_RATE = 1
         self.target_point = np.zeros(3)
@@ -67,7 +67,7 @@ class TrackRegulator(object):
 
     def rotate(self, point):
         da = (point[2] - self.start_angle) % (2 * np.pi)
-        if da > np.pi:
+        if self.rotation_diraction == -1:
             da = 2 * np.pi - da
 
         if da >= self.dangle:
@@ -75,9 +75,9 @@ class TrackRegulator(object):
             self.start_move_forward(point)
             return np.zeros(3)
         elif da > self.dangle - self.NORM_ANGLE:
-            v_angle = (self.dangle - da) / self.NORM_ANGLE * self.MAX_ROTATION
+            v_angle = np.sqrt((self.dangle - da) / self.NORM_ANGLE) * self.MAX_ROTATION
         elif da < self.NORM_ANGLE:
-            v_angle = da / self.NORM_ANGLE * self.MAX_ROTATION
+            v_angle = np.sqrt(da / self.NORM_ANGLE) * self.MAX_ROTATION
         else:
             v_angle = self.MAX_ROTATION
         v_angle += self.MIN_ROTATION
@@ -94,9 +94,9 @@ class TrackRegulator(object):
             self.is_moving = False
             return np.zeros(3)
         elif dx > self.distance - self.NORM_DISTANCE:
-            v = (self.distance - dx) / self.NORM_DISTANCE * self.MAX_VELOCITY
+            v = np.sqrt((self.distance - dx) / self.NORM_DISTANCE) * self.MAX_VELOCITY
         elif dx < self.NORM_DISTANCE and dx > 0:
-            v = dx / self.NORM_DISTANCE * self.MAX_VELOCITY
+            v = np.sqrt(dx) / self.NORM_DISTANCE * self.MAX_VELOCITY
         elif dx < 0:
             v = 0
         else:
@@ -105,11 +105,14 @@ class TrackRegulator(object):
         
         dy = point_in_target_system[1]
         v_perp = - v * dy / self.PERP_NORM_DISTANCE * self.PERP_MAX_RATE
+        v_perp = min(v_perp, self.MAX_VELOCITY)
+        v_perp = max(v_perp, -self.MAX_VELOCITY)
+        w = - (point[2] - self.target_point[2]) / self.NORM_ANGLE * self.MAX_ROTATION * v / self.MAX_VELOCITY
         v_x, v_y, _ = cvt_local2global((v, v_perp, 0), (0, 0, self.start_to_target_point[2] - point[2]))
         # v_x = v * np.cos(self.start_to_target_point[2] - point[2])
         # v_y = v * np.sin(self.start_to_target_point[2] - point[2])
         print("MOVE FORWARD v_x, v_y = (%f, %f) dist = %f target_dist = %f" % (v_x, v_y, dx, self.distance))
-        return np.array([v_x, v_y, 0])
+        return np.array([v_x, v_y, w])
 
     def regulate(self, point):
         if self.is_rotate:
