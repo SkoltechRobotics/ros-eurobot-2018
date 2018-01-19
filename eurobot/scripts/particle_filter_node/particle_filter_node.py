@@ -29,7 +29,7 @@ def stm_coordinates_callback(data):
     pub.publish(' '.join(map(str, coords)))
 
     # create and pub PointArray with particles    
-    poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=0), tf.transformations.quaternion_from_euler(0, 0, particle_filter.particles[i,2])) for i in range(len(particle_filter.particles))]
+    poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.4), Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i,2]))) for i in range(len(particle_filter.particles))]
     header = Header(frame_id="world")
     particles = PoseArray(header=header, poses=poses)
     pub_particles.publish(particles)
