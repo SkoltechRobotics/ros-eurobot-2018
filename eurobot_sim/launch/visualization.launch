@@ -2,9 +2,7 @@
 <launch>
   <group ns="main_robot">
     <!-- NODES -->
-    <node pkg="tf" type="static_transform_publisher" name="laser_broadcaster" args="0 0 0 0 0 0 world table 1000" />
-    <node pkg="eurobot_sim" name="tf_broadcaster" type="tf_broadcaster.py"  output="screen"/>
-    <node pkg="rviz" name="rviz_laserscan" type="rviz" args="-d $(find eurobot_sim)/config/laserscan.rviz" output="screen"/>
+    <node pkg="rviz" name="rviz_laserscan" type="rviz" args="-d $(find eurobot_sim)/config/visualization.rviz" output="screen"/>
 
     <!-- PARAMS -->
     <!-- robot -->
@@ -26,5 +24,32 @@
     <param name="start_a" type="double" value="4.71" />
 
   </group>
+
+  <group ns="field">
+    <node pkg="eurobot_sim" name="tf_broadcaster" type="tf_broadcaster.py"  output="screen"/>
+    <node pkg="eurobot_sim" name="cubes_broadcaster" type="cubes_broadcaster.py"  output="screen"/>
+  </group>
+
+  <group ns="field">
+    <!-- field params -->
+    <param name="cube1c_x" type="double" value="850" />
+    <param name="cube1c_y" type="double" value="540" />
+
+    <param name="cube2c_x" type="double" value="300" />
+    <param name="cube2c_y" type="double" value="1190" />
+
+    <param name="cube3c_x" type="double" value="1100" />
+    <param name="cube3c_y" type="double" value="1500" />
+
+    <param name="cube4c_x" type="double" value="1900" />
+    <param name="cube4c_y" type="double" value="1500" />
+
+    <param name="cube5c_x" type="double" value="2700" />
+    <param name="cube5c_y" type="double" value="1190" />
+
+    <param name="cube6c_x" type="double" value="2150" />
+    <param name="cube6c_y" type="double" value="540" />
+  </group>
+
 
 </launch>
