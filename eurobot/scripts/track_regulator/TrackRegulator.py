@@ -28,7 +28,7 @@ class TrackRegulator(object):
         self.MIN_VELOCITY = 0.02
         self.MIN_ROTATION = 0.10
         self.NORM_ANGLE = 3.14 / 8
-        self.NORM_DISTANCE = 50
+        self.NORM_DISTANCE = 100
         self.PERP_NORM_DISTANCE = 50
         self.PERP_MAX_RATE = 1
         self.target_point = np.zeros(3)
@@ -69,7 +69,8 @@ class TrackRegulator(object):
         da = (point[2] - self.start_angle) % (2 * np.pi)
         if self.rotation_diraction == -1:
             da = 2 * np.pi - da
-
+        if da > 3 * np.pi / 2:
+            da = da - 2 * np.pi
         if da >= self.dangle:
             print("Stop rotate")
             self.start_move_forward(point)
@@ -96,8 +97,8 @@ class TrackRegulator(object):
         elif dx > self.distance - self.NORM_DISTANCE:
             v = np.sqrt((self.distance - dx) / self.NORM_DISTANCE) * self.MAX_VELOCITY
         elif dx < self.NORM_DISTANCE and dx > 0:
-            v = np.sqrt(dx) / self.NORM_DISTANCE * self.MAX_VELOCITY
-        elif dx < 0:
+            v = np.sqrt(dx / self.NORM_DISTANCE) * self.MAX_VELOCITY
+        elif dx <= 0:
             v = 0
         else:
             v = self.MAX_VELOCITY
@@ -107,7 +108,14 @@ class TrackRegulator(object):
         v_perp = - v * dy / self.PERP_NORM_DISTANCE * self.PERP_MAX_RATE
         v_perp = min(v_perp, self.MAX_VELOCITY)
         v_perp = max(v_perp, -self.MAX_VELOCITY)
-        w = - (point[2] - self.target_point[2]) / self.NORM_ANGLE * self.MAX_ROTATION * v / self.MAX_VELOCITY
+        
+        da = (point[2] - self.target_point[2]) % (2 * np.pi)
+        if da > np.pi:
+            da = da - 2 * np.pi
+        w = - da / self.NORM_ANGLE * self.MAX_ROTATION * v / self.MAX_VELOCITY
+        w = min(w, self.MAX_ROTATION)
+        w = max(w, -self.MAX_ROTATION)
+        print("da = %f, w = %f" %(da, w)) 
         v_x, v_y, _ = cvt_local2global((v, v_perp, 0), (0, 0, self.start_to_target_point[2] - point[2]))
         # v_x = v * np.cos(self.start_to_target_point[2] - point[2])
         # v_y = v * np.sin(self.start_to_target_point[2] - point[2])
