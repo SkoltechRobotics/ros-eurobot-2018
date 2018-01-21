@@ -25,12 +25,14 @@ class TrackRegulator(object):
     def __init__(self):
         self.MAX_VELOCITY = 0.2
         self.MAX_ROTATION = 1
-        self.MIN_VELOCITY = 0.02
-        self.MIN_ROTATION = 0.10
+        self.MIN_VELOCITY = 0.002
+        self.MIN_ROTATION = 0.01
         self.NORM_ANGLE = 3.14 / 8
         self.NORM_DISTANCE = 100
         self.PERP_NORM_DISTANCE = 50
         self.PERP_MAX_RATE = 1
+        self.MIN_DIST = 3
+        self.MIN_ANGLE = 0.02
         self.target_point = np.zeros(3)
         self.is_rotate = False
         self.is_move_forward = False
@@ -45,6 +47,7 @@ class TrackRegulator(object):
         else:
             self.rotation_diraction = -1
             self.dangle = 2 * np.pi - da
+        self.dangle -= self.MIN_ANGLE
         self.start_angle = point[2]
         self.is_rotate = True
 
@@ -52,7 +55,7 @@ class TrackRegulator(object):
         print("Start move forward")
         self.is_rotate = False
         self.is_move_forward = True
-        self.distance = np.sum((self.target_point[:2] - point[:2]) ** 2) ** 0.5
+        self.distance = np.sum((self.target_point[:2] - point[:2]) ** 2) ** 0.5 - self.MIN_DIST
 
         self.start_to_target_point = np.zeros(3)
         self.start_to_target_point[:2] = point[:2]
@@ -82,7 +85,7 @@ class TrackRegulator(object):
         else:
             v_angle = self.MAX_ROTATION
         v_angle += self.MIN_ROTATION
-        print("ROTATE v_angle = %f da = %f" % (v_angle, da))
+        print("ROTATE v_angle = %f da = %f target_angle = %f" % (v_angle, da, self.dangle))
         return np.array([0, 0, self.rotation_diraction * (v_angle + self.MIN_ROTATION)])
 
     def move(self, point):
