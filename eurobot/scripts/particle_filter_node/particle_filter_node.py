@@ -29,6 +29,11 @@ def stm_coordinates_callback(data):
     # calculate coordinates
     lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
     global coords, prev_stm_coords
+    delta = stm_coords - prev_stm_coords
+    # Actual delta is different, as stm_coords (from odometry) accumulates an error. fix:
+    stm_error_angle = coords[2] - prev_stm_coords[2]
+    delta[0] *= np.cos(stm_error_angle)
+    delta[1] *= np.sin(stm_error_angle)
     coords = particle_filter.localisation(stm_coords - prev_stm_coords, lidar_data)
 
     # store stm_coords
