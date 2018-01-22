@@ -7,7 +7,7 @@ from EncoderIntegrator import EncoderIntegrator
 import numpy as np
 from npParticle import ParticleFilter
 from tf.transformations import quaternion_from_euler
-#import matplotlib.pyplot as plt # for DEBUG
+import datetime
 
 # Storage
 scan = LaserScan()
@@ -16,6 +16,15 @@ def stm_coordinates_callback(data):
     # parse name,type
     stm_coords = data.data.split()
     stm_coords = np.array(map(float, stm_coords))
+
+    # determine time of 1 iteration of PF
+    #now = datetime.datetime.now()
+    #now_ros = rospy.get_rostime()
+    #global last, last_ros
+    #print 'python dt =\t', now-last
+    #print 'ros dt =\t', now_ros-last_ros
+    #last = now
+    #last_ros = now_ros
 
     # calculate coordinates
     lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
@@ -27,7 +36,7 @@ def stm_coordinates_callback(data):
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
-
+"""
     # create and pub PointArray with particles    
     poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.4), Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i,2]))) for i in range(len(particle_filter.particles))]
     header = Header(frame_id="world")
@@ -45,15 +54,15 @@ def stm_coordinates_callback(data):
     #landm = particle_filter.get_landmarks(lidar_data)
     #print particle_filter.p_trans(landm[0],landm[1])
     #print "---------"
-    
+"""    
 def scan_callback(data):
     global scan
     scan = data
 
     ## DEBUG: pring coordinates of the beacons
     #lidar_data = np.array([scan.ranges, scan.intensities]).T
-    #angle, distance = particle_filter.get_landmarks(lidar_data)
-    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
+#angle, distance = particle_filter.get_landmarks(lidar_data)
+#x_coords, y_coords = particle_filter.p_trans(angle,distance)
     #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
     #print np.array([x_coords, y_coords]).T * 1000
     #print "------------------------------------------"
@@ -80,6 +89,11 @@ if __name__ == '__main__':
         prev_stm_coords = coords.copy()
 
         rospy.init_node('particle_filter_node', anonymous=True)
+
+        # for determining time of PF iterations:
+        #last = datetime.datetime.now()
+        #last_ros = rospy.get_rostime()
+
         rospy.Subscriber("scan", LaserScan, scan_callback, queue_size=1) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback, queue_size=1) # stm data
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
