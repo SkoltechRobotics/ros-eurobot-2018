@@ -237,20 +237,23 @@ class RootNode(TreeNode):
     def __init__(self, name, execution_rate = 100):
         # execution rate is 100Hz by default
         
-        ControlNode.__init__(self, name)
+        TreeNode.__init__(self, name)
 
         self.child = None
         self.execution_rate = execution_rate
-        self.looped = loop_execution
+        # self.looped = loop_execution
         self.timer = None
         
+    def append_child(self, child):
+        self.set_child(child)
+    
     def set_child(self, child):
         self.child = child
     
     def tick(self):
         self.child.tick()
         
-        child_status = child.check_status()
+        child_status = self.child.check_status()
 
         if child_status in ["failed", "finished", "error"]:
             self.status = child_status
@@ -262,9 +265,10 @@ class RootNode(TreeNode):
 
         TreeNode.start(self)
         
-        self.timer = rospy.Timer(rospy.Duration(1.0/self.execution_rate, self.tick)
-
-        self.status == "active"
+        def _callback_tick(e):
+            return self.tick()
+        self.timer = rospy.Timer(rospy.Duration(1.0/self.execution_rate), _callback_tick)
+        self.status = "active"
         
 
     def finish(self):
@@ -278,8 +282,8 @@ class RootNode(TreeNode):
 class BehaviorTree:
     def __init__(self, name,  execution_rate = 100):
         self.name = name
-        self.root_node = RootNode("root", execution_rate)
-        self.nodes = {"root": self.root_node}
+        self.root_node = RootNode(self.name, execution_rate)
+        self.nodes = {self.name: self.root_node}
         self.node_types = { 
             "action":   ActionNode,
             "sequence": SequenceNode,
@@ -326,11 +330,18 @@ class BehaviorTree:
 
         # TODO: add constructors from parameters string!
 
+        
+
         try:
             parent_name, node_type, node_name, node_params = re.match("(\S*)\s(\S*)\s(\S*)\s([\S\s]*)", node_string).group(1,2,3,4)
-        except:
-            print "Error: wrong string description"
-            raise
+        except AttributeError:
+            try:
+                parent_name, node_type, node_name = re.match("(\S*)\s(\S*)\s(\S*)", node_string).group(1,2,3)
+            except:
+                print "Error: wrong string description"
+                raise
+        
+            
 
 
         try:
@@ -344,7 +355,8 @@ class BehaviorTree:
         node = None
 
         if node_type == "action":
-            publisher_name, request_topic_name, message = re.match("\(S*)\s(\S*)\s([\S\s]*)", node_params).group(1,2,3)
+            print node_params
+            publisher_name, request_topic_name, message = re.match("(\S*)\s(\S*)\s([\S\s]*)", node_params).group(1,2,3)
             node = ActionNode(node_name, self.pubs[publisher_name], message, request_topic_name)
 
         # elif node_type == "parallel":
@@ -376,21 +388,46 @@ if __name__  == '__main__':
     a3 = ActionNode("a3", pub, "move 0 0 2", "fake_stm_response")
 
     s0 = SequenceNode("s0")
-    # s1 = SequenceNode("s1")
+    s1 = SequenceNode("s1")
     p0 = ParallelNode("p0")
-    s0.append_child(a1)
-    s0.append_child(p0)
-    p0.append_child(a2)
-    p0.append_child(a3)
+    # s0.append_child(a1)
+    # s0.append_child(p0)
+    # p0.append_child(a2)
+    # p0.append_child(a3)
     rospy.sleep(0.2)
     
     
-    r = rospy.Rate(100)
-    while s0.status != "finished":
-        s0.tick()
-        r.sleep()
-        
+    bt = BehaviorTree("big_robot", 100)
+
+    bt.add_node(s0, "big_robot")
+    bt.add_node(a1, s0.name)
+    bt.add_node(p0, s0.name)
+    bt.add_node(a2, p0.name)
+    bt.add_node(a3, p0.name)
+
+
     
+    bt.root_node.start()
+    r = rospy.Rate(10)
+    while bt.root_node.check_status() != "finished":
+        r.sleep()
+
+   
+    bt2 = BehaviorTree("small_robot", 100)
+    
+    bt2.add_publisher("fake_stm_command", pub)
+    bt2.add_node_by_string("small_robot sequence s0")
+    bt2.add_node_by_string("s0 action a1 fake_stm_command fake_stm_response move 0 0 0")
+    bt2.add_node_by_string("s0 parallel p0")
+    bt2.add_node_by_string("p0 action a2 fake_stm_command fake_stm_response move 0 0 1")
+    bt2.add_node_by_string("p0 action a3 fake_stm_command fake_stm_response move 0 0 2")
+
+    bt2.root_node.start()
+
+    while bt2.root_node.check_status() != "finished":
+        r.sleep()
+
+
     rospy.loginfo("a1 time " + str(a1.time_worked()))
     rospy.loginfo("a2 time " + str(a2.time_worked()))
     rospy.loginfo("s0 time " + str(s0.time_worked())) 

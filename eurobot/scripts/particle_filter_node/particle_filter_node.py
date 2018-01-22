@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
         rospy.init_node('particle_filter_node', anonymous=True)
         rospy.Subscriber("scan", LaserScan, scan_callback, queue_size=1) # lidar data 
-        rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback) # stm data
+        rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback, queue_size=1) # stm data
         pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
         # for vizualization, can be commented before competition
         pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)

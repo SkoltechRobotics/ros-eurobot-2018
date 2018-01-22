@@ -5,7 +5,7 @@ import datetime
 
 class STMprotocol(object):
     def __init__(self, serial_port):
-        self.ser = serial.Serial(serial_port, baudrate=115200, timeout=0.2)
+        self.ser = serial.Serial(serial_port, baudrate=64000, timeout=0.2)
         self.pack_format = {
             0x01: "=BBBB",
             0x03: "=Bf",
