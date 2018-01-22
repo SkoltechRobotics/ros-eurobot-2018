@@ -78,6 +78,8 @@ class TrackRegulator(object):
             print("Stop rotate")
             self.start_move_forward(point)
             return np.zeros(3)
+        elif da <= 0:
+            v_angle = 0
         elif da > self.dangle - self.NORM_ANGLE:
             v_angle = np.sqrt((self.dangle - da) / self.NORM_ANGLE) * self.MAX_ROTATION
         elif da < self.NORM_ANGLE:
