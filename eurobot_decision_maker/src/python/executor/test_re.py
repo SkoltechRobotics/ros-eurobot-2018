@@ -64,9 +64,10 @@ class B(A):
         self.b = 2
 
 if __name__  == '__main__':
-    action_id, action_response = re.match("(\S*)\s(\S*)","abc bcd").group(1,2)
+    action_id, action_response, a3, a4 = re.match("(\S*)\s(\S*)\s(\S*)([\s\S]*)","abc bcd cde abce").group(1,2,3,4)
     print(action_id)
     print(action_response)
-    
+    print(a3)
+    print(a4)
     b = B()
     print(b.a)
