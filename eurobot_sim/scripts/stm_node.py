@@ -95,8 +95,8 @@ class stm_node():
         #elif action_type == 0x0:
             
 
-        if successfuly:
-            print 'STM responded to cmd', action_name, '\twith args:', args_response
+        #if successfuly:
+        #    print 'STM responded to cmd', action_name, '\twith args:', args_response
 
         # high-level commands handling
         if action_type in self.action_types:

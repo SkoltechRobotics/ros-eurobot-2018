@@ -37,40 +37,46 @@ def broadcast_stm_tf(msg, robot_name):
                      "particles",
                      "world")
 
-    # TBD transfer to another node
-    # pub cubes
-    #global cubes
-    #pub_cubes.publish(cubes)
-
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
-    robot_name = rospy.get_param('robot_name')
-    rospy.Subscriber("stm/coordinates",
+    robot_name = rospy.get_param('/main_robot/robot_name')
+    rospy.Subscriber("/main_robot/stm/coordinates",
                      String,
                      broadcast_stm_tf,
                      robot_name)
-    rospy.Subscriber("particle_filter/coordinates",
+    rospy.Subscriber("/main_robot/particle_filter/coordinates",
                      String,
                      broadcast_robot_tf,
                      robot_name)
 
+    # cube colors
+    yellow = [247, 181, 0]
+    blue = [0, 124, 176]
+    black = [14, 14, 16]
+    green = [97, 153, 59]
+    orange = [208, 93, 40]
+
     # initial position of cubes
+    d = 0.058
+    z = .029
     cubes = MarkerArray()
     marker = Marker()
-    marker.header.frame_id = "table"
+    marker.header.frame_id = "world"
+    marker.ns = 'cubes'
+    marker.id = 11
     marker.type = marker.CUBE
     marker.action = marker.ADD
-    marker.scale.x = 0.058
-    marker.scale.y = 0.058
-    marker.scale.z = 0.058
+    marker.scale.x = d
+    marker.scale.y = d
+    marker.scale.z = d
     marker.color.a = 1.0
     marker.color.r = 1.0
     marker.color.g = 1.0
     marker.color.b = 0.0
     marker.pose.orientation.w = 1.0
-    marker.pose.position.x = .850
-    marker.pose.position.y = .540
-    marker.pose.position.z = .029
+    marker.pose.position.x = rospy.get_param("/field/cube1c_x") / 1000
+    marker.pose.position.y = rospy.get_param("/field/cube1c_y") / 1000
+    marker.pose.position.z = z
     #markers.append(Marker(header=header, type=1, action=0, pose=Pose(Point(0,0,0), Quaternion(w=1)), scale=Vector3(.058,.058,.058), color=ColorRGBA(1,0,0,.5), lifetime=rospy.Duration.from_sec(100)))
     #markers.append(Marker(header=header, type=1, action=0, pose=Pose(Point(x=.850, y=.540, z=.029), Quaternion(w=1)), scale=Vector3(.058,.058,.058), color=ColorRGBA(1,0,0,.5), lifetime=rospy.Duration.from_sec(1)))
     #points.append(Point(.850, .482, .029))
@@ -80,7 +86,6 @@ if __name__ == '__main__':
     #cubes = MarkerArray(markers=markers)
 
     cubes.markers.append(marker)
-    print cubes
-    pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
-    pub_cubes.publish(cubes)
+    #pub_cubes = rospy.Publisher("/field/cubes", MarkerArray, queue_size=1)
+    #pub_cubes.publish(cubes)
     rospy.spin()
