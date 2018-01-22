@@ -10,13 +10,24 @@ from tf.transformations import quaternion_from_euler
 import datetime
 
 # Storage
-scan = LaserScan()
+prev_used_stm_coords = np.array([0, 0, 0])
+stm_coords = np.array([0, 0, 0])
+coords = np.array([0, 0, 0])
 
 def stm_coordinates_callback(data):
-    # parse name,type
-    stm_coords = data.data.split()
-    stm_coords = np.array(map(float, stm_coords))
+    global stm_coords
+    stm_coords = np.array(map(float, data.data.split()))
 
+def delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords):
+    """ Calculates delta coords for PF, that is used for moving particles """
+    delta = used_stm_coords - prev_used_stm_coords
+    # Actual delta is different, as stm_coords (from odometry) accumulates an error. fix:
+    stm_error_angle = pf_coords[2] - prev_used_stm_coords[2]
+    delta[0] *= np.cos(stm_error_angle)
+    delta[1] *= np.sin(stm_error_angle)
+    return delta
+    
+def scan_callback(scan):
     # determine time of 1 iteration of PF
     #now = datetime.datetime.now()
     #now_ros = rospy.get_rostime()
@@ -26,18 +37,22 @@ def stm_coordinates_callback(data):
     #last = now
     #last_ros = now_ros
 
-    # calculate coordinates
-    lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
-    global coords, prev_stm_coords
-    delta = stm_coords - prev_stm_coords
-    # Actual delta is different, as stm_coords (from odometry) accumulates an error. fix:
-    stm_error_angle = coords[2] - prev_stm_coords[2]
-    delta[0] *= np.cos(stm_error_angle)
-    delta[1] *= np.sin(stm_error_angle)
-    coords = particle_filter.localisation(stm_coords - prev_stm_coords, lidar_data)
+    global coords, stm_coords, prev_used_stm_coords
+    # copy stm_coords as they may change during calculations
+    used_stm_coords = stm_coords.copy()
 
-    # store stm_coords
-    prev_stm_coords = stm_coords.copy()
+    # calculate coordinates
+    # TBD: check if python lib for Hokuyo is fasteer than urg_node and this transformation
+    lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
+    delta = delta_coords(used_stm_coords, prev_used_stm_coords, coords)
+    coords = particle_filter.localisation(delta, lidar_data)
+
+    # store previous stm_coords
+    prev_used_stm_coords = used_stm_coords.copy()
+
+    # robot may have moved a bit during calculations. fix:
+    coords += delta_coords(stm_coords,used_stm_coords, coords)
+    # rate of updating stm_coords should be higher that scanning rate
 
     # publish calculated coordinates
     pub.publish(' '.join(map(str, coords)))
@@ -60,10 +75,6 @@ def stm_coordinates_callback(data):
     #print particle_filter.p_trans(landm[0],landm[1])
     #print "---------"
     
-def scan_callback(data):
-    global scan
-    scan = data
-
     ## DEBUG: pring coordinates of the beacons
     #lidar_data = np.array([scan.ranges, scan.intensities]).T
 #angle, distance = particle_filter.get_landmarks(lidar_data)
@@ -88,10 +99,11 @@ if __name__ == '__main__':
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
 
         # ROS entities
-        # Set initial coords and previous STM coords
-        global coords, prev_stm_coords
+        # Set initial coords and STM (and prev) coords
+        global coords, stm_coords, prev_used_stm_coords
         coords = np.array([rospy.get_param('/main_robot/start_x'), rospy.get_param('/main_robot/start_y'), rospy.get_param('/main_robot/start_a')])
-        prev_stm_coords = coords.copy()
+        stm_coords = coords.copy()
+        prev_used_stm_coords = coords.copy()
 
         rospy.init_node('particle_filter_node', anonymous=True)
 
