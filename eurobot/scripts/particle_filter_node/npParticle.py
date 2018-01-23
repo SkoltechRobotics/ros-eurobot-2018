@@ -252,7 +252,7 @@ class ParticleFilter:
         angles = np.pi / 4 / 180 * ind
         distances = scan[ind, 0]
         #logging.info('scan preproccesing time: ' + str(time.time() - stamp))
-        return (angles + np.pi * 5/ 4) % (2 * np.pi), distances
+        return (angles + np.pi * 5 / 4) % (2 * np.pi), distances
 
 
     def p_trans(self, agl, pit):

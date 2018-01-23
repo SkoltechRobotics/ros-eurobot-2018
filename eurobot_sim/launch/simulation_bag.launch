@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- COMMON PARAMS -->
-  <param name="color" type="string" value="orange" />
 
   <group ns="main_robot">
     <!-- NODES -->
@@ -20,7 +18,7 @@
     <param name="dim_z" type="double" value="350" />
 
     <!-- particle filter params -->
-    <param name="particles" type="int" value="2000" />
+    <param name="particles" type="int" value="500" />
     <param name="sense_noise" type="double" value="25" />
     <param name="distance_noise" type="double" value="25" />
     <param name="angle_noise" type="double" value="0.1" />
@@ -30,7 +28,10 @@
   </group>
 
   <group ns="field">
-    <!-- field params -->
+
+    <param name="color" type="string" value="orange" />
+
+    <!-- cubes coordinates -->
     <param name="cube1c_x" type="double" value="850" />
     <param name="cube1c_y" type="double" value="540" />
 
@@ -48,6 +49,7 @@
 
     <param name="cube6c_x" type="double" value="2150" />
     <param name="cube6c_y" type="double" value="540" />
+
   </group>
 
 </launch>

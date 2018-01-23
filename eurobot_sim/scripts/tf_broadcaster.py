@@ -39,12 +39,12 @@ def broadcast_stm_tf(msg, robot_name):
 
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
-    robot_name = rospy.get_param('/main_robot/robot_name')
-    rospy.Subscriber("/main_robot/stm/coordinates",
+    robot_name = rospy.get_param('robot_name')
+    rospy.Subscriber("stm/coordinates",
                      String,
                      broadcast_stm_tf,
                      robot_name)
-    rospy.Subscriber("/main_robot/particle_filter/coordinates",
+    rospy.Subscriber("particle_filter/coordinates",
                      String,
                      broadcast_robot_tf,
                      robot_name)

@@ -1,12 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- COMMON PARAMS -->
-  <param name="color" type="string" value="orange" />
 
   <group ns="main_robot">
     <!-- NODES -->
     <node pkg="eurobot_sim" name="stm_node" type="stm_node.py" output="screen"/>
-    <!--node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen"/-->
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/>
     <node pkg="eurobot" name="track_regulator" type="track_regulator.py" output="screen"/>
     <node pkg="eurobot" name="status_checker" type="status_checker.py" output="screen" />
@@ -22,18 +19,23 @@
     <param name="dim_y" type="double" value="190" />
     <param name="dim_z" type="double" value="350" />
 
-    <!-- particle filter params -->
-    <param name="particles" type="int" value="2000" />
-    <param name="sense_noise" type="double" value="25" />
-    <param name="distance_noise" type="double" value="25" />
-    <param name="angle_noise" type="double" value="0.1" />
-    <param name="max_itens" type="double" value="3500" />
-    <param name="max_dist" type="double" value="3700" />
+    <group ns="particle_filter">
+      <!-- particle filter params -->
+      <param name="particles" type="int" value="500" />
+      <param name="sense_noise" type="double" value="25" />
+      <param name="distance_noise" type="double" value="25" />
+      <param name="angle_noise" type="double" value="0.1" />
+      <param name="max_itens" type="double" value="3500" />
+      <param name="max_dist" type="double" value="3700" />
+    </group>
 
   </group>
 
   <group ns="field">
-    <!-- field params -->
+
+    <param name="color" type="string" value="orange" />
+
+    <!-- cubes coordinates -->
     <param name="cube1c_x" type="double" value="850" />
     <param name="cube1c_y" type="double" value="540" />
 
@@ -51,6 +53,7 @@
 
     <param name="cube6c_x" type="double" value="2150" />
     <param name="cube6c_y" type="double" value="540" />
+
   </group>
 
 </launch>

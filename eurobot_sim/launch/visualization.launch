@@ -10,9 +10,11 @@
     <param name="field_description" textfile="$(find eurobot_sim)/models/field.urdf" />
     <param name="robot_by_stm_description" command="cat $(find eurobot_sim)/models/main_robot_by_stm.urdf" />
     <param name="robot_description" command="cat $(find eurobot_sim)/models/main_robot.urdf" />
+
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false"/>
-
+    <node pkg="eurobot_sim" name="tf_broadcaster" type="tf_broadcaster.py"  output="screen"/>
+    
     <!-- robot size -->
     <param name="dim_x" type="double" value="420" />
     <param name="dim_y" type="double" value="190" />
@@ -26,12 +28,11 @@
   </group>
 
   <group ns="field">
-    <node pkg="eurobot_sim" name="tf_broadcaster" type="tf_broadcaster.py"  output="screen"/>
     <node pkg="eurobot_sim" name="cubes_broadcaster" type="cubes_broadcaster.py"  output="screen"/>
-  </group>
 
-  <group ns="field">
-    <!-- field params -->
+    <param name="color" type="string" value="orange" />
+
+    <!-- cubes coordinates -->
     <param name="cube1c_x" type="double" value="850" />
     <param name="cube1c_y" type="double" value="540" />
 
@@ -49,6 +50,7 @@
 
     <param name="cube6c_x" type="double" value="2150" />
     <param name="cube6c_y" type="double" value="540" />
+
   </group>
 
 
