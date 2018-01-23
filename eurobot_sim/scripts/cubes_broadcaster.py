@@ -23,8 +23,8 @@ if __name__ == '__main__':
     n_groups = 6
     n_cubes_in_group = 5
     for n in range(n_groups):
-        x = rospy.get_param("/field/cube" + str(n+1) + "c_x") / 1000
-        y = rospy.get_param("/field/cube" + str(n+1) + "c_y") / 1000
+        x = rospy.get_param("cube" + str(n+1) + "c_x") / 1000
+        y = rospy.get_param("cube" + str(n+1) + "c_y") / 1000
         coords.append([[x,y],[x,y+d],[x,y-d],[x-d,y],[x+d,y]])
         for m in range(n_cubes_in_group):
             marker = Marker()

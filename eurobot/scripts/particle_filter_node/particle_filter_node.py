@@ -9,11 +9,6 @@ from npParticle import ParticleFilter
 from tf.transformations import quaternion_from_euler
 import datetime
 
-# Storage
-prev_used_stm_coords = np.array([0, 0, 0])
-stm_coords = np.array([0, 0, 0])
-coords = np.array([0, 0, 0])
-
 def stm_coordinates_callback(data):
     global stm_coords
     stm_coords = np.array(map(float, data.data.split()))
@@ -86,22 +81,21 @@ def scan_callback(scan):
 if __name__ == '__main__':
     try:
         # create a PF object with params from ROS
-        color = rospy.get_param("/color")
-        particles = rospy.get_param("/main_robot/particles")
-        sense_noise = rospy.get_param("/main_robot/sense_noise")
-        distance_noise = rospy.get_param("/main_robot/distance_noise")
-        angle_noise = rospy.get_param("/main_robot/angle_noise")
-        in_x = rospy.get_param("/main_robot/start_x")
-        in_y = rospy.get_param("/main_robot/start_y")
-        in_angle = rospy.get_param("/main_robot/start_a")
-        max_itens = rospy.get_param("/main_robot/max_itens")
-        max_dist = rospy.get_param("/main_robot/max_dist")
+        color = rospy.get_param("/field/color")
+        particles = rospy.get_param("particle_filter/particles")
+        sense_noise = rospy.get_param("particle_filter/sense_noise")
+        distance_noise = rospy.get_param("particle_filter/distance_noise")
+        angle_noise = rospy.get_param("particle_filter/angle_noise")
+        in_x = rospy.get_param("start_x")
+        in_y = rospy.get_param("start_y")
+        in_angle = rospy.get_param("start_a")
+        max_itens = rospy.get_param("particle_filter/max_itens")
+        max_dist = rospy.get_param("particle_filter/max_dist")
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise, angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color = color, max_itens=max_itens, max_dist=max_dist)
 
         # ROS entities
         # Set initial coords and STM (and prev) coords
-        global coords, stm_coords, prev_used_stm_coords
-        coords = np.array([rospy.get_param('/main_robot/start_x'), rospy.get_param('/main_robot/start_y'), rospy.get_param('/main_robot/start_a')])
+        coords = np.array([in_x, in_y, in_angle])
         stm_coords = coords.copy()
         prev_used_stm_coords = coords.copy()
 
