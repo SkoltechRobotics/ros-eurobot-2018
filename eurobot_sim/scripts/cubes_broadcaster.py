@@ -11,6 +11,14 @@ def coords_callback(data):
     global coords
     coords = np.array(map(float, data.data.split()))
 
+def command_callback(data):
+    # parse data
+    data_splitted = data.data.split()
+    action_type = int(data_splitted[1])
+
+    if action_type == 0xdd: # TODO put real cmd number here
+        take_cube(int(data_splitted[2]))
+
 def cube_index(heap_num, cube_num):
     return n_cubes_in_heap * heap_num + cube_num
 
@@ -39,6 +47,7 @@ if __name__ == '__main__':
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
     coords = np.array([0,0,0])
     rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
+    rospy.Subscriber("/main_robot/stm_command", String, comand_callback, queue_size=10)
 
     # cube colors [yellow, blue, black, green, orange]
     COLORS = [[247, 181, 0], [0, 124, 176], [14, 14, 16], [97, 153, 59], [208, 93, 40]]
