@@ -53,16 +53,16 @@ def scan_callback(scan):
     pub.publish(' '.join(map(str, coords)))
 
     # create and pub PointArray with particles    
-    poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.4), Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i,2]+np.pi/2))) for i in range(len(particle_filter.particles))]
-    header = Header(frame_id="world")
-    particles = PoseArray(header=header, poses=poses)
-    pub_particles.publish(particles)
+    #poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.4), Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i,2]+np.pi/2))) for i in range(len(particle_filter.particles))]
+    #header = Header(frame_id="world")
+    #particles = PoseArray(header=header, poses=poses)
+    #pub_particles.publish(particles)
     
     # create and pub PointArray with landmarks
-    points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.0) for i in range(len(particle_filter.landmarks[0]))]
-    header = Header(frame_id="laser")
-    landmarks = PointCloud(header=header, points=points)
-    pub_landmarks.publish(landmarks)
+    #points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.0) for i in range(len(particle_filter.landmarks[0]))]
+    #header = Header(frame_id="laser")
+    #landmarks = PointCloud(header=header, points=points)
+    #pub_landmarks.publish(landmarks)
     
     # DEBUG
     #print "Landmarks:"
