@@ -3,12 +3,14 @@ import rospy
 from std_msgs.msg import String
 import serial
 from STMprotocol import STMprotocol
-
+#import thread
+from threading import Lock
 
 class stm_node(STMprotocol):
     def __init__(self, serial_port):
         super(stm_node, self).__init__(serial_port)
-        
+        self.mutex = Lock()
+
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
@@ -30,9 +32,16 @@ class stm_node(STMprotocol):
         return action_name,action_type,args
 
     def stm_command_callback(self, data):
+        # Lock() is used to prevent mixing bytes of diff commands to STM
+        self.mutex.acquire()
+        self.send(data)
+        self.mutex.release()
+
+    def send(self, data):
         # parse data
         action_name,action_type,args = self.parse_data(data)
 
+        #print 'START\t', rospy.get_rostime(), '\tthread id:\t', thread.get_ident()
         ## Command handling
         # send command to STM32
         successfuly, args_response = self.send_command(action_type, args)
@@ -53,6 +62,9 @@ class stm_node(STMprotocol):
             if successfuly:
                  self.pub_stm_coords.publish(' '.join(map(str, [args_response[0]*1000, args_response[1]*1000, args_response[2]])))
             #self.handle_response()
+
+        #print 'stop\t', rospy.get_rostime(), '\tthread id:\t', thread.get_ident()
+        #print '*************************************************************'
 
     def handle_response(self, status): # TBD
         """Handles response for high-lvl commands (only)."""
