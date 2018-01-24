@@ -34,6 +34,7 @@ class stm_node():
             0xb1: "=B",
             0x0e: "=fff",
             0x0f: "=",
+            0xb0: "=B",
         }
 
         self.unpack_format = {
@@ -54,6 +55,7 @@ class stm_node():
             0xb1: "=BB",
             0x0e: "=BB",
             0x0f: "=fff",
+            0xb0: "=BB",
         }
 
         self.freq = 100

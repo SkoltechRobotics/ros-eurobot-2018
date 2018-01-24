@@ -6,20 +6,26 @@ import numpy as np
 
 def show_callback(event):
     pub_cubes.publish(cubes)
-    for i in range(3):
-        take_cube(i)
 
 def coords_callback(data):
     global coords
     coords = np.array(map(float, data.data.split()))
 
+def response_callback(manipulator_num, action_id):
+    def response_callback_(event):
+    	take_cube(manipulator_num)
+    	pub_response.publish(action_id + ' finished')
+    return response_callback_
+
 def command_callback(data):
     # parse data
     data_splitted = data.data.split()
+    action_id = data_splitted[0]
     action_type = int(data_splitted[1])
 
-    if action_type == 0xdd: # TODO put real cmd number here
-        take_cube(int(data_splitted[2]))
+    if action_type == 0xb0: # TODO put real cmd number here
+        manipulator_num = int(data_splitted[2])
+        rospy.Timer(rospy.Duration(1), response_callback(manipulator_num, action_id), oneshot=True) 
 
 def cube_index(heap_num, cube_num):
     return n_cubes_in_heap * heap_num + cube_num
@@ -33,7 +39,6 @@ def take_cube2(heap_num, cube_num, manipulator_num):
         for c in range(n_cubes_in_heap):
             if where_cube[h][c] == manipulator_num:
                 cube_marker(h, c).pose.position.z += d
-                print 'lift', h, c
     # grab a new cube
     cube = cube_marker(heap_num, cube_num)
     cube.header.frame_id = "main_robot_stm"
@@ -58,6 +63,7 @@ def take_cube(manipulator_num):
 if __name__ == '__main__':
     rospy.init_node('cubes_broadcaster')
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
+    pub_response = rospy.Publisher("/main_robot/stm/response", String, queue_size=10)
     coords = np.array([0,0,0])
     rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
     rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)
