@@ -47,7 +47,7 @@ def take_cube2(heap_num, cube_num, manipulator_num):
     cube.pose.position.z = d * 1.5
 
 def take_cube(manipulator_num):
-    c = coords.T
+    c = coords.T.copy()
     c[:2] /= 1000
     M = np.array([[np.cos(c[2]), -np.sin(c[2])], [np.sin(c[2]), np.cos(c[2])]])
     manipulator_coords = np.matmul(M, manipulator[manipulator_num].T) + c[:2]
@@ -55,6 +55,7 @@ def take_cube(manipulator_num):
         for c in range(n_cubes_in_heap):
             p = cube_marker(h, c).pose.position
             if p.z < d and ((p.x-manipulator_coords[0])**2 + (p.y-manipulator_coords[1])**2) < (d/2)**2:
+                #print 'cube', c, 'in heap', h, 'found'
                 take_cube2(h, c, manipulator_num)
                 where_cube[h][c] = manipulator_num
                 return True
@@ -63,7 +64,7 @@ def take_cube(manipulator_num):
 if __name__ == '__main__':
     rospy.init_node('cubes_broadcaster')
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
-    pub_response = rospy.Publisher("/main_robot/stm/response", String, queue_size=10)
+    pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
     coords = np.array([0,0,0])
     rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
     rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)

@@ -49,7 +49,7 @@ if __name__ == '__main__':
         pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
         pub_response = rospy.Publisher("response", String, queue_size=10) 
         rospy.Subscriber("move_command", String, command_callback)
-        rospy.Subscriber("particle_filter/coordinates", String, coordinates_callback)
+        rospy.Subscriber("stm/coordinates", String, coordinates_callback)
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
