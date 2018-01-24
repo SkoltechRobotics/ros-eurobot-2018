@@ -6,6 +6,8 @@ import numpy as np
 
 def show_callback(event):
     pub_cubes.publish(cubes)
+    for i in range(3):
+        take_cube(i)
 
 def coords_callback(data):
     global coords
@@ -25,20 +27,31 @@ def cube_index(heap_num, cube_num):
 def cube_marker(heap_num, cube_num):
     return cubes.markers[cube_index(heap_num, cube_num)]
 
-def take_cube2(heap_num, cube_num, manipulator_num, floor):
+def take_cube2(heap_num, cube_num, manipulator_num):    
+    # lift all cubes in this manipulator
+    for h in range(n_heaps):
+        for c in range(n_cubes_in_heap):
+            if where_cube[h][c] == manipulator_num:
+                cube_marker(h, c).pose.position.z += d
+                print 'lift', h, c
+    # grab a new cube
     cube = cube_marker(heap_num, cube_num)
     cube.header.frame_id = "main_robot_stm"
     cube.pose.position.x = manipulator[manipulator_num][0]
     cube.pose.position.y = manipulator[manipulator_num][1]
-    cube.pose.position.z = d * (.5 + floor)
+    cube.pose.position.z = d * 1.5
 
 def take_cube(manipulator_num):
+    c = coords.T
+    c[:2] /= 1000
+    M = np.array([[np.cos(c[2]), -np.sin(c[2])], [np.sin(c[2]), np.cos(c[2])]])
+    manipulator_coords = np.matmul(M, manipulator[manipulator_num].T) + c[:2]
     for h in range(n_heaps):
         for c in range(n_cubes_in_heap):
             p = cube_marker(h, c).pose.position
-            if ((p.x-coords[0]/1000)**2 + (p.y-coords[1]/1000)**2) < (d/2)**2:
-                take_cube2(h, c, manipulator_num, next_floor[manipulator_num])
-                next_floor[manipulator_num] += 1
+            if p.z < d and ((p.x-manipulator_coords[0])**2 + (p.y-manipulator_coords[1])**2) < (d/2)**2:
+                take_cube2(h, c, manipulator_num)
+                where_cube[h][c] = manipulator_num
                 return True
     return False
 
@@ -47,7 +60,7 @@ if __name__ == '__main__':
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
     coords = np.array([0,0,0])
     rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
-    rospy.Subscriber("/main_robot/stm_command", String, comand_callback, queue_size=10)
+    rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)
 
     # cube colors [yellow, blue, black, green, orange]
     COLORS = [[247, 181, 0], [0, 124, 176], [14, 14, 16], [97, 153, 59], [208, 93, 40]]
@@ -87,9 +100,8 @@ if __name__ == '__main__':
             cubes.markers.append(marker)
 
     # params of manipulators
-    l = 0.005
-    manipulator = [[d-l,d+l],[0,0],[d+l,d+l]]
-    next_floor = [1,1,1]
+    manipulator = np.array([[d,d],[0,0],[-d,d]])
+    where_cube = np.ones((n_heaps, n_cubes_in_heap)) * (-1)
 
     rospy.Timer(rospy.Duration(.03), show_callback)
     rospy.spin()
