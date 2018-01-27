@@ -94,7 +94,7 @@ class stm_node():
             self.coords = np.array(args)
         elif action_type == 0x0F:
             args_response = self.coords
-        #elif action_type == 0x0:
+            #elif action_type == 0x0:
             
 
         #if successfuly:
