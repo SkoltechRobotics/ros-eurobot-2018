@@ -4,18 +4,23 @@ from std_msgs.msg import String
 from visualization_msgs.msg import Marker, MarkerArray
 import numpy as np
 
+
 def show_callback(event):
     pub_cubes.publish(cubes)
+
 
 def coords_callback(data):
     global coords
     coords = np.array(map(float, data.data.split()))
 
+
 def response_callback(manipulator_num, action_id):
     def response_callback_(event):
-    	take_cube(manipulator_num)
-    	pub_response.publish(action_id + ' finished')
+        take_cube(manipulator_num)
+        pub_response.publish(action_id + ' finished')
+
     return response_callback_
+
 
 def command_callback(data):
     # parse data
@@ -23,17 +28,20 @@ def command_callback(data):
     action_id = data_splitted[0]
     action_type = int(data_splitted[1])
 
-    if action_type == 0xb0: # TODO put real cmd number here
+    if action_type == 0xb0:  # TODO put real cmd number here
         manipulator_num = int(data_splitted[2])
-        rospy.Timer(rospy.Duration(1), response_callback(manipulator_num, action_id), oneshot=True) 
+        rospy.Timer(rospy.Duration(1), response_callback(manipulator_num, action_id), oneshot=True)
+
 
 def cube_index(heap_num, cube_num):
     return n_cubes_in_heap * heap_num + cube_num
 
+
 def cube_marker(heap_num, cube_num):
     return cubes.markers[cube_index(heap_num, cube_num)]
 
-def take_cube2(heap_num, cube_num, manipulator_num):    
+
+def take_cube2(heap_num, cube_num, manipulator_num):
     # lift all cubes in this manipulator
     for h in range(n_heaps):
         for c in range(n_cubes_in_heap):
@@ -46,6 +54,7 @@ def take_cube2(heap_num, cube_num, manipulator_num):
     cube.pose.position.y = manipulator[manipulator_num][1]
     cube.pose.position.z = d * 1.5
 
+
 def take_cube(manipulator_num):
     c = coords.T.copy()
     c[:2] /= 1000
@@ -54,18 +63,19 @@ def take_cube(manipulator_num):
     for h in range(n_heaps):
         for c in range(n_cubes_in_heap):
             p = cube_marker(h, c).pose.position
-            if p.z < d and ((p.x-manipulator_coords[0])**2 + (p.y-manipulator_coords[1])**2) < (d/2)**2:
-                #print 'cube', c, 'in heap', h, 'found'
+            if p.z < d and ((p.x - manipulator_coords[0]) ** 2 + (p.y - manipulator_coords[1]) ** 2) < (d / 2) ** 2:
+                # print 'cube', c, 'in heap', h, 'found'
                 take_cube2(h, c, manipulator_num)
                 where_cube[h][c] = manipulator_num
                 return True
     return False
 
+
 if __name__ == '__main__':
     rospy.init_node('cubes_broadcaster')
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
     pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
-    coords = np.array([0,0,0])
+    coords = np.array([0, 0, 0])
     rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
     rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)
 
@@ -83,14 +93,14 @@ if __name__ == '__main__':
     n_heaps = 6
     n_cubes_in_heap = 5
     for n in range(n_heaps):
-        x = rospy.get_param("cube" + str(n+1) + "c_x") / 1000
-        y = rospy.get_param("cube" + str(n+1) + "c_y") / 1000
-        heap_coords.append([[x,y],[x-d,y],[x,y+d],[x+d,y],[x,y-d]])
+        x = rospy.get_param("cube" + str(n + 1) + "c_x") / 1000
+        y = rospy.get_param("cube" + str(n + 1) + "c_y") / 1000
+        heap_coords.append([[x, y], [x - d, y], [x, y + d], [x + d, y], [x, y - d]])
         for m in range(n_cubes_in_heap):
             marker = Marker()
             marker.header.frame_id = "world"
             marker.ns = 'cubes'
-            marker.id = 10 * (n+1) + (m+1)
+            marker.id = 10 * (n + 1) + (m + 1)
             marker.type = marker.CUBE
             marker.action = marker.ADD
             marker.scale.x = d
@@ -107,7 +117,7 @@ if __name__ == '__main__':
             cubes.markers.append(marker)
 
     # params of manipulators
-    manipulator = np.array([[d,d],[0,0],[-d,d]])
+    manipulator = np.array([[d, d], [0, 0], [-d, d]])
     where_cube = np.ones((n_heaps, n_cubes_in_heap)) * (-1)
 
     rospy.Timer(rospy.Duration(.03), show_callback)
