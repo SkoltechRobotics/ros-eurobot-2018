@@ -44,7 +44,7 @@ if __name__ == '__main__':
                      String,
                      broadcast_stm_tf,
                      robot_name)
-    rospy.Subscriber("particle_filter/coordinates",
+    rospy.Subscriber("kalman_filter/coordinates",
                      String,
                      broadcast_robot_tf,
                      robot_name)
