@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
-import serial
 from STMprotocol import STMprotocol
 # import thread
 from threading import Lock
