@@ -55,9 +55,9 @@ if __name__ == '__main__':
         rate = rospy.Rate(10)
         pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
         pub_response = rospy.Publisher("response", String, queue_size=10) 
-        #pub_speed = rospy.Publisher("track_regulator/speed", String, queue_size=1) 
+        pub_speed = rospy.Publisher("track_regulator/speed", String, queue_size=1) 
         rospy.Subscriber("move_command", String, command_callback)
-        rospy.Subscriber("kalman_filter/coordinates", String, coordinates_callback)
+        rospy.Subscriber("stm/coordinates", String, coordinates_callback)
 
         while not rospy.is_shutdown():
             if not cmd_id is None:
@@ -67,6 +67,7 @@ if __name__ == '__main__':
                     print("speeds", speeds)
                     speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
                     pub_command.publish("SETSPEED 8 " + speeds)
+                    pub_speed.publish(str(speeds))
                     rate.sleep()
                 # publish response
                 pub_response.publish(cmd_id + " finished")

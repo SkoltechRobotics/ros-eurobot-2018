@@ -5,14 +5,16 @@ import numpy as np
 import time
 
 class kalman_filter():
-    def __init__(self, initial_coords = np.zeros(3), sigma_acc = 10, sigma_measure_x = 0.05, sigma_measure_a = 0.01):
-        self.speed = np.matrix([0, 0]).T
+    def __init__(self, initial_coords = np.zeros(3), sigma_acc = 20, sigma_acc_a = 0.01, sigma_measure_x = 0.03, sigma_measure_a = 0.01):
+        self.speed = np.matrix([0, 0, 0]).T
 
         self.sigma_acc = sigma_acc
+        self.sigma_acc_a = sigma_acc_a
         self.sigma_measure_x = sigma_measure_x
         self.sigma_measure_a = sigma_measure_a
-
+        # measurement covariance matrix:
         self.R = np.matrix(np.diag((self.sigma_measure_x**2, self.sigma_measure_x**2, self.sigma_measure_a**2)))
+
         self.H = np.matrix([[1,0,0,0,0,0],[0,0,1,0,0,0],[0,0,0,0,1,0]])
         self.Ht = self.H.T
         self.I = np.matrix(np.eye(6))
@@ -37,14 +39,18 @@ class kalman_filter():
         self.F = np.matrix([[1, T, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0], [0, 0, 1, T, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 1, T], [0, 0, 0, 0, 0, 1]])
         self.Ft = self.F.T
         self.G = np.matrix([[T**2/2, 0, 0], [T, 0, 0], [0, T**2/2, 0], [0, T, 0], [0, 0, T**2/2], [0, 0, T]])
-        self.Gt = self.G.T
+        self.Gt = self.G.T 
+        # process covariance matrix: TODO
         self.Q = self.G * self.Gt * self.sigma_acc**2
+        self.Q[:6] *= self.sigma_acc**2
+        self.Q[6:] *= self.sigma_acc_a**2
+        self.B = np.matrix([[T,0,0], [0,0,0], [0,T,0], [0,0,0], [0,0,T], [0,0,0]])
 
     def predict(self):
-        #self.Xf[1] = self.speed[0]
-        #self.Xf[3] = self.speed[1]
-        #self.Xf[5] = self.speed[2]
-        self.Xp = self.F * self.Xf
+        #self.Xf[1,0] = self.speed[0,0]
+        #self.Xf[3,0] = self.speed[1,0]
+        #self.Xf[5,0] = self.speed[2,0]
+        self.Xp = self.F * self.Xf + self.B * self.speed
         self.Pp = self.F * self.Pf * self.Ft + self.Q
 
     def update(self, Zm):
@@ -58,11 +64,12 @@ class kalman_filter():
         self.reset_T()
         self.predict()
         self.update(Zm)
-        print 'kalman iteration took', time.clock() - t1, 'sec'
+        #print 'kalman iteration took', time.clock() - t1, 'sec'
         return self.Xf
 
     def set_speed(self, v):
-        self.speed = np.matrix(v).T
+        #self.speed = np.matrix(v).T
+        self.speed = v
 
 def coords_input_callback(data):
     z = map(float, data.data.split())
@@ -70,7 +77,11 @@ def coords_input_callback(data):
     pub.publish(' '.join(map(str, [X[0,0], X[2,0], X[4,0]])))
 
 def speed_input_callback(data):
-    v = map(float, data.data.split())
+    v = np.matrix(map(float, data.data.split())).T
+    angle = k_filter.Xf[5,0]
+    M = np.matrix([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
+    v = M * v
+    v[:2] *= 1000
     k_filter.set_speed(v)
 
 if __name__ == '__main__':

@@ -7,20 +7,20 @@ from visualization_msgs.msg import Marker, MarkerArray
 def parse(msg):
     return map(float, msg.data.split())
 
-def broadcast_robot_tf(msg, robot_name):
+def broadcast_robot_pf_tf(msg, robot_name):
     br = tf.TransformBroadcaster()
     coords = parse(msg)
     br.sendTransform((coords[0]/1000, coords[1]/1000, 0),
                      tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                      rospy.Time.now(),
-                     robot_name,
+                     "%s_pf" % robot_name,
                      "world")
     # for visualizing LIDAR scan from stm_coords prospective
     br.sendTransform((.0, .0, .41),
                      tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                      rospy.Time.now(),
                      "laser",
-                     robot_name)
+                     "%s_pf" % robot_name)
 
 def broadcast_stm_tf(msg, robot_name):
     br = tf.TransformBroadcaster()
@@ -30,11 +30,14 @@ def broadcast_stm_tf(msg, robot_name):
                      rospy.Time.now(),
                      "%s_stm" % robot_name,
                      "world")
-    # for visualizing particles
-    br.sendTransform((.0, .0, .0),
-                     tf.transformations.quaternion_from_euler(0, 0, 0),
+
+def broadcast_robot_kf_tf(msg, robot_name):
+    br = tf.TransformBroadcaster()
+    coords = parse(msg)
+    br.sendTransform((coords[0]/1000, coords[1]/1000, 0),
+                     tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                      rospy.Time.now(),
-                     "particles",
+                     "%s_kf" % robot_name,
                      "world")
 
 if __name__ == '__main__':
@@ -44,9 +47,13 @@ if __name__ == '__main__':
                      String,
                      broadcast_stm_tf,
                      robot_name)
+    rospy.Subscriber("particle_filter/coordinates",
+                     String,
+                     broadcast_robot_pf_tf,
+                     robot_name)
     rospy.Subscriber("kalman_filter/coordinates",
                      String,
-                     broadcast_robot_tf,
+                     broadcast_robot_kf_tf,
                      robot_name)
 
     # cube colors

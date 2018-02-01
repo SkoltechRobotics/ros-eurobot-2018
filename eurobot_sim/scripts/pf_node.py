@@ -9,7 +9,7 @@ def stm_coord_callback(data):
     global pub
     data_splitted = data.data.split()
     point = np.array([float(x) for x in data_splitted[:3]])
-    point += np.random.normal(scale=(10, 10, 0.02), size=3)
+    point += np.random.normal(scale=(5, 5, 0.01), size=3)
     pub.publish(' '.join(map(str, point)))
  
 

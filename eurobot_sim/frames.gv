@@ -1,0 +1,9 @@
+digraph G {
+"world" -> "main_robot_stm"[label="Broadcaster: /main_robot/tf_broadcaster\nAverage rate: 40.219 Hz\nMost recent transform: 1517321510.812 ( 0.010 sec old)\nBuffer length: 4.923 sec\n"];
+"world" -> "main_robot_pf"[label="Broadcaster: /main_robot/tf_broadcaster\nAverage rate: 80.435 Hz\nMost recent transform: 1517321510.813 ( 0.009 sec old)\nBuffer length: 4.923 sec\n"];
+"main_robot_pf" -> "laser"[label="Broadcaster: /main_robot/tf_broadcaster\nAverage rate: 40.227 Hz\nMost recent transform: 1517321510.813 ( 0.009 sec old)\nBuffer length: 4.922 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1517321510.822"[ shape=plaintext ] ;
+ }->"world";
+}

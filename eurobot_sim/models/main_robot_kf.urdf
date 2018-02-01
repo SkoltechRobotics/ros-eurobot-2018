@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<robot name="main_robot">
-  <material name="green">
-    <color rgba="0 1 0 1"/>
+<robot name="main_robot_kf">
+  <material name="blue">
+    <color rgba="0 0 1 1"/>
   </material>
 
-  <link name="main_robot">
+  <link name="main_robot_kf">
     <visual>
       <origin xyz="0 0 .18" rpy="0 0 0" />
       <geometry>
