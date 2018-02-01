@@ -49,7 +49,7 @@ if __name__ == '__main__':
                      String,
                      broadcast_stm_tf,
                      robot_name)
-    rospy.Subscriber("smoother/coordinates",
+    rospy.Subscriber("minimizer/coordinates",
                      String,
                      broadcast_robot_tf,
                      robot_name)
