@@ -9,7 +9,7 @@
             <node pkg="eurobot" name="kalman_filter" type="kalman_filter_node.py" output="screen" />
     <node pkg="eurobot_sim" name="stm_node" type="stm_node.py" output="screen"/-->
     <node pkg="eurobot" name="minimizer_node" type="minimizer_node.py" output="screen"/>
-    <node pkg="rosbag" name="bag_play" type="play" args="$(find eurobot_sim)/bag/2018-01-21-19-51-07.bag" />
+    <node pkg="rosbag" name="bag_play" type="play" args="$(find eurobot_sim)/bag/2018-02-01-18-15-23.bag" />
 
     <!-- PARAMS -->
     <!-- initial coordinates -->
