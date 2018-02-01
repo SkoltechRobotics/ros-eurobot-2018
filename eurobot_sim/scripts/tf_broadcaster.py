@@ -4,13 +4,15 @@ import tf
 from std_msgs.msg import String, Header, ColorRGBA
 from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
+
+
 def parse(msg):
     return map(float, msg.data.split())
 
 def broadcast_robot_pf_tf(msg, robot_name):
     br = tf.TransformBroadcaster()
     coords = parse(msg)
-    br.sendTransform((coords[0]/1000, coords[1]/1000, 0),
+    br.sendTransform((coords[0] / 1000, coords[1] / 1000, 0),
                      tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                      rospy.Time.now(),
                      "%s_pf" % robot_name,
@@ -22,10 +24,11 @@ def broadcast_robot_pf_tf(msg, robot_name):
                      "laser",
                      "%s_pf" % robot_name)
 
+
 def broadcast_stm_tf(msg, robot_name):
     br = tf.TransformBroadcaster()
     coords = parse(msg)
-    br.sendTransform((coords[0]/1000, coords[1]/1000, 0),
+    br.sendTransform((coords[0] / 1000, coords[1] / 1000, 0),
                      tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                      rospy.Time.now(),
                      "%s_stm" % robot_name,
@@ -40,6 +43,7 @@ def broadcast_robot_kf_tf(msg, robot_name):
                      "%s_kf" % robot_name,
                      "world")
 
+
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
     robot_name = rospy.get_param('robot_name')
@@ -51,7 +55,8 @@ if __name__ == '__main__':
                      String,
                      broadcast_robot_pf_tf,
                      robot_name)
-    rospy.Subscriber("kalman_filter/coordinates",
+    #rospy.Subscriber("kalman_filter/coordinates",
+    rospy.Subscriber("minimizer/coordinates",
                      String,
                      broadcast_robot_kf_tf,
                      robot_name)
@@ -84,15 +89,15 @@ if __name__ == '__main__':
     marker.pose.position.x = rospy.get_param("/field/cube1c_x") / 1000
     marker.pose.position.y = rospy.get_param("/field/cube1c_y") / 1000
     marker.pose.position.z = z
-    #markers.append(Marker(header=header, type=1, action=0, pose=Pose(Point(0,0,0), Quaternion(w=1)), scale=Vector3(.058,.058,.058), color=ColorRGBA(1,0,0,.5), lifetime=rospy.Duration.from_sec(100)))
-    #markers.append(Marker(header=header, type=1, action=0, pose=Pose(Point(x=.850, y=.540, z=.029), Quaternion(w=1)), scale=Vector3(.058,.058,.058), color=ColorRGBA(1,0,0,.5), lifetime=rospy.Duration.from_sec(1)))
-    #points.append(Point(.850, .482, .029))
-    #points.append(Point(.850, .598, .029))
-    #points.append(Point(.792, .540, .029))
-    #points.append(Point(.908, .540, .029))
-    #cubes = MarkerArray(markers=markers)
+    # markers.append(Marker(header=header, type=1, action=0, pose=Pose(Point(0,0,0), Quaternion(w=1)), scale=Vector3(.058,.058,.058), color=ColorRGBA(1,0,0,.5), lifetime=rospy.Duration.from_sec(100)))
+    # markers.append(Marker(header=header, type=1, action=0, pose=Pose(Point(x=.850, y=.540, z=.029), Quaternion(w=1)), scale=Vector3(.058,.058,.058), color=ColorRGBA(1,0,0,.5), lifetime=rospy.Duration.from_sec(1)))
+    # points.append(Point(.850, .482, .029))
+    # points.append(Point(.850, .598, .029))
+    # points.append(Point(.792, .540, .029))
+    # points.append(Point(.908, .540, .029))
+    # cubes = MarkerArray(markers=markers)
 
     cubes.markers.append(marker)
-    #pub_cubes = rospy.Publisher("/field/cubes", MarkerArray, queue_size=1)
-    #pub_cubes.publish(cubes)
+    # pub_cubes = rospy.Publisher("/field/cubes", MarkerArray, queue_size=1)
+    # pub_cubes.publish(cubes)
     rospy.spin()
