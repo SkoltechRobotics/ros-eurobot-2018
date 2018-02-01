@@ -9,6 +9,14 @@ BEACONS = np.array([[-70, 30], [-70, 2000 - 30], [3000 + 70, 1000]])
 R = 50
 
 
+def summ(point1, point2):
+    point = point1 + point2
+    point[2] %= 2 * np.pi
+    if point[2] > np.pi:
+        point[2] -= 2 * np.pi
+    return point
+
+
 def cvt_local2global_1(local_point, sc_point):
     point = np.zeros(3)
     x, y, a = local_point
@@ -40,7 +48,7 @@ def cvt_local2global(local_point, sc_point):
 
 
 class Minimizer(object):
-    def __init__(self, x, y, angle, min_i, max_d, alpha=0.05):
+    def __init__(self, x, y, angle, min_i, max_d, alpha=0.1):
         self.point = np.array([x, y, angle])
         self.min_i = min_i
         self.max_d = max_d
@@ -51,7 +59,7 @@ class Minimizer(object):
 
     def find_point(self, scan):
         # The most probable point
-        point = cvt_local2global_1(self.coords_in_stm, self.stm_point)
+        point = summ(self.coords_in_stm, self.stm_point)
 
         # Use scans
         angles = np.linspace(0, 270, len(scan)) / 180 * np.pi - np.pi / 4
@@ -77,15 +85,15 @@ class Minimizer(object):
                                            args=[points, num_beacons], ftol=1e-3)
 
         # Smoothing
-        new_point = cvt_global2local_1(res.x, self.stm_point)
-        self.coords_in_stm = self.coords_in_stm + self.alpha * (new_point - self.coords_in_stm)
-        self.point = cvt_local2global_1(self.coords_in_stm, self.stm_point)
-        # print "point", point
-        # print "res.x", res.x
-        # print "stm_point", self.stm_point
-        # print "coords_in_stm", self.coords_in_stm
-        # print "self.point", self.point
-        # print "--------------"
+        new_point = summ(res.x, -self.stm_point)
+        self.coords_in_stm = summ(self.coords_in_stm, self.alpha * summ(new_point, -self.coords_in_stm))
+        self.point = summ(self.coords_in_stm, self.stm_point)
+        print "point", point
+        print "res.x", res.x
+        print "stm_point", self.stm_point
+        print "coords_in_stm", self.coords_in_stm
+        print "self.point", self.point
+        print "--------------"
         return self.point
 
     @staticmethod
@@ -96,7 +104,7 @@ class Minimizer(object):
         return r
 
     def set_stm_coords(self, point):
-        self.stm_point = point
+        self.stm_point = np.array(point)
 
 
 def scan_callback(scan):
