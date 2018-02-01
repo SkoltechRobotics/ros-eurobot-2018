@@ -59,12 +59,13 @@ if __name__ == '__main__':
         pub_response = rospy.Publisher("response", String, queue_size=10)
         pub_speed = rospy.Publisher("track_regulator/speed", String, queue_size=1)
         rospy.Subscriber("move_command", String, command_callback)
-        rospy.Subscriber("smoother/coordinates", String, coordinates_callback)
+        coords_source = rospy.get_param("track_regulator/coords_source")
+        rospy.Subscriber("%s/coordinates".format(coords_source), String, coordinates_callback)
 
         while not rospy.is_shutdown():
             if cmd_id is not None:
                 # regulation
-                while regulator.is_moving:
+                while not rospy.is_shutdown() and regulator.is_moving:
                     speeds = regulator.regulate(c_p)
                     print("speeds", speeds)
                     speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])

@@ -1,4 +1,0 @@
-<launch>
-  <machine name="m1" address="marco-pc" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true" />
-  <machine name="m2" address="actual-host-name-here" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />
-</launch>

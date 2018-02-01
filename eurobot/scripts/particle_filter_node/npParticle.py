@@ -21,7 +21,7 @@ BEACONS = np.array([[WORLD_X+WORLD_BORDER+BEAC_BORDER+BEAC_L/2., WORLD_Y/2.],
 BEAC_DIST_THRES = 200
 
 class ParticleFilter:
-    def __init__(self, particles=500, sense_noise=50, distance_noise=30, angle_noise=0.02, in_x=293, in_y=425, in_angle=3*np.pi/2, color='orange', max_itens=3500.0, max_dist=3700.0):
+    def __init__(self, particles=500, sense_noise=50, distance_noise=5, angle_noise=0.02, in_x=293, in_y=425, in_angle=3*np.pi/2, color='orange', max_itens=3500.0, max_dist=3700.0):
         global BEACONS
         if(color == 'green'):
             BEACONS = np.array([[-(WORLD_BORDER+BEAC_BORDER+BEAC_L/2.), WORLD_Y/2.], 
