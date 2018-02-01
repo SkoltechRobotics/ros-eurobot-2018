@@ -49,13 +49,15 @@ class ParticleFilter:
         self.max_dist=max_dist
 
         self.landmarks = [[],[]]
+
+        self.reset = False
         
     def gaus(self, x, mu=0, sigma=1):
         """calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma"""
         return np.exp(- ((x-mu) ** 2) / (sigma ** 2) / 2.0) / np.sqrt(2.0 * np.pi * (sigma ** 2))
 
     def move_particles(self, delta, mode="npy"): # delta = [dx,dy,d_rot]
-        stamp = time.time()
+        #stamp = time.time()
         x_noise = np.random.normal(0, self.distance_noise, self.particles_num)
         y_noise = np.random.normal(0, self.distance_noise, self.particles_num)
         angle_noise = np.random.normal(0, self.angle_noise, self.particles_num)
@@ -202,9 +204,16 @@ class ParticleFilter:
 
     def localisation(self, delta_coords, lidar_data):
         tmstmp = time.time() - self.start_time
-        self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
+        
+        if self.reset == True:
+            print 'PF resets particles'
+            self.spread_particles()
+            self.reset = False
+        else:
+            self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
         # add aproximation
         self.particle_sense(lidar_data)
+
         #if self.warning:
         #    print "Finding place"
         #    temp_num = self.particles_num
@@ -262,6 +271,11 @@ class ParticleFilter:
         y_beac = pit*np.sin(agl)
         return x_beac,y_beac
 
+    def start_over(self):
+        self.reset = True
 
-
+    def spread_particles(self):
+        self.particles[:, 0] = np.random.rand(self.particles_num) * WORLD_X
+        self.particles[:, 1] = np.random.rand(self.particles_num) * WORLD_Y
+        self.particles[:, 2] = np.random.rand(self.particles_num) * 2 * np.pi 
 

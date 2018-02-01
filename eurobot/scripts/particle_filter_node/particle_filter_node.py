@@ -9,6 +9,9 @@ from npParticle import ParticleFilter
 from tf.transformations import quaternion_from_euler
 import datetime
 
+def pf_cmd_callback(data):
+    particle_filter.start_over()
+
 def stm_coordinates_callback(data):
     global stm_coords
     stm_coords = np.array(map(float, data.data.split()))
@@ -102,7 +105,12 @@ if __name__ == '__main__':
 
         rospy.Subscriber("scan", LaserScan, scan_callback, queue_size=1) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback, queue_size=1) # stm data
-        pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
+        pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1) 
+        
+
+        rospy.Subscriber("pf_cmd", String, pf_cmd_callback, queue_size=1)
+               
+
         # for vizualization, can be commented before competition
         pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
         pub_landmarks = rospy.Publisher("particle_filter/landmarks", PointCloud, queue_size=1)
