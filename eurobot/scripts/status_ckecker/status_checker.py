@@ -12,7 +12,7 @@ def checker():
     pub.publish("set_initial_coords 14 " + ' '.join(map(str, initial_coords)))
     # TBD: make sure STM recieves this command, it may miss it if
 
-    rate = rospy.Rate(40) # in hz
+    rate = rospy.Rate(120) # in hz
     while not rospy.is_shutdown():
         pub.publish("request_stm_status 15")
         rate.sleep()
