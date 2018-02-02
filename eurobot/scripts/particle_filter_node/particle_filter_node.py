@@ -23,6 +23,9 @@ def delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords):
     """ Calculates delta coords for PF, that is used for moving particles """
     delta = used_stm_coords - prev_used_stm_coords
     # Actual delta is different, as stm_coords (from odometry) accumulates an error. fix:
+    stm_error_angle = pf_coords[2] - prev_used_stm_coords[2]
+    M = np.array([[np.cos(stm_error_angle), np.sin(stm_error_angle)], [-np.sin(stm_error_angle), np.cos(stm_error_angle)]])
+    delta[:2] = np.matmul(M, delta[:2].reshape((2,1))).reshape(2)
     return delta
 
 
