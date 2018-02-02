@@ -9,6 +9,9 @@ from npParticle import ParticleFilter
 from tf.transformations import quaternion_from_euler
 import datetime
 
+def pf_cmd_callback(data):
+    particle_filter.start_over()
+
 def stm_coordinates_callback(data):
     global stm_coords
     stm_coords = np.array(map(float, data.data.split()))
@@ -24,13 +27,11 @@ def delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords):
     
 def scan_callback(scan):
     # determine time of 1 iteration of PF
-    #now = datetime.datetime.now()
-    #now_ros = rospy.get_rostime()
-    #global last, last_ros
-    #print 'python dt =\t', now-last
-    #print 'ros dt =\t', now_ros-last_ros
-    #last = now
-    #last_ros = now_ros
+    now = datetime.datetime.now()
+    global last
+    dt = (now - last).total_seconds()
+    print 'PF interation time in sec:', round(dt, 3), '\t(', round(1/dt, 1), 'Hz )'
+    last = now
 
     global coords, stm_coords, prev_used_stm_coords
     # copy stm_coords as they may change during calculations
@@ -53,16 +54,14 @@ def scan_callback(scan):
     pub.publish(' '.join(map(str, coords)))
 
     # create and pub PointArray with particles    
-    #poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.4), Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i,2]+np.pi/2))) for i in range(len(particle_filter.particles))]
-    #header = Header(frame_id="world")
-    #particles = PoseArray(header=header, poses=poses)
-    #pub_particles.publish(particles)
+    poses = [Pose(Point(x=particle_filter.particles[i,0]/1000, y=particle_filter.particles[i,1]/1000, z=.4), Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i,2]+np.pi/2))) for i in range(len(particle_filter.particles))]
+    particles = PoseArray(header=Header(frame_id="world"), poses=poses)
+    pub_particles.publish(particles)
     
     # create and pub PointArray with landmarks
-    #points = [Point(x=particle_filter.landmarks[0,i], y=particle_filter.landmarks[1,i], z=.0) for i in range(len(particle_filter.landmarks[0]))]
-    #header = Header(frame_id="laser")
-    #landmarks = PointCloud(header=header, points=points)
-    #pub_landmarks.publish(landmarks)
+    points = [Point(x=particle_filter.landmarks[0,i]/1000, y=particle_filter.landmarks[1,i]/1000, z=.0) for i in range(len(particle_filter.landmarks[0]))]
+    landmarks = PointCloud(header=Header(frame_id="laser"), points=points)
+    pub_landmarks.publish(landmarks)
     
     # DEBUG
     #print "Landmarks:"
@@ -102,15 +101,19 @@ if __name__ == '__main__':
         rospy.init_node('particle_filter_node', anonymous=True)
 
         # for determining time of PF iterations:
-        #last = datetime.datetime.now()
-        #last_ros = rospy.get_rostime()
+        last = datetime.datetime.now()
 
         rospy.Subscriber("scan", LaserScan, scan_callback, queue_size=1) # lidar data 
         rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback, queue_size=1) # stm data
-        pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
+        pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1) 
+        
+
+        rospy.Subscriber("pf_cmd", String, pf_cmd_callback, queue_size=1)
+               
+
         # for vizualization, can be commented before competition
         pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
-        pub_landmarks = rospy.Publisher("particle_filter/filtered_scan", PointCloud, queue_size=1)
+        pub_landmarks = rospy.Publisher("particle_filter/landmarks", PointCloud, queue_size=1)
 
 
         ## Simulate
