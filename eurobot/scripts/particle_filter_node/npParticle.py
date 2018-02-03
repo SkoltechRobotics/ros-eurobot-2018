@@ -7,7 +7,7 @@ import math
 # Dimensions of the playing field
 WORLD_X = 3000
 WORLD_Y = 2000
-WORLD_BORDER = 16  # in rules it's 22!
+WORLD_BORDER = 22
 BEAC_R = 44
 BEAC_L = 100
 BEAC_BORDER = 20

@@ -24,8 +24,10 @@ def delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords):
     delta = used_stm_coords - prev_used_stm_coords
     # Actual delta is different, as stm_coords (from odometry) accumulates an error. fix:
     stm_error_angle = pf_coords[2] - prev_used_stm_coords[2]
-    M = np.array([[np.cos(stm_error_angle), np.sin(stm_error_angle)], [-np.sin(stm_error_angle), np.cos(stm_error_angle)]])
+    M = np.array([[np.cos(stm_error_angle), -np.sin(stm_error_angle)], [np.sin(stm_error_angle), np.cos(stm_error_angle)]])
     delta[:2] = np.matmul(M, delta[:2].reshape((2,1))).reshape(2)
+    #print 'PF calculated actual delta_coords:', delta.round(2)
+    #print 'Calculated delta was between', used_stm_coords.round(2), 'and', prev_used_stm_coords.round(2), 'Using as actual coords:', pf_coords
     return delta
 
 
@@ -34,7 +36,7 @@ def scan_callback(scan):
     now = datetime.datetime.now()
     global last
     dt = (now - last).total_seconds()
-    print 'PF interaction time in sec:', round(dt, 3), '\t(', round(1 / dt, 1), 'Hz )'
+    #print 'PF iteration time in sec:', round(dt, 3), '\t(', round(1 / dt, 1), 'Hz )'
     last = now
 
     global coords, stm_coords, prev_used_stm_coords
@@ -47,6 +49,7 @@ def scan_callback(scan):
     delta = delta_coords(used_stm_coords, prev_used_stm_coords, coords)
     coords = particle_filter.localisation(delta, lidar_data)
 
+    print 'PF work time in sec:', datetime.datetime.now() - last
     # store previous stm_coords
     prev_used_stm_coords = used_stm_coords.copy()
 
@@ -58,17 +61,15 @@ def scan_callback(scan):
     pub.publish(' '.join(map(str, coords)))
 
     # create and pub PointArray with particles    
-    poses = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
-                  Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i, 2] + np.pi / 2))) for i in
-             range(len(particle_filter.particles))]
-    particles = PoseArray(header=Header(frame_id="world"), poses=poses)
-    pub_particles.publish(particles)
+    #iposes = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
+    #Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i, 2] + np.pi / 2))) for i in range(len(particle_filter.particles))]
+    #particles = PoseArray(header=Header(frame_id="world"), poses=poses)
+    #pub_particles.publish(particles)
 
     # create and pub PointArray with landmarks
-    points = [Point(x=particle_filter.landmarks[0, i] / 1000, y=particle_filter.landmarks[1, i] / 1000, z=.0) for i in
-              range(len(particle_filter.landmarks[0]))]
-    landmarks = PointCloud(header=Header(frame_id="laser"), points=points)
-    pub_landmarks.publish(landmarks)
+    #points = [Point(x=particle_filter.landmarks[0, i] / 1000, y=particle_filter.landmarks[1, i] / 1000, z=.0) for i in range(len(particle_filter.landmarks[0]))]
+    #landmarks = PointCloud(header=Header(frame_id="laser"), points=points)
+    #pub_landmarks.publish(landmarks)
 
     # DEBUG
     # print "Landmarks:"
