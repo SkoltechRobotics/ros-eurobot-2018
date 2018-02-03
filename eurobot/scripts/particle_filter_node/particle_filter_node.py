@@ -49,7 +49,7 @@ def scan_callback(scan):
     delta = delta_coords(used_stm_coords, prev_used_stm_coords, coords)
     coords = particle_filter.localisation(delta, lidar_data)
 
-    print 'PF work time in sec:', datetime.datetime.now() - last
+    #print 'PF work time in sec:', datetime.datetime.now() - last
     # store previous stm_coords
     prev_used_stm_coords = used_stm_coords.copy()
 
