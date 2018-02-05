@@ -110,10 +110,10 @@ class stm_node():
         #    self.pub_response.publish(action_name + " ok")
 
         # pub stm/coordinates whenever stm status is requested
-        if action_type == 0x0f:
-            if successfuly:
-                 self.pub_stm_coords.publish(' '.join(map(str, [args_response[0]*1000, args_response[1]*1000, args_response[2]])))
-            #self.handle_response()
+
+
+    def publish_coords(self):
+        self.pub_stm_coords.publish(' '.join(map(str, [self.coords[0]*1000, self.coords[1]*1000, self.coords[2]])))
 
     def handle_response(self, status):
         """Handles response for high-lvl commands (only)."""
@@ -134,6 +134,7 @@ class stm_node():
             self.coords = self.coords + self.vel / self.freq + noise
             self.coords[2] = self.coords[2] % (2 * np.pi)
             self.rate.sleep()
+            self.publish_coords()
 
 if __name__ == '__main__':
     try:
