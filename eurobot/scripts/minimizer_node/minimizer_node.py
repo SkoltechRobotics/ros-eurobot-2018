@@ -5,8 +5,8 @@ from sensor_msgs.msg import LaserScan
 import numpy as np
 import scipy.optimize
 
-BEACONS = np.array([[-70, 30], [-70, 2000 - 30], [3000 + 70, 1000]])
-R = 50
+BEACONS = np.array([[-90, 50], [-90, 2000 - 50], [3000 + 90, 1000]])
+R = 45
 
 
 def summ(point1, point2):
