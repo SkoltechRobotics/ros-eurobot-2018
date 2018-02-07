@@ -15,6 +15,7 @@ class stm_node():
         # high-level commands info (for handling response)
         self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
         self.action_types = [] # list of high-level action types only
+        self.actions_with_response = [0x0E]
 
         self.pack_format = {
             0x01: "=BBBB",
@@ -78,6 +79,7 @@ class stm_node():
     def stm_command_callback(self, data):
         # parse data
         action_name,action_type,args = self.parse_data(data)
+        rospy.loginfo(str(action_type))
 
         ## Command handling
         # simulate STM32 response
@@ -103,11 +105,15 @@ class stm_node():
         # high-level commands handling
         if action_type in self.action_types:
             # store action_name
+            # rospy.loginfo(str(action_type))
             self.actions_in_progress[self.action_types[action_type]] = action_name
 
         # low-level commands handling - not required
-        #else:
-        #    self.pub_response.publish(action_name + " ok")
+        elif action_type in self.actions_with_response:
+            rospy.loginfo(action_name + " finished")
+            def delayed_cb(e):
+                self.pub_response.publish(action_name + " finished")
+            rospy.Timer(rospy.Duration(0.2), delayed_cb, oneshot=True)
 
         # pub stm/coordinates whenever stm status is requested
 
@@ -120,6 +126,7 @@ class stm_node():
         l = len(status)
         for i in range(l):
             # mind that indeces in status[] correspond to indeces in actions_in_progress[]
+            rospy.loginfo(status[i] + ' ' + str(self.action_in_progress[i]))
             if status[i] == '0' and len(self.actions_in_progress[i]) > 0:
                 self.actions_in_progress[i] = ''                                    # stop storing this action_name
                 self.pub_response.publish(self.actions_in_progress[i] + " done")    # publish responce

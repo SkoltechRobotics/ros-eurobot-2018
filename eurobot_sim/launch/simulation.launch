@@ -21,7 +21,7 @@
     <param name="dim_z" type="double" value="350" />
 
     <group ns="track_regulator">
-      <param name="coords_source" type="string" value="particle_filter" />
+      <param name="coords_source" type="string" value="stm" />
     </group>
 
     <group ns="particle_filter">
