@@ -7,7 +7,7 @@ import math
 # Dimensions of the playing field
 WORLD_X = 3000
 WORLD_Y = 2000
-WORLD_BORDER = 16  # in rules it's 22!
+WORLD_BORDER = 22
 BEAC_R = 44
 BEAC_L = 100
 BEAC_BORDER = 20
@@ -19,8 +19,8 @@ BEACONS = np.array([[WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., WORLD_Y
 
 # parameters of lidar
 BEAC_DIST_THRES = 200
-
-
+LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
+LIDAR_START_ANGLE = np.pi + np.pi / 4 # relatively to the robot
 class ParticleFilter:
     def __init__(self, particles=500, sense_noise=50, distance_noise=5, angle_noise=0.02, in_x=293, in_y=425,
                  in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0):
@@ -201,7 +201,6 @@ class ParticleFilter:
             weights /= np.sum(weights)
         else:
             weights = np.ones(self.particles_num, dtype=np.float) / self.particles_num
-        print("weights")
         return weights
         # TODO try use median instead mean
         # TODO if odometry works very bad and weights are small use only lidar
@@ -258,14 +257,12 @@ class ParticleFilter:
 
     def get_landmarks(self, scan):
         """Returns filtrated lidar data"""
-        # stamp = time.time()
-        # array of indexes, where condition is met:
         ind = np.where(np.logical_and(scan[:, 1] > self.max_itens, scan[:, 0] < self.max_dist))[0]
         # array of angles/distances, for which condition is met
-        angles = np.pi / 4 / 180 * ind
+        angles = LIDAR_DELTA_ANGLE * ind
         distances = scan[ind, 0]
         # logging.info('scan preproccesing time: ' + str(time.time() - stamp))
-        return (angles + np.pi * 5 / 4) % (2 * np.pi), distances
+        return (angles + LIDAR_START_ANGLE) % (2 * np.pi), distances
 
     @staticmethod
     def p_trans(agl, pit):

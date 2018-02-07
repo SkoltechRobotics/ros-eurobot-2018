@@ -34,10 +34,10 @@ class StrategyOptimizer:
     }
 
     action_places = {
-        "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]]),
-        "funny": np.array([[10, 113, 0], [190, 10, 0]]),
-        "disposal": np.array([[10, 61, 0]]),
-        "base": np.array([[15, 15, 0]])
+        "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]], dtype=np.float64),
+        "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
+        "disposal": np.array([[10, 61, 0]],dtype=np.float64),
+        "base": np.array([[15, 15, 0]],dtype=np.float64)
     }
     def __init__(self, **kvargs):
         self.model = grb.Model("eurobot")
