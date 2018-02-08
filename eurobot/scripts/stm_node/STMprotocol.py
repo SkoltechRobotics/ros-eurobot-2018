@@ -25,6 +25,7 @@ class STMprotocol(object):
             0xb1: "=B",
             0x0e: "=fff",
             0x0f: "=",
+            0xa2: "=ffffff"
         }
 
         self.unpack_format = {
@@ -46,6 +47,7 @@ class STMprotocol(object):
             0xb1: "=BB",
             0x0e: "=BB",
             0x0f: "=fff",
+            0xa2: "=BB"
         }
     def pure_send_command(self, cmd, args):
         # Clear buffer
