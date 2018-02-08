@@ -35,30 +35,37 @@ PLANS = list(all_plans())
 COLORS = np.array([[0, 124, 176], [208, 93, 40], [14, 14, 16], [97, 153, 59],
                    [247, 181, 0]], dtype=np.uint8)
 LABELS = ['blue', 'orange', 'black', 'green', 'yellow']
+STEP = 10
 
 
 def clh_transform(img):
-    clh_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(30, 30))
+    k_size = int(STEP / 2)
+    clh_img = cv2.medianBlur(img, k_size + k_size % 2 + 1)
+    clh_img = cv2.cvtColor(clh_img, cv2.COLOR_RGB2HSV)
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(STEP // 2, STEP // 2))
     clh_img[:, :, 2] = clahe.apply(clh_img[:, :, 2])
     clh_img = cv2.cvtColor(clh_img, cv2.COLOR_HSV2RGB)
     return clh_img
 
 
+def get_rough(img):
+    h_border, w_border = img.shape[:2]
+    points1 = np.float32([(0, h_border), (0, 0),
+                          (w_border, 0)])
+    points2 = np.float32([(0, h_border // STEP), (0, 0),
+                          (w_border // STEP, 0)])
+
+    img = cv2.warpAffine(img, cv2.getAffineTransform(points1, points2), (w_border // STEP, h_border // STEP))
+    return img
+
+
 def find_colors(small_img):
-    h_border, w_border = small_img.shape[:2]
     # hist_img = cv2.cvtColor(small_img, cv2.COLOR_RGB2HSV)
     # hist_img[:, :, 2] = cv2.equalizeHist(hist_img[:, :, 2])
     # hist_img = cv2.cvtColor(hist_img, cv2.COLOR_HSV2RGB)
 
     clh_img = clh_transform(small_img)
-    points1 = np.float32([(0, h_border), (0, 0),
-                          (w_border, 0)])
-    points2 = np.float32([(0, h_border // 30), (0, 0),
-                          (w_border // 30, 0)])
-
-    rough_img = cv2.warpAffine(clh_img, cv2.getAffineTransform(points1, points2),
-                               (w_border // 30, h_border // 30))
+    rough_img = get_rough(clh_img)
 
     height, width = rough_img.shape[0:2]
     dist_array = np.zeros((height, width, COLORS.shape[0]))
