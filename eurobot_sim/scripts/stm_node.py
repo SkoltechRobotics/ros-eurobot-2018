@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
-import datetime
 import numpy as np
 
 class stm_node():
@@ -9,7 +8,7 @@ class stm_node():
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=10)
+        self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=1)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
 
         # high-level commands info (for handling response)
@@ -61,9 +60,10 @@ class stm_node():
         self.freq = 100
         self.rate = rospy.Rate(self.freq) # 100Hz
 
-        self.coords = np.array([0.0, 0.0, 0.0])
+        self.coords = np.array([rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
         self.vel = np.array([0.0, 0.0, 0.0])
 
+        rospy.Timer(rospy.Duration(1./80), self.pub_timer_callback)
 
     def parse_data(self, data):
         data_splitted = data.data.split()
@@ -79,7 +79,6 @@ class stm_node():
         # parse data
         action_name,action_type,args = self.parse_data(data)
 
-        ## Command handling
         # simulate STM32 response
         successfuly = True
         args_response = "Ok"
@@ -94,23 +93,11 @@ class stm_node():
             self.coords = np.array(args)
         elif action_type == 0x0F:
             args_response = self.coords
-            #elif action_type == 0x0:
             
-
-        #if successfuly:
-        #    print 'STM responded to cmd', action_name, '\twith args:', args_response
-
         # high-level commands handling
         if action_type in self.action_types:
             # store action_name
             self.actions_in_progress[self.action_types[action_type]] = action_name
-
-        # low-level commands handling - not required
-        #else:
-        #    self.pub_response.publish(action_name + " ok")
-
-        # pub stm/coordinates whenever stm status is requested
-
 
     def publish_coords(self):
         self.pub_stm_coords.publish(' '.join(map(str, [self.coords[0]*1000, self.coords[1]*1000, self.coords[2]])))
@@ -130,11 +117,13 @@ class stm_node():
         while not rospy.is_shutdown():
             noise = np.random.normal(size=3)
             noise *= 0.1 * self.vel / self.freq
-            #noise *= 0.96
+            #noise *= 0.96 # simulate bad estimation of wheel size, etc.
             self.coords = self.coords + self.vel / self.freq + noise
             self.coords[2] = self.coords[2] % (2 * np.pi)
             self.rate.sleep()
-            self.publish_coords()
+
+    def pub_timer_callback(self, event):
+        self.publish_coords()
 
 if __name__ == '__main__':
     try:

@@ -5,9 +5,9 @@ from STMprotocol import STMprotocol
 from threading import Lock
 
 
-class STMnode(STMprotocol):
+class stm_node(STMprotocol):
     def __init__(self, serial_port):
-        super(STMnode, self).__init__(serial_port)
+        super(stm_node, self).__init__(serial_port)
         self.mutex = Lock()
 
         # ROS
@@ -63,7 +63,7 @@ class STMnode(STMprotocol):
 
 if __name__ == '__main__':
     serial_port = "/dev/ttyUSB0"
-    stm = STMnode(serial_port)
+    stm = stm_node(serial_port)
 
     # turn stm inverse kinematics handler ON
     stm.send("set_inverse_kinematics_ON", 13, [1])
