@@ -2,9 +2,9 @@
 import rospy
 import tf
 from std_msgs.msg import String, Header, ColorRGBA
-from geometry_msgs.msg import Pose, Point, Quaternion, Vector3
 from visualization_msgs.msg import Marker, MarkerArray
-
+from eurobot_navigation.srv import PlanGlobal
+from geometry_msgs.msg import PoseStamped
 
 def parse(msg):
     return map(float, msg.data.split())
@@ -43,6 +43,23 @@ def broadcast_robot_kf_tf(msg, robot_name):
                      "%s_kf" % robot_name,
                      "world")
 
+def broadcast_path(B):
+    rospy.wait_for_service('global_path_planner/plan')
+    try:
+        A = PoseStamped()
+        A.pose.position.x = .3 # coords[0]
+        A.pose.position.y = .3 # coords[1]
+        A.pose.orientation.w = 1 # = tf.transformations.quaternion_from_euler(0, 0, coords[2])
+        #B = PoseStamped()
+        #B.pose.position.x = 1500
+        #B.pose.position.y = 1000
+        #B.pose.orientation = tf.transformations.quaternion_from_euler(0, 0, 3.14)
+
+        plan_global = rospy.ServiceProxy('global_path_planner/plan', PlanGlobal)
+        resp1 = plan_global(A, B)
+    except rospy.ServiceException, e:
+        print "Service call failed: %s" % e
+
 
 if __name__ == '__main__':
     rospy.init_node('tf_broadcaster')
@@ -60,6 +77,14 @@ if __name__ == '__main__':
                      String,
                      broadcast_robot_kf_tf,
                      robot_name)
+
+    rospy.Subscriber("how_to_move",
+                     PoseStamped,
+                     broadcast_path,
+                     queue_size=1)
+
+    # test global_path_planner
+    #rospy.Timer(rospy.Duration(2), broadcast_path)
 
     # cube colors
     yellow = [247, 181, 0]
