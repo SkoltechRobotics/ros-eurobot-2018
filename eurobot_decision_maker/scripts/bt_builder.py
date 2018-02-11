@@ -27,7 +27,7 @@ class BehaviorTreeBuilder:
         self.last_angle = self.black_angle
         self.heaps_sequences = []
         self.strategy_sequence = []
-        self.cube_vector = np.array([[5.8],[0.0],[0.0]])
+        self.cube_vector = np.array([[0],[5.8],[0.0]])
         self.opt_units = "cm" # from self.opt_units to self.track_units
         self.track_units = "m"
         self.move_action_name = str(0x0E)
@@ -77,8 +77,9 @@ class BehaviorTreeBuilder:
         args[:2] = [self.convert_units(a) for a in args[:2]]
         args = np.array(args).reshape(3,1)
         shift_center = rot_matrix(robot_angle).dot(self.convert_units(self.cube_vector))
-        print shift_center.shape
-        args += shift_center
+        rospy.loginfo(shift_center)
+        args -= shift_center
+        rospy.loginfo(args)
         args = list(args.ravel())
         args.insert(0, self.move_action_name)
         self.last_angle = args[-1] # saving last angle
@@ -99,7 +100,10 @@ class BehaviorTreeBuilder:
             if len(c) > 0:
                 manipulator = m
                 color = c[0]
-        return (color-manipulator+1) % 4 * np.pi/2 + self.black_angle
+
+        angle =  (color-manipulator+1) % 4 * np.pi/2 + self.black_angle
+        rospy.loginfo(self.construct_string(cubes,manipulator,color,(color-manipulator+1) % 4 ,sep=' '))
+        return 2*np.pi - angle
     def get_mans_and_colors(self, cubes):
         mans_colors = [(i,c) for i,c in enumerate(cubes) if len(c) > 0]
         manipulators = list(zip(*mans_colors)[0])
@@ -145,15 +149,17 @@ class BehaviorTreeBuilder:
                 
                 # calculate angle for picking 4: take it from side opposite to last cube
                 cubes_for_angle = copy.deepcopy(cubes)
-                cubes_for_angle[manipulators[0]][0] = next_mans[0]
+                rospy.loginfo(next_colors)
+                cubes_for_angle[manipulators[0]][0] = next_colors[0][0]
                 angle_to_pick_4 = (self.get_angle_to_cubes(cubes_for_angle) + np.pi) % (2*np.pi)
-
+                rospy.loginfo(angle_to_pick_4)
                 coordinate_to_pick_4 = self.action_places["heaps"][heap_num].copy()
                 coordinate_to_pick_4[-1] = angle_to_pick_4
                 self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
                 
                 # rotate vector [58,0], not robot!!!
-                delta_xy = rot_matrix(angle_to_pick_4 + np.pi/2).dot(self.cube_vector)
+                # delta_xy = rot_matrix(angle_to_pick_4 + np.pi/2).dot(self.cube_vector)
+                delta_xy = rot_matrix(angle_to_pick_4 - np.pi/2*(manipulators[0]-1)).dot(self.cube_vector)
                 #rospy.loginfo(delta_xy.flatten().tolist())
                 coordinate_to_pick_4 = coordinate_to_pick_4.reshape(3,1)
                 coordinate_to_pick_4 += delta_xy
@@ -163,7 +169,7 @@ class BehaviorTreeBuilder:
             
             else:
                 #  last_cube
-                last_cube_delta_xy = rot_matrix(self.last_angle + np.pi/2*(manipulators[0] - 1)).dot(self.cube_vector)
+                last_cube_delta_xy = rot_matrix(self.last_angle - np.pi/2*(manipulators[0] - 1)).dot(self.cube_vector)
                 #rospy.loginfo(self.last_coordinates)
                 coordinate_to_pick_5 = np.array(self.last_coordinates).reshape(3,1)
                 coordinate_to_pick_5 += last_cube_delta_xy
@@ -213,6 +219,7 @@ class BehaviorTreeBuilder:
 
                 
 import sys
+from strategy_operator import StrategyOperator
 
 if __name__ == "__main__":
     rospy.init_node("btb_node", anonymous=True)
@@ -222,8 +229,13 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] in ['simple','standard']:
         move_type = sys.argv[1]
     btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
-    # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
-    btb.add_strategy([("heaps",2)])
+    btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
+    # btb.add_strategy([("heaps",0)])
+    
+    so = StrategyOperator(file='first_bank.txt')
+    
+    btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
+    """
     btb.add_cubes_sequence([[[0], [1], []],
                             [[3], [], []],
                             [[4], [], []],
@@ -235,6 +247,7 @@ if __name__ == "__main__":
                             [[0], [1], [2]],
                             [[], [], [4]],
                             [[], [], [3]]])
+    """
     btb.create_tree_from_strategy()
     rospy.sleep(0.5)
     btb.bt.root_node.start()
