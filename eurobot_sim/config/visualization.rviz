@@ -4,8 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1
-        - /TF1/Frames1
         - /Odometry1/Covariance1
       Splitter Ratio: 0.655097604
     Tree Height: 843
@@ -216,11 +214,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        main_robot_kf:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotState
       Robot Alpha: 1
       Robot Description: main_robot_kf_description
