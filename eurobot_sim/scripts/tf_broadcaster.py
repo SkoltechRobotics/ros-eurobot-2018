@@ -24,7 +24,6 @@ def broadcast_robot_pf_tf(msg, robot_name):
                      "laser",
                      "%s_pf" % robot_name)
 
-
 def broadcast_stm_tf(msg, robot_name):
     br = tf.TransformBroadcaster()
     coords = parse(msg)

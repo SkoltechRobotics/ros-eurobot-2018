@@ -2,14 +2,20 @@
 import rospy
 from std_msgs.msg import String
 import numpy as np
+import tf
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist
+
 
 class stm_node():
     def __init__(self):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
+        rospy.Subscriber("/cmd_vel", Twist, self.set_twist)
         self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=1)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
+        self.pub_odom = rospy.Publisher("/odom", Odometry, queue_size=1)
 
         # high-level commands info (for handling response)
         self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
@@ -66,6 +72,13 @@ class stm_node():
 
         rospy.Timer(rospy.Duration(1./80), self.pub_timer_callback)
 
+    def set_twist(self, twist):
+        vel = np.zeros(3)
+        vel[0] = twist.linear.x
+        vel[1] = twist.linear.y
+        vel[2] = twist.angular.z
+        self.set_vel(vel)
+
     def parse_data(self, data):
         data_splitted = data.data.split()
         action_name = data_splitted[0]
@@ -76,6 +89,14 @@ class stm_node():
         args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name,action_type,args
 
+    def set_vel(self, vel):
+        self.vel[0] = vel[0]*np.cos(self.coords[2]) - vel[1]*np.sin(self.coords[2])
+        self.vel[1] = vel[1]*np.cos(self.coords[2]) + vel[0]*np.sin(self.coords[2])
+        self.vel[2] = vel[2]
+
+    def set_coords(self, coords):
+        self.coords = coords
+
     def stm_command_callback(self, data):
         # parse data
         action_name,action_type,args = self.parse_data(data)
@@ -85,14 +106,11 @@ class stm_node():
         successfuly = True
         args_response = "Ok"
         if action_type == 0x08:
-            vel = np.array(args)
-            self.vel[0] = vel[0]*np.cos(self.coords[2]) - vel[1]*np.sin(self.coords[2])
-            self.vel[1] = vel[1]*np.cos(self.coords[2]) + vel[0]*np.sin(self.coords[2])
-            self.vel[2] = vel[2]
+            self.set_vel(np.array(args))
         elif action_type == 0x09:
             args_response = self.vel
         elif action_type == 0x0E:
-            self.coords = np.array(args)
+            self.set_coords(np.array(args))
         elif action_type == 0x0F:
             args_response = self.coords
             
@@ -135,6 +153,18 @@ class stm_node():
 
     def pub_timer_callback(self, event):
         self.publish_coords()
+        
+        odom = Odometry()
+        odom.header.frame_id = 'world'
+        odom.pose.pose.position.x = self.coords[0]
+        odom.pose.pose.position.y = self.coords[1]
+        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2] + np.pi/2)
+        odom.pose.pose.orientation.z = quat[2] 
+        odom.pose.pose.orientation.w = quat[3]
+        odom.twist.twist.linear.x = self.vel[0]
+        odom.twist.twist.linear.x = self.vel[1]
+        odom.twist.twist.angular.z = self.vel[2]
+        self.pub_odom.publish(odom)
 
 if __name__ == '__main__':
     try:
