@@ -78,3 +78,137 @@ Best objective 2.439321321319e+01, best bound 2.439321321319e+01, gap 0.0000%
       x[4,0]            1 
       x[5,9]            1 
       x[6,6]            1 
+
+Gurobi 7.5.2 (linux64, Python) logging started Tue Feb 13 17:41:56 2018
+
+Optimize a model with 62 rows, 70 columns and 449 nonzeros
+Model has 540 quadratic objective terms
+Variable types: 0 continuous, 70 integer (70 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+01]
+  Objective range  [0e+00, 0e+00]
+  QObjective range [5e+00, 3e+01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+02]
+Found heuristic solution: objective 36.7914623
+Presolve removed 20 rows and 22 columns
+Presolve time: 0.00s
+Presolved: 354 rows, 360 columns, 1243 nonzeros
+Variable types: 0 continuous, 360 integer (360 binary)
+
+Root relaxation: objective 2.567499e+00, 48 iterations, 0.00 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0    2.56750    0   29   36.79146    2.56750  93.0%     -    0s
+     0     0    5.25381    0   24   36.79146    5.25381  85.7%     -    0s
+     0     0    5.25381    0   24   36.79146    5.25381  85.7%     -    0s
+H    0     0                      30.6738601    5.25381  82.9%     -    0s
+     0     0    6.61424    0   22   30.67386    6.61424  78.4%     -    0s
+     0     0    6.61424    0   22   30.67386    6.61424  78.4%     -    0s
+     0     0    8.25379    0   21   30.67386    8.25379  73.1%     -    0s
+     0     0    8.26390    0   20   30.67386    8.26390  73.1%     -    0s
+     0     0    8.75357    0   15   30.67386    8.75357  71.5%     -    0s
+     0     0    8.75357    0   13   30.67386    8.75357  71.5%     -    0s
+     0     0    8.75357    0   15   30.67386    8.75357  71.5%     -    0s
+     0     0    8.96665    0   12   30.67386    8.96665  70.8%     -    0s
+H    0     0                      26.3060968    8.96665  65.9%     -    0s
+     0     0   10.11405    0   23   26.30610   10.11405  61.6%     -    0s
+     0     0   10.11405    0   24   26.30610   10.11405  61.6%     -    0s
+     0     0   10.11405    0   25   26.30610   10.11405  61.6%     -    0s
+     0     0   10.46065    0   23   26.30610   10.46065  60.2%     -    0s
+     0     0   10.46065    0   23   26.30610   10.46065  60.2%     -    0s
+     0     2   10.46065    0   23   26.30610   10.46065  60.2%     -    0s
+*  212    15               7      24.3932132   18.72548  23.2%   8.7    0s
+
+Cutting planes:
+  Gomory: 2
+  Clique: 6
+  MIR: 14
+  Zero half: 3
+
+Explored 255 nodes (2415 simplex iterations) in 0.08 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 4: 24.3932 26.3061 30.6739 36.7915 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 2.439321321319e+01, best bound 2.439321321319e+01, gap 0.0000%
+
+    Variable            x 
+-------------------------
+      x[0,8]            1 
+      x[1,1]            1 
+      x[2,7]            1 
+      x[3,2]            1 
+      x[4,0]            1 
+      x[5,9]            1 
+      x[6,6]            1 
+
+Gurobi 7.5.2 (linux64, Python) logging started Tue Feb 13 17:42:03 2018
+
+Optimize a model with 62 rows, 70 columns and 449 nonzeros
+Model has 540 quadratic objective terms
+Variable types: 0 continuous, 70 integer (70 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+01]
+  Objective range  [0e+00, 0e+00]
+  QObjective range [5e+00, 3e+01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+02]
+Found heuristic solution: objective 36.7914623
+Presolve removed 20 rows and 22 columns
+Presolve time: 0.00s
+Presolved: 354 rows, 360 columns, 1243 nonzeros
+Variable types: 0 continuous, 360 integer (360 binary)
+
+Root relaxation: objective 2.567499e+00, 48 iterations, 0.00 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0    2.56750    0   29   36.79146    2.56750  93.0%     -    0s
+     0     0    5.25381    0   24   36.79146    5.25381  85.7%     -    0s
+     0     0    5.25381    0   24   36.79146    5.25381  85.7%     -    0s
+H    0     0                      30.6738601    5.25381  82.9%     -    0s
+     0     0    6.61424    0   22   30.67386    6.61424  78.4%     -    0s
+     0     0    6.61424    0   22   30.67386    6.61424  78.4%     -    0s
+     0     0    8.25379    0   21   30.67386    8.25379  73.1%     -    0s
+     0     0    8.26390    0   20   30.67386    8.26390  73.1%     -    0s
+     0     0    8.75357    0   15   30.67386    8.75357  71.5%     -    0s
+     0     0    8.75357    0   13   30.67386    8.75357  71.5%     -    0s
+     0     0    8.75357    0   15   30.67386    8.75357  71.5%     -    0s
+     0     0    8.96665    0   12   30.67386    8.96665  70.8%     -    0s
+H    0     0                      26.3060968    8.96665  65.9%     -    0s
+     0     0   10.11405    0   23   26.30610   10.11405  61.6%     -    0s
+     0     0   10.11405    0   24   26.30610   10.11405  61.6%     -    0s
+     0     0   10.11405    0   25   26.30610   10.11405  61.6%     -    0s
+     0     0   10.46065    0   23   26.30610   10.46065  60.2%     -    0s
+     0     0   10.46065    0   23   26.30610   10.46065  60.2%     -    0s
+     0     2   10.46065    0   23   26.30610   10.46065  60.2%     -    0s
+*  212    15               7      24.3932132   18.72548  23.2%   8.7    0s
+
+Cutting planes:
+  Gomory: 2
+  Clique: 6
+  MIR: 14
+  Zero half: 3
+
+Explored 255 nodes (2415 simplex iterations) in 0.07 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 4: 24.3932 26.3061 30.6739 36.7915 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 2.439321321319e+01, best bound 2.439321321319e+01, gap 0.0000%
+
+    Variable            x 
+-------------------------
+      x[0,8]            1 
+      x[1,1]            1 
+      x[2,7]            1 
+      x[3,2]            1 
+      x[4,0]            1 
+      x[5,9]            1 
+      x[6,6]            1 
