@@ -1,11 +1,8 @@
-#static_map - True if using existing map
-
 global_costmap:
-  global_frame: odom
-  robot_base_frame: main_robot_stm
-  update_frequency: 1.0
-  publish_frequency: 1.0
-  resolution: 0.001
+  update_frequency: 1
+  publish_frequency: 1
+  static_map: true
+  rolling_window: false
   static_map: true
   width: 3.0
   height: 2.0

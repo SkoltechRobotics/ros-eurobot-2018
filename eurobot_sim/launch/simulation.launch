@@ -4,11 +4,11 @@
   <group ns="main_robot">
     <!-- NODES -->
     <node pkg="eurobot_sim" name="stm_node" type="stm_node.py" output="screen"/> 
-    <node pkg="eurobot_sim" name="pf_node" type="pf_node.py" output="screen"/>
+    <!--node pkg="eurobot_sim" name="pf_node" type="pf_node.py" output="screen"/-->
     <!--node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/-->
-    <node pkg="eurobot" name="track_regulator" type="track_regulator.py" output="screen"/>
+    <!--node pkg="eurobot" name="track_regulator" type="track_regulator.py" output="screen"/-->
     <!--node pkg="eurobot" name="smoother" type="smoother_node.py" output="screen" / -->
-    <node pkg="eurobot_navigation" name="global_path_planner" type="global_path_planner.py" output="screen"/>
+    <!--node pkg="eurobot_navigation" name="global_path_planner" type="global_path_planner.py" output="screen"/-->
 
     <!-- PARAMS -->
     <!-- initial coordinates -->
