@@ -79,8 +79,8 @@ if __name__ == '__main__':
     rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
     rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)
 
-    # cube colors [yellow, blue, black, green, orange]
-    COLORS = [[247, 181, 0], [0, 124, 176], [14, 14, 16], [97, 153, 59], [208, 93, 40]]
+    # cube colors [yellow, green, blue, orange, black]
+    COLORS = [[247, 181, 0], [97, 153, 59], [0, 124, 176], [208, 93, 40], [14, 14, 16]]
 
     # size of cubes
     d = 0.058
@@ -107,9 +107,15 @@ if __name__ == '__main__':
             marker.scale.y = d
             marker.scale.z = d
             marker.color.a = 1.0
-            marker.color.r = COLORS[m][0] / 255.0
-            marker.color.g = COLORS[m][1] / 255.0
-            marker.color.b = COLORS[m][2] / 255.0
+            color = COLORS[m]
+            if n >= 3:
+                if m == 1:
+                    color = COLORS[3]
+                elif m == 3:
+                    color = COLORS[1]
+            marker.color.r = color[0] / 255.0
+            marker.color.g = color[1] / 255.0
+            marker.color.b = color[2] / 255.0
             marker.pose.orientation.w = 1.0
             marker.pose.position.x = heap_coords[n][m][0]
             marker.pose.position.y = heap_coords[n][m][1]

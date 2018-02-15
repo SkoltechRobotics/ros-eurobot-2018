@@ -2,4 +2,5 @@
 <launch>
   <include file="$(find eurobot_sim)/launch/visualization.launch"/>
   <include file="$(find eurobot_sim)/launch/simulation.launch"/>
+  <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
 </launch>

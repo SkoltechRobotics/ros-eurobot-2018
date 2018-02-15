@@ -2,7 +2,7 @@
 <launch>
   <group ns="main_robot">
     <!-- NODES -->
-    <node pkg="rviz" name="rviz_laserscan" type="rviz" args="-d $(find eurobot_sim)/config/visualization.rviz" output="screen"/>
+    <node pkg="rviz" name="rviz" type="rviz" args="-d $(find eurobot_sim)/config/visualization.rviz" output="screen"/>
 
     <!-- PARAMS -->
     <!-- robot -->
@@ -54,5 +54,7 @@
 
   </group>
 
+  <!-- Navigation -->
+  <!-- node name="map_tf" pkg="tf" type="static_transform_publisher" args="0 0 0.01 0 0 0 world map 1" / --> 
 
 </launch>
