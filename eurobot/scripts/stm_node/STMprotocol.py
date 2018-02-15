@@ -65,7 +65,7 @@ class STMprotocol(object):
         if len(data) == 0:
             raise Exception("No data received")
 
-        sync = ord(data[0])
+        sync = data[0]
         if sync != 0xfa:
             raise Exception("Incorrect byte of syncronization", sync)
         

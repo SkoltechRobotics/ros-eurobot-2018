@@ -3,7 +3,7 @@ import cv2
 import rospy
 import cv_bridge
 from sensor_msgs.msg import Image
-from PlanRecognition import find_colors, clh_transform, STEP, get_rough
+from PlanRecognition import find_colors_geom, img_transformation, STEP, rag
 import numpy as np
 
 COLORS = np.array([[0, 124, 176], [208, 93, 40], [14, 14, 16], [97, 153, 59],
@@ -19,6 +19,19 @@ real_points = np.float32([(dw, h_border - dh), (dw, dh),
                           (w_border - dw, dh), (w_border - dw, h_border - dh)])
 M = cv2.getPerspectiveTransform(img_points, real_points)
 
+params = {"kl": 2,
+          "kp": 1,
+          "k1": 1,
+          "k2": 4,
+          "kr": 1,
+          "thresh": 40,
+          "compactness": 20,
+          "s_cutoff": 0.27,
+          "s_gain": 30,
+          "v_cutoff": 0.25,
+          "v_gain": 30,
+          "c": -0.45}
+
 
 def img_callback(data):
     global bridge
@@ -27,18 +40,20 @@ def img_callback(data):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.warpPerspective(img, M, (w_border, h_border))
 
-    colors, ind = find_colors(img)
-    img = clh_transform(img)
-    rough_img = get_rough(img)
+    img1 = img_transformation(img, **params)
+    img2 = rag(img1, **params)[0]
+    pub_add_img.publish(bridge.cv2_to_imgmsg(cv2.cvtColor(img1, cv2.COLOR_RGB2BGR), "bgr8"))
+
+    colors, _, centers = find_colors_geom(img, **params)
+    centers = np.array(centers).T.astype(np.uint8)
+    img = img2
     for i, color in enumerate(colors):
-        cv2.rectangle(img, ((ind[1] + 2 * i) * STEP, ind[0] * STEP), ((ind[1] + 2 * i) * STEP + STEP,
-                                                                      ind[0] * STEP + STEP),
+        cv2.rectangle(img, (centers[i, 0] + STEP // 2, centers[i, 1] + STEP // 2),
+                           (centers[i, 0] - STEP // 2, centers[i, 1] - STEP // 2),
                       [int(x_) for x_ in COLORS[color]], STEP // 6 + 1 if STEP < 6 else 0)
 
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    rough_img = cv2.cvtColor(rough_img, cv2.COLOR_RGB2BGR)
     pub.publish(bridge.cv2_to_imgmsg(img, "bgr8"))
-    pub_add_img.publish(bridge.cv2_to_imgmsg(rough_img, "bgr8"))
 
 
 if __name__ == '__main__':
