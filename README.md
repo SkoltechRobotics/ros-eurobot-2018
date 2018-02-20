@@ -9,6 +9,9 @@
 `$ source devel/setup.bash` <br/>
 `$ rospack find eurobot_decision_maker`
 
+`Might require:` <br/>
+`$ sudo apt-get install ros-kinetic-moveit ros-kinetic-rviz-visual-tools ros-kinetic-move-base ros-kinetic-map-server`
+
 `How to use LIDAR:` <br/>
 `We use urg_node, a ROS package that works with Hokuyo lidars` <br/>
 
