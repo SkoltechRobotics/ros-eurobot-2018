@@ -1,14 +1,11 @@
 <?xml version="1.0"?>
 <launch>
+  
+  <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 map odom 100"/>
 
   <group ns="main_robot">
     <!-- NODES -->
     <node pkg="eurobot_sim" name="stm_node" type="stm_node.py" output="screen"/> 
-    <!--node pkg="eurobot_sim" name="pf_node" type="pf_node.py" output="screen"/-->
-    <!--node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/-->
-    <!--node pkg="eurobot" name="track_regulator" type="track_regulator.py" output="screen"/-->
-    <!--node pkg="eurobot" name="smoother" type="smoother_node.py" output="screen" / -->
-    <!--node pkg="eurobot_navigation" name="global_path_planner" type="global_path_planner.py" output="screen"/-->
 
     <!-- PARAMS -->
     <!-- initial coordinates -->
@@ -20,10 +17,6 @@
     <param name="dim_x" type="double" value="420" />
     <param name="dim_y" type="double" value="190" />
     <param name="dim_z" type="double" value="350" />
-
-    <group ns="track_regulator">
-      <param name="coords_source" type="string" value="stm" />
-    </group>
 
     <group ns="particle_filter">
       <!-- particle filter params -->

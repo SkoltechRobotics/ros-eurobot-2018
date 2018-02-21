@@ -5,8 +5,7 @@
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <!-- Place map frame at odometry frame -->
-  <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 map odom 100"/>
-  <node pkg="tf" type="static_transform_publisher" name="map_world_broadcaster" args="0 0 0 0 0 0 map world 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_nav" args="0 0 0 0 0 0 world map 100"/>
 
   <!-- Move base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
@@ -15,9 +14,10 @@
     <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find eurobot_navigation)/config/teb_local_planner_params.yaml" command="load" />
-    <remap from="cmd_vel" to="cmd_vel"/>
-    <remap from="odom" to="odom"/>
+    <remap from="cmd_vel" to="main_robot/cmd_vel"/>
+    <remap from="odom" to="main_robot/odom"/>
 
+    <!-- A better global planner than the default one" -->
     <param name="base_global_planner" value="global_planner/GlobalPlanner" />
   </node>
 
