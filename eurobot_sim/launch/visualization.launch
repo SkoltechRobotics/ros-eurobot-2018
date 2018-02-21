@@ -36,29 +36,6 @@
   
     <node pkg="eurobot_sim" name="cubes_broadcaster" type="cubes_broadcaster.py"  output="screen"/>
 
-    <!-- PARAMS -->
-
-    <param name="color" type="string" value="orange" />
-
-    <!-- cubes coordinates -->
-    <param name="cube1c_x" type="double" value="850" />
-    <param name="cube1c_y" type="double" value="540" />
-
-    <param name="cube2c_x" type="double" value="300" />
-    <param name="cube2c_y" type="double" value="1190" />
-
-    <param name="cube3c_x" type="double" value="1100" />
-    <param name="cube3c_y" type="double" value="1500" />
-
-    <param name="cube4c_x" type="double" value="1900" />
-    <param name="cube4c_y" type="double" value="1500" />
-
-    <param name="cube5c_x" type="double" value="2700" />
-    <param name="cube5c_y" type="double" value="1190" />
-
-    <param name="cube6c_x" type="double" value="2150" />
-    <param name="cube6c_y" type="double" value="540" />
-
   </group>
 
 </launch>

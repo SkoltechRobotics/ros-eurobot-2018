@@ -1,0 +1,6 @@
+particles: 500
+sense_noise: 20.0
+distance_noise: 2.0
+angle_noise: 0.01
+max_itens: 3500.0
+max_dist: 3700.0

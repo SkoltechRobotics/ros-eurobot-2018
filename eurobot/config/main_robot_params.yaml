@@ -1,0 +1,9 @@
+# initial coordinates
+start_x: 293.0
+start_y: 425.0
+start_a: 4.71
+
+# robot size
+dim_x: 420.0
+dim_y: 190.0
+dim_z: 350.0

@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+  <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
+  <rosparam file="$(find eurobot)/config/particle_filter_params.yaml" command="load" ns="main_robot/particle_filter" />
+  <rosparam file="$(find eurobot)/config/main_robot_params.yaml" command="load" ns="main_robot" />
+
   <include file="$(find eurobot_sim)/launch/visualization.launch"/>
   <include file="$(find eurobot_sim)/launch/simulation.launch"/>
   <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
