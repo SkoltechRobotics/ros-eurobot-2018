@@ -156,7 +156,7 @@ class stm_node():
         odom.child_frame_id = self.robot_name
         odom.pose.pose.position.x = self.coords[0]
         odom.pose.pose.position.y = self.coords[1]
-        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2] + np.pi/2)
+        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2])
         odom.pose.pose.orientation.z = quat[2] 
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = self.vel[0]
