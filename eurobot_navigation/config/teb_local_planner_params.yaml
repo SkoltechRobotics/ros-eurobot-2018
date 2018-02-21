@@ -1,0 +1,94 @@
+base_local_planner: "teb_local_planner/TebLocalPlannerROS"
+
+TebLocalPlannerROS:
+  # Robot Configuration Parameters
+  acc_lim_x: 3
+  acc_lim_theta: 6
+  max_vel_x: 0.5
+  max_vel_x_backwards: 0.5
+  max_vel_theta: 2.7
+#  min_turning_radius (double, default: 0.0)
+#  wheelbase (double, default: 1.0)
+#  cmd_angle_instead_rotvel (bool, default: false)
+  max_vel_y: 0.5
+  acc_lim_y: 3
+  footprint_model/type: "polygon"
+#  footprint_model/radius (double, default: 0.2)
+#  footprint_model/line_start (double[2], default: [-0.3, 0.0])
+#  footprint_model/line_end (double[2], default: [0.3, 0.0])
+#  footprint_model/front_offset (double, default: 0.2)
+#  footprint_model/front_radius (double, default: 0.2)
+#  footprint_model/rear_offset (double, default: 0.2)
+#  footprint_model/rear_radius (double, default: 0.2)
+  footprint_model/vertices: [[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095], 
+[-0.11, 0.095], [-0.11, -0.045], [0.11, -0.045], [0.11, 0.095]]
+  
+  # Goal Tolerance Parameters
+  xy_goal_tolerance: 0.01
+  yaw_goal_tolerance: 0.05
+#  free_goal_vel (bool, default: false)
+
+  # Trajectory Configuration Parameters
+#  dt_ref (double, default: 0.3)
+#  dt_hysteresis (double, default: 0.1)
+#  min_samples (int, default: 3)
+#  global_plan_overwrite_orientation (bool, default: true)
+#  global_plan_viapoint_sep (double, default: -0.1 (disabled))
+#  max_global_plan_lookahead_dist (double, default: 3.0)
+#  force_reinit_new_goal_dist (double, default: 1.0)
+#  feasibility_check_no_poses (int, default: 4)
+#  publish_feedback (bool, default: false)
+#  shrink_horizon_backup (bool, default: true)
+  allow_init_with_backwards_motion: true
+#  exact_arc_length (bool, default: false)
+#  shrink_horizon_min_duration (double, default: 10.0)
+
+  # Obstacle Parameters
+  min_obstacle_dist: 0.03
+#  include_costmap_obstacles (bool, default: true)
+#  costmap_obstacles_behind_robot_dist (double, default: 1.0)
+#  obstacle_poses_affected (int, default: 30)
+  inflation_dist: 0.33
+#  legacy_obstacle_association (bool, default: false)
+#  obstacle_association_force_inclusion_factor (double, default: 1.5)
+#  obstacle_association_cutoff_factor (double, default: 5)
+#  costmap_converter_plugin (string, default: "")
+#  costmap_converter_spin_thread (bool, default: true)
+#  costmap_converter_rate (double, default: 5.0)
+
+  # Optimization Parameters
+#  no_inner_iterations (int, default: 5)
+#  no_outer_iterations (int, default: 4)
+#  penalty_epsilon (double, default: 0.1)
+#  weight_max_vel_x (double, default: 2.0)
+#  weight_max_vel_theta (double, default: 1.0)
+#  weight_acc_lim_x (double, default: 1.0)
+#  weight_acc_lim_theta (double, default: 1.0)
+  weight_kinematics_nh: 0
+#  weight_kinematics_forward_drive (double, default: 1.0)
+#  weight_kinematics_turning_radius (double, default: 1.0)
+#  weight_optimaltime (double, default: 1.0)
+#  weight_obstacle (double, default: 50.0)
+#  weight_viapoint (double, default: 1.0)
+#  weight_inflation (double, default: 0.1)
+#  weight_adapt_factor (double, default: 2.0)
+
+  # Parallel Planning in distinctive Topologies
+  enable_homotopy_class_planning: false
+#  enable_multithreading (bool, default: true)
+#  max_number_classes (int, default: 4)
+#  selection_cost_hysteresis (double, default: 1.0)
+#  selection_obst_cost_scale (double, default: 100.0)
+#  selection_viapoint_cost_scale (double, default: 1.0)
+#  selection_alternative_time_cost (bool, default: false)
+#  roadmap_graph_no_samples (int, default: 15)
+#  roadmap_graph_area_width (double, default: 6)
+#  h_signature_prescaler (double, default: 1.0)
+#  h_signature_threshold (double, default: 0.1)
+#  obstacle_heading_threshold (double, default: 1.0)
+  visualize_hc_graph: true
+#  viapoints_all_candidates (bool, default: true)
+
+  # Miscellaneous Parameters
+#  odom_topic (string, default: "odom")
+#  map_frame (string, default: "odom")
