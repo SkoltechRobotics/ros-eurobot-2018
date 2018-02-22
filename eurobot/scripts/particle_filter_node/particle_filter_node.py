@@ -6,27 +6,34 @@ from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
 import numpy as np
 from npParticle import ParticleFilter
 import datetime
+import tf
+from nav_msgs.msg import Odometry
 
 
 def pf_cmd_callback(data):
-    particle_filter.start_over()
+    particle_filter.start_over() # TODO
 
 
-def stm_coordinates_callback(data):
+def odom_callback(odom):
+    quat = odom.pose.pose.orientation
+    yaw = tf.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
     global stm_coords
-    stm_coords = np.array(map(float, data.data.split()))
+    stm_coords = np.array([odom.pose.pose.position.x * 1000, odom.pose.pose.position.y * 1000, yaw])
 
 
 def delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords):
     """ Calculates delta coords for PF, that is used for moving particles """
     delta = used_stm_coords - prev_used_stm_coords
     # Actual delta is different, as stm_coords (from odometry) accumulates an error. fix:
-    stm_error_angle = pf_coords[2] - prev_used_stm_coords[2]
-    M = np.array([[np.cos(stm_error_angle), -np.sin(stm_error_angle)], [np.sin(stm_error_angle), np.cos(stm_error_angle)]])
-    delta[:2] = np.matmul(M, delta[:2].reshape((2,1))).reshape(2)
-    #print 'PF calculated actual delta_coords:', delta.round(2)
-    #print 'Calculated delta was between', used_stm_coords.round(2), 'and', prev_used_stm_coords.round(2), 'Using as actual coords:', pf_coords
-    return delta
+    return rotation_transform(delta, pf_coords[2] - prev_used_stm_coords[2])
+
+
+def rotation_transform(vec, angle):
+    """ Rotation transformation of 2D vector given in form of 1D array"""
+    M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+    ans = vec.copy()
+    ans[:2] = np.matmul(M, ans[:2].reshape((2,1))).reshape(2)
+    return ans 
 
 
 def scan_callback(scan):
@@ -55,8 +62,23 @@ def scan_callback(scan):
     coords += delta_coords(stm_coords, used_stm_coords, coords)
     # rate of updating stm_coords should be higher that scanning rate
 
-    # publish calculated coordinates
-    pub.publish(' '.join(map(str, coords)))
+    global lidar_coords, in_x, in_y, in_angle, br, robot_name
+    pf_coords = coords - rotation_transform(lidar_coords, coords[2])
+    
+    br.sendTransform((pf_coords[0] / 1000, pf_coords[1] / 1000, 0),
+                                    tf.transformations.quaternion_from_euler(0, 0, pf_coords[2]),
+                                    rospy.Time.now(),
+                                    "%s_pf" % robot_name,
+                                    "world")
+
+    # publish tf map -> odom for navigation
+    angle = pf_coords[2] - stm_coords[2]
+    stm_coords_rotated = rotation_transform(stm_coords, angle)
+    br.sendTransform(((pf_coords[0] - stm_coords_rotated[0]) / 1000, (pf_coords[1] - stm_coords_rotated[1]) / 1000, 0),
+                tf.transformations.quaternion_from_euler(0, 0, pf_coords[2] - stm_coords_rotated[2]),
+                rospy.Time.now(),
+                "odom",
+                "map")
 
     # create and pub PointArray with particles    
     #iposes = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
@@ -96,6 +118,7 @@ if __name__ == '__main__':
         in_x = rospy.get_param("start_x")
         in_y = rospy.get_param("start_y")
         in_angle = rospy.get_param("start_a")
+        lidar_coords = np.array([rospy.get_param("lidar_x"), rospy.get_param("lidar_y"), 0])
         max_itens = rospy.get_param("particle_filter/max_itens")
         max_dist = rospy.get_param("particle_filter/max_dist")
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise,
@@ -109,14 +132,14 @@ if __name__ == '__main__':
         prev_used_stm_coords = coords.copy()
 
         rospy.init_node('particle_filter_node', anonymous=True)
+        robot_name = rospy.get_param("robot_name") 
+        br = tf.TransformBroadcaster()
 
         # for determining time of PF iterations:
         last = datetime.datetime.now()
 
-        rospy.Subscriber("scan", LaserScan, scan_callback, queue_size=1)  # lidar data
-        rospy.Subscriber("stm/coordinates", String, stm_coordinates_callback, queue_size=1)  # stm data
-        pub = rospy.Publisher('particle_filter/coordinates', String, queue_size=1)
-
+        rospy.Subscriber("scan", LaserScan, scan_callback, queue_size=1)
+        rospy.Subscriber("odom", Odometry, odom_callback, queue_size=1) 
         rospy.Subscriber("pf_cmd", String, pf_cmd_callback, queue_size=1)
 
         # for vizualization, can be commented before competition

@@ -28,7 +28,7 @@ def command_callback(data):
     action_id = data_splitted[0]
     action_type = int(data_splitted[1])
 
-    if action_type == 0xb0:  # TODO put real cmd number here
+    if action_type == 0xb0:
         manipulator_num = int(data_splitted[2])
         rospy.Timer(rospy.Duration(1), response_callback(manipulator_num, action_id), oneshot=True)
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
     pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
     coords = np.array([0, 0, 0])
-    rospy.Subscriber("/main_robot/stm/coordinates", String, coords_callback, queue_size=1)
+    rospy.Subscriber("/main_robot/coordinates", String, coords_callback, queue_size=1)
     rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)
 
     # cube colors [yellow, green, blue, orange, black]
