@@ -34,17 +34,25 @@ def command_callback(data):
     print("Receive command " + data.data)
 
     if action_type == "MOVETOHEAP":
-        x = np.array([0, 0, 0])
-        for i in range(3):
-            f = fun(x, start_sensors, sensors)
-            dX = A_R.dot(f[:, np.newaxis])[:, 0]
-            x = x - dX
+        # vm = np.array([0.3, 0.3, 0.5])
+        # x_last = np.array([0, 0, 0])
+        while not rospy.is_shutdown():
+            x = np.array([0, 0, 0])
+            for i in range(3):
+                f = fun(x, start_sensors, sensors)
+                dX = A_R.dot(f[:, np.newaxis])[:, 0]
+                x = x - dX
+            x[0:2] /= -1000
             print(x)
-        x[0:2] /= -1000
-        vm = np.array([0.06, 0.06, 0.1])
-        v = np.abs(x / np.max(np.abs(x / vm)))
-        print "move to ", x, v
-        pub_command.publish("MOVE 162 " + ' '.join(map(str, x)) + ' ' + ' '.join(map(str, v)))
+            # dx = x - x_last
+            # x_last = x
+            dt = 0.3
+            v = x / dt
+            pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
+            rate.sleep()
+            if np.all(np.abs(x) < np.array([0.003, 0.003, 0.01])):
+                pub_command.publish("MOVE 8 0 0 0")
+                break
 
 
 def distance_sensors_callback(data):
@@ -61,6 +69,7 @@ def distance_sensors_callback(data):
 
 if __name__ == '__main__':
     try:
+        rate = rospy.Rate(20)
         sensors = np.zeros(4)
         start_sensors = np.array([40, 88, 77, 40])
         rospy.init_node('read_data_node', anonymous=True)
