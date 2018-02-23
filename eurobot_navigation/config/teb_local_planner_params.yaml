@@ -29,14 +29,14 @@ TebLocalPlannerROS:
 #  free_goal_vel (bool, default: false)
 
   # Trajectory Configuration Parameters
-#  dt_ref (double, default: 0.3)
-#  dt_hysteresis (double, default: 0.1)
+  dt_ref: 0.15 # (double, default: 0.3)
+  dt_hysteresis: 0.02 # (double, default: 0.1)
 #  min_samples (int, default: 3)
 #  global_plan_overwrite_orientation (bool, default: true)
 #  global_plan_viapoint_sep (double, default: -0.1 (disabled))
 #  max_global_plan_lookahead_dist (double, default: 3.0)
 #  force_reinit_new_goal_dist (double, default: 1.0)
-#  feasibility_check_no_poses (int, default: 4)
+  feasibility_check_no_poses: 20 # (int, default: 4)
 #  publish_feedback (bool, default: false)
 #  shrink_horizon_backup (bool, default: true)
   allow_init_with_backwards_motion: true
@@ -45,7 +45,7 @@ TebLocalPlannerROS:
 
   # Obstacle Parameters
   min_obstacle_dist: 0.03
-#  include_costmap_obstacles (bool, default: true)
+  include_costmap_obstacles: false
 #  costmap_obstacles_behind_robot_dist (double, default: 1.0)
 #  obstacle_poses_affected (int, default: 30)
   inflation_dist: 0.33
