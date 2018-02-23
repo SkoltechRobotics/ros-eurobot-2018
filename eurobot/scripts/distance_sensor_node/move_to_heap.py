@@ -5,8 +5,8 @@ import numpy as np
 from numpy import cos, tan
 
 L = 58
-L2 = 72
-L3 = 50
+L2 = 50
+L3 = 72
 A_R = np.array([[-0.5, 0, 0, 0.5],
                 [0, -0.5, -0.5, 0],
                 [0, -1. / (L2 + L3), 1./(L2 + L3), 0]])
@@ -23,6 +23,7 @@ def distances(point):
 
 
 def fun(x, r0s, rs):
+    print r0s, rs
     return distances(x) + r0s - rs
 
 
@@ -38,7 +39,7 @@ def command_callback(data):
         # x_last = np.array([0, 0, 0])
         while not rospy.is_shutdown():
             x = np.array([0, 0, 0])
-            for i in range(3):
+            for i in range(1):
                 f = fun(x, start_sensors, sensors)
                 dX = A_R.dot(f[:, np.newaxis])[:, 0]
                 x = x - dX
@@ -70,7 +71,7 @@ def distance_sensors_callback(data):
 if __name__ == '__main__':
     try:
         sensors = np.zeros(4)
-        start_sensors = np.array([40, 87, 89, 33])
+        start_sensors = np.array([35, 96, 89, 31])
         rospy.init_node('read_data_node', anonymous=True)
         rate = rospy.Rate(20)
 
