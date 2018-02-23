@@ -9,7 +9,7 @@ L2 = 50
 L3 = 72
 A_R = np.array([[-0.5, 0, 0, 0.5],
                 [0, -0.5, -0.5, 0],
-                [0, -1 / (L2 + L3), 1/(L2 + L3), 0]])
+                [0, -1. / (L2 + L3), 1./(L2 + L3), 0]])
 
 
 def distances(point):
@@ -39,10 +39,12 @@ def command_callback(data):
             f = fun(x, start_sensors, sensors)
             dX = A_R.dot(f[:, np.newaxis])[:, 0]
             x = x - dX
-        vm = 0.2
-        vr = 0.5
-        x[0:2] /= 1000
-        pub_command.publish("MOVE 162 " + str(x) + " 0.2 0.2 0.5")
+            print(x)
+        x[0:2] /= -1000
+        vm = np.array([0.06, 0.06, 0.1])
+        v = np.abs(x / np.max(np.abs(x / vm)))
+        print "move to ", x, v
+        pub_command.publish("MOVE 162 " + ' '.join(map(str, x)) + ' ' + ' '.join(map(str, v)))
 
 
 def distance_sensors_callback(data):
@@ -50,7 +52,7 @@ def distance_sensors_callback(data):
     global start_sensors
     a = 0.8
     try:
-        sensors1 = map(int, data.data.split())
+        sensors1 = np.array(map(int, data.data.split()))
     except ValueError:
         sensors1 = start_sensors
 
@@ -60,12 +62,12 @@ def distance_sensors_callback(data):
 if __name__ == '__main__':
     try:
         sensors = np.zeros(4)
-        start_sensors = np.array([37, 90, 87, 38])
+        start_sensors = np.array([40, 88, 77, 40])
         rospy.init_node('read_data_node', anonymous=True)
 
         pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
         rospy.Subscriber("/main_robot/move_command", String, command_callback)
-        rospy.Subscriber("distance_sensors/distances", String, distance_sensors_callback)
+        rospy.Subscriber("/distance_sensors/distances", String, distance_sensors_callback)
 
         rospy.spin()
     except rospy.ROSInterruptException:
