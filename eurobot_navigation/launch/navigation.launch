@@ -4,6 +4,7 @@
   <arg name="map_file" default="$(find eurobot_navigation)/map/field.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
   <node name="obstacle_publisher" pkg="eurobot_navigation" type="obstacle_publisher.py" />
+  <node name="path_posearray" pkg="eurobot_navigation" type="path_posearray.py" />
 
   <!-- Place map frame at odometry frame -->
   <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_nav" args="0 0 0 0 0 0 world map 100"/>
@@ -14,7 +15,9 @@
     <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find eurobot_navigation)/config/teb_local_planner_params.yaml" command="load" />
+
+    <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
+    <rosparam file="$(find eurobot_navigation)/config/dwa_local_planner_params.yaml" command="load" />
     <remap from="cmd_vel" to="main_robot/cmd_vel"/>
     <remap from="odom" to="main_robot/odom"/>
 
