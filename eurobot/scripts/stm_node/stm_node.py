@@ -42,7 +42,7 @@ class stm_node(STMprotocol):
         action_type = int(data_splitted[1])
         args_str = data_splitted[2:]
         # TODO: split any chars in Strings like 'ECHO'->['E','C','H','O']
-        action_args_dict = {'B': ord, 'H': int, 'f': float}
+        action_args_dict = {'B': int, 'H': int, 'f': float}
         args = [action_args_dict[t](s) for t, s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name, action_type, args
 
@@ -107,7 +107,6 @@ class stm_node(STMprotocol):
         successfully1, coords = stm.send('request_stm_coords', 15, [])
         successfully2, vel = stm.send('request_stm_vel', 9, [])
         if successfully1 and successfully2:
-            print coords
             stm.publish_odom(coords, vel)
         # TODO: status = ...
         # TODO: stm.handle_response(status)

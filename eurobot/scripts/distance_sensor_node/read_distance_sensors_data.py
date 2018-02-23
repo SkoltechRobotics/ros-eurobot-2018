@@ -9,7 +9,7 @@ if __name__ == '__main__':
         rospy.init_node('read_data_node', anonymous=True)
         pub = rospy.Publisher('distance_sensors/distances', String, queue_size=2)
 
-        ser = serial.Serial("/dev/USB1")
+        ser = serial.Serial("/dev/ttyACM0")
         while not rospy.is_shutdown():
             s = ser.readline()
             pub.publish(s)

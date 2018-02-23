@@ -1,3 +1,5 @@
+robot_name: "main_robot"
+
 # initial coordinates
 start_x: 293.0
 start_y: 425.0
