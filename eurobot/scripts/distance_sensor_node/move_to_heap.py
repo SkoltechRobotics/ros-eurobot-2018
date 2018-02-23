@@ -4,9 +4,9 @@ from std_msgs.msg import String
 import numpy as np
 from numpy import cos, tan
 
-L = 5.8
-L2 = 5
-L3 = 7.2
+L = 58
+L2 = 50
+L3 = 72
 A_R = np.array([[-0.5, 0, 0, 0.5],
                 [0, -0.5, -0.5, 0],
                 [0, -1 / (L2 + L3), 1/(L2 + L3), 0]])
@@ -33,13 +33,16 @@ def command_callback(data):
     action_type = data_splitted[1]
     print("Receive command " + data.data)
 
-    x = [0, 0, 0]
     if action_type == "MOVETOHEAP":
-        x = [0, 0, 0]
+        x = np.array([0, 0, 0])
         for i in range(3):
             f = fun(x, start_sensors, sensors)
             dX = A_R.dot(f[:, np.newaxis])[:, 0]
             x = x - dX
+        vm = 0.2
+        vr = 0.5
+        x[0:2] /= 1000
+        pub_command.publish("MOVE 162 " + str(x) + " 0.2 0.2 0.5")
 
 
 def distance_sensors_callback(data):
@@ -57,7 +60,7 @@ def distance_sensors_callback(data):
 if __name__ == '__main__':
     try:
         sensors = np.zeros(4)
-        start_sensors = np.array([35, 85, 85, 35])
+        start_sensors = np.array([37, 90, 87, 38])
         rospy.init_node('read_data_node', anonymous=True)
 
         pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
