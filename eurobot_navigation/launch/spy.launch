@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="spy">
+
+    <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_nav" args="-0.094 0.05 0.47 0 0 0 map spy 100"/>
+    <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen">
+      <param name="frame_id" value="spy"/>
+    </node>
+
+   </group>
+</launch>
