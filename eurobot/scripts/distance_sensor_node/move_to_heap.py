@@ -71,7 +71,7 @@ def distance_sensors_callback(data):
 if __name__ == '__main__':
     try:
         sensors = np.zeros(4)
-        start_sensors = np.array([35, 96, 89, 31])
+        start_sensors = np.array([39, 88, 91, 31])
         rospy.init_node('read_data_node', anonymous=True)
         rate = rospy.Rate(20)
 

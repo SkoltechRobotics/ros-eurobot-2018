@@ -62,7 +62,7 @@ class STMprotocol(object):
         crc = sum(msg) % 256
         msg += bytearray([crc])
         self.ser.write(msg)
-        if cmd == 176:
+        if cmd == 176 or cmd == 162:
             print cmd, args
         #Receiving data
         data = self.ser.read()
