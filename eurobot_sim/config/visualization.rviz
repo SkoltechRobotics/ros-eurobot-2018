@@ -8,7 +8,7 @@ Panels:
         - /TF1/Tree1
         - /Robot1
       Splitter Ratio: 0.655097604
-    Tree Height: 359
+    Tree Height: 815
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: SpyLandmarks
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -84,9 +84,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        laser:
+          Value: true
+        main_robot:
+          Value: true
         map:
           Value: true
-        spy:
+        odom:
           Value: true
         world:
           Value: true
@@ -98,8 +102,10 @@ Visualization Manager:
       Tree:
         world:
           map:
-            spy:
-              {}
+            odom:
+              main_robot:
+                laser:
+                  {}
       Update Interval: 0
       Value: true
     - Attached Body Color: 150; 50; 150
@@ -330,13 +336,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Marker
-      Enabled: false
+      Enabled: true
       Marker Topic: /move_base/TebLocalPlannerROS/teb_markers
       Name: TEB_Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Arrow Length: 0.0500000007
       Axes Length: 0.300000012
@@ -438,16 +444,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.53694105
+      Distance: 2.55558014
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.36863124
-        Y: 0.980707228
-        Z: 0.0333371758
+        X: 0.739788592
+        Y: 0.882340074
+        Z: 0.0339650996
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
