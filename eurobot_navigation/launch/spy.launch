@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="spy">
+      
+    <node pkg="tf" type="static_transform_publisher" name="map_spy_broadcaster" args="-0.094 0.05 0.47 0 0 0 map spy 1000"/>
+    <!--node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen">
+      <param name="frame_id" value="spy"/>
+    </node-->
+    <node pkg="rosbag" name="bag_play" type="play" args="$(find eurobot_navigation)/bag/spy_scan.bag --start=0 --duration=58 --loop" />
+    <node pkg="eurobot_navigation" type="spy.py" name="spy" output="screen" />
+    <rosparam file="$(find eurobot_navigation)/config/spy_params.yaml" command="load" />
+
+   </group>
+</launch>

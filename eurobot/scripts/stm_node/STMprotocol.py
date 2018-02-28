@@ -49,6 +49,8 @@ class STMprotocol(object):
             0x0f: "=fff",
             0xa2: "=BB"
         }
+
+
     def pure_send_command(self, cmd, args):
         # Clear buffer
         self.ser.reset_output_buffer()
@@ -60,6 +62,8 @@ class STMprotocol(object):
         crc = sum(msg) % 256
         msg += bytearray([crc])
         self.ser.write(msg)
+        if cmd == 176 or cmd == 162:
+            print cmd, args
         #Receiving data
         data = self.ser.read()
         if len(data) == 0:
@@ -83,7 +87,10 @@ class STMprotocol(object):
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
         return True, args
+
+
     def send_command(self, cmd, args, n_repeats = 5):
+        # print (cmd, args)
         for i in range(n_repeats):
             try:
                 return self.pure_send_command(cmd, args)
@@ -91,5 +98,6 @@ class STMprotocol(object):
                 if i == n_repeats-1:
                     print('Exception:\t', exc)
                     print('At time:\t', datetime.datetime.now())
+                    print('cmd:', cmd, 'args:', args)
                     print('--------------------------')
         return False, None

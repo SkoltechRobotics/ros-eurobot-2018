@@ -12,10 +12,12 @@ class stm_node():
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        rospy.Subscriber("/cmd_vel", Twist, self.set_twist)
-        self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=1)
+        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
-        self.pub_odom = rospy.Publisher("/odom", Odometry, queue_size=1)
+        self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
+
+        self.robot_name = rospy.get_param('robot_name')
+        self.br = tf.TransformBroadcaster()
 
         # high-level commands info (for handling response)
         self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
@@ -127,9 +129,6 @@ class stm_node():
                 self.pub_response.publish(action_name + " finished")
             rospy.Timer(rospy.Duration(0.2), delayed_cb, oneshot=True)
 
-    def publish_coords(self):
-        self.pub_stm_coords.publish(' '.join(map(str, [self.coords[0]*1000, self.coords[1]*1000, self.coords[2]])))
-
     def handle_response(self, status):
         """Handles response for high-lvl commands (only)."""
         l = len(status)
@@ -152,19 +151,31 @@ class stm_node():
             self.rate.sleep()
 
     def pub_timer_callback(self, event):
-        self.publish_coords()
-        
         odom = Odometry()
-        odom.header.frame_id = 'world'
+        odom.header.frame_id = 'odom'
+        odom.child_frame_id = self.robot_name
         odom.pose.pose.position.x = self.coords[0]
         odom.pose.pose.position.y = self.coords[1]
-        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2] + np.pi/2)
+        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2])
         odom.pose.pose.orientation.z = quat[2] 
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = self.vel[0]
         odom.twist.twist.linear.x = self.vel[1]
         odom.twist.twist.angular.z = self.vel[2]
         self.pub_odom.publish(odom)
+
+        self.br.sendTransform((self.coords[0], self.coords[1], 0),
+                                tf.transformations.quaternion_from_euler(0, 0, self.coords[2]),
+                                rospy.Time.now(),
+                                self.robot_name,
+                                "odom")
+
+        self.br.sendTransform((0, 0.06, 0.41),
+                                tf.transformations.quaternion_from_euler(0, 0, 1.570796),
+                                rospy.Time.now(),
+                                'laser',
+                                self.robot_name)
+
 
 if __name__ == '__main__':
     try:

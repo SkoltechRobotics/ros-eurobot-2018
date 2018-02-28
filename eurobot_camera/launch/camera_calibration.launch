@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <!--include file="$(find raspicam_node)/launch/camerav2_1280x960.launch"/-->
+    <group ns="central_traking_device">
+        <!--node pkg="rqt_image_view" name="rqt_image_view" type="rqt_image_view"-->
+        <node pkg="image_transport" name="republish" type="republish" args="compressed in:=/raspicam_node/image raw out:=/raspicam_node/image_1"/>
+        <node pkg="camera_calibration" name="cameracalibrator" type="cameracalibrator.py" args="--size 7x4 --square 0.98 image:=/raspicam_node/image_1 camera:=/raspicam_node" />
+    </group>
+</launch>

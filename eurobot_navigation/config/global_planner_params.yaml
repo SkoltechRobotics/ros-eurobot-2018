@@ -1,0 +1,8 @@
+base_global_planner: "global_planner/GlobalPlanner"
+
+GlobalPlanner:
+  cost_factor: 3.0
+  lethal_cost: 255
+  neutral_cost: 50
+  orientation_mode: 2
+  publish_potential: true

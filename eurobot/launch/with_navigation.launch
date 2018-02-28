@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+
+  <include file="$(find eurobot)/launch/main_robot.launch"/>
+  <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
+
+</launch>
