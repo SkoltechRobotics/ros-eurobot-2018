@@ -80,8 +80,13 @@ class ActionNode(TreeNode):
         if self.status == "not started": # do we need some mutex here?
             TreeNode.start(self)
             self.status = "active"
-            rospy.loginfo(self.id + ' ' + self.message)
-            self.command_pub.publish(self.id + ' ' + self.message)
+            if isinstance(self.message, str):
+                self.message = self.id + ' ' + self.message
+            else:
+                self.message.goal_id.id = self.id
+                # CHECKME ??? 
+            rospy.loginfo(self.message)
+            self.command_pub.publish(self.message)
             self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
 
     def finish(self):
