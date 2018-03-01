@@ -4,6 +4,7 @@ import rospy
 from std_msgs.msg import String
 #import tf
 from move_base_msgs.msg import MoveBaseActionGoal
+from actionlib_msgs.msg import GoalStatusArray
 
 
 class MovementHandler():
@@ -14,10 +15,12 @@ class MovementHandler():
         coords_source = rospy.get_param("track_regulator/coords_source")
         rospy.Subscriber("%s/coordinates" % coords_source, String, self.coordinates_callback)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
-        self.pub_goal = rospy.Publisher("move_base/goal", MoveBaseActionGoal, queue_size=1)
+        self.pub_goal = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size=1)
+        rospy.Subscriber("/move_base/status",)
         self.d = 0.1 # first approach distance
 
-    def parse_data(self, data):
+    @staticmethod
+    def parse_data(data):
         data_splitted = data.data.split()
         cmd_id = data_splitted[0]
         cmd = int(data_splitted[1])
@@ -29,21 +32,18 @@ class MovementHandler():
             # parse args
             args = [float(args_str[i]) for i in range(3)]
             # start movement
-            self.move(*arts)
-        elif action_type == "STOP":
+            self.move(*args)
+        elif cmd == "STOP":
+            pass
             # pub_stop
-        elif action_type == "RETURN":
+        elif cmd == "RETURN":
             x = rospy.get_param("/main_robot/start_x")
             y = rospy.get_param("/main_robot/start_y")
             a = rospy.get_param("/main_robot/start_a")
             self.move(x, y, a)
-        elif action_type == "MOVECUBE":
+        elif cmd == "MOVECUBE":
             n = int(args_str[0])
-            self.move_cube(n_cube)
             self.move_to_heap(n, 0)
-
-        pub_response.publish(cmd_id + ' finished')
-
             
     def move(self, x, y, a):
         goal = MoveBaseActionGoal()
@@ -53,7 +53,7 @@ class MovementHandler():
         orient = tf.transformations.quaternion_from_euler(0, 0, a)
         goal.goal.target_pose.pose.orientation.z = orient[2]
         goal.goal.target_pose.pose.orientation.w = orient[3]
-        self.pub_goal(goal)
+        self.pub_goal.publish(goal)
 
     def move_to_heap(self, n, a): # should be checked
         # calculate approach coords
@@ -77,12 +77,15 @@ class MovementHandler():
     def cmd_callback(self, data):
         cmd_id, cmd, args_str = self.parse_data(data)
         status = self.perform_cmd(cmd_id, cmd, args_str)
-        self.pub_response(
+        self.pub_response()
 
-    def coordinates_callback(self, data):
+    @staticmethod
+    def coordinates_callback(data):
         data_splitted = data.data.split()
         global coords
         coords = np.array([float(data_splitted[i]) for i in range(3)])
+
+
 if __name__ == '__main__':
 
     rospy.spin()
