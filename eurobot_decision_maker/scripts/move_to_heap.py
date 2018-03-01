@@ -26,7 +26,7 @@ if __name__  == '__main__':
     distance_to_move = 0.06 #m
     speed_to_move    = 0.2  #m/s
     
-    pub_move = rospy.Publisher("move_base/goal", MoveBaseActionGoal, queue_size=100)
+    pub_move = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size=100)
     pub_cmd  = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
     pub_rf   = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
 
