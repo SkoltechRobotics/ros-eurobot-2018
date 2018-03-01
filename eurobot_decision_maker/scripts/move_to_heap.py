@@ -8,24 +8,31 @@ from executor import *
 from move_base_msgs.msg import MoveBaseActionGoal
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
-if __name__  == '__main__':
-    rospy.init_node("executor", anonymous=True)
-    
+def move_message(x, y, a):
     move_message = MoveBaseActionGoal()
 
     #edit move_message here
+    
+    move_message.goal.target_pose.header.frame_id = 'world'
 
-
-    move_message.goal.target_pose.pose.position.x = 0.85
-    move_message.goal.target_pose.pose.position.y = 0.54 - 0.058 - 0.058
+    move_message.goal.target_pose.pose.position.x = x
+    move_message.goal.target_pose.pose.position.y = y
     
     move_message.goal.target_pose.pose.orientation.x = 0
     move_message.goal.target_pose.pose.orientation.y = 0
     move_message.goal.target_pose.pose.orientation.z = 0
     move_message.goal.target_pose.pose.orientation.w = 0
     
-    print(quaternion_from_euler(*[0,0,4.71]))
+    o = move_message.goal.target_pose.pose.orientation
 
+    o.x, o.y, o.z, o.w = quaternion_from_euler(*[0,0,a])
+    
+    return move_message
+
+
+if __name__  == '__main__':
+    rospy.init_node("executor", anonymous=True)
+    
     sub_response_name = "/main_robot/response"
 
     #stm_move parameters
@@ -38,7 +45,7 @@ if __name__  == '__main__':
 
     move_to_heap = SequenceNode("move_to_heap")
 
-    nav_move = ActionNode("nav_move", pub_rf, "MOVE 0.85 0.424 4.71", sub_response_name)
+    nav_move = ActionNode("nav_move", pub_move, move_message(0.85, 0.54 - 0.058*2, 4.71), sub_response_name)
     stm_move = ActionNode("stm_move", pub_cmd,  "162 0 " + str(distance_to_move) + " 0 0 " + str(speed_to_move) + " 0", sub_response_name)
     rf_move  = ActionNode("rf_move" , pub_rf,   "MOVETOHEAP", sub_response_name)
     
