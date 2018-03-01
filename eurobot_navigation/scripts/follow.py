@@ -88,7 +88,7 @@ if __name__ == "__main__":
     rospy.Subscriber("/move_base/GlobalPlanner/plan", Path, plan_callback, queue_size = 1)
     rospy.Subscriber("/move_base/goal", MoveBaseActionGoal, goal_callback, queue_size = 1)
     cmd_pub = rospy.Publisher("/main_robot/cmd_vel", Twist, queue_size = 1)
-    pub_response = rospy.Publisher("/response", String, queue_size=10)
+    pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
 
     listener = tf.TransformListener()
     rate = rospy.Rate(20.0)
