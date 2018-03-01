@@ -26,7 +26,7 @@ if __name__  == '__main__':
     distance_to_move = 0.06 #m
     speed_to_move    = 0.2  #m/s
     
-    pub_move = rospy.Publisher("move_base/goal", MoveBaseActionGoal, queue_size=100)
+    pub_move = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size=100)
     pub_cmd  = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
     pub_rf   = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
 
@@ -35,7 +35,9 @@ if __name__  == '__main__':
     nav_move = ActionNode("nav_move", pub_move, move_message, sub_response_name)
     stm_move = ActionNode("stm_move", pub_cmd,  "162 0 " + str(distance_to_move) + " 0 0 " + str(speed_to_move) + " 0", sub_response_name)
     rf_move  = ActionNode("rf_move" , pub_rf,   "MOVETOHEAP", sub_response_name)
- 
+    
+    rospy.sleep(0.2)
+
     bt = BehaviorTree("big_robot", 100)
     
     bt.add_node(move_to_heap, "big_robot")
