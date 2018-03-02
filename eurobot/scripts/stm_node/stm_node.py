@@ -8,6 +8,14 @@ from geometry_msgs.msg import Twist
 import tf
 import numpy as np
 
+RATE = 20
+
+GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
+GET_MANIPULATOR_STATUS = 0xa1
+TAKE_CUBE = 0xb0
+UNLOAD_TOWER = 0xb1
+ODOMETRY_MOVEMENT = 0xa2
+
 
 class stm_node(STMprotocol):
     def __init__(self, serial_port):
@@ -24,11 +32,12 @@ class stm_node(STMprotocol):
         self.robot_name = rospy.get_param("robot_name")
         self.br = tf.TransformBroadcaster()
 
-        # high-level commands info (for handling response)
-        # TODO: test and debug
-        self.actions_in_progress = ['']  # action_names, indexing corresponds to types indexing
-        self.action_types = []  # list of high-level action types only
-
+        # high-level command IDs
+        self.odometry_movement_id = ''
+        self.take_cube0 = ''
+        self.take_cube1 = ''
+        self.take_cube2 = ''
+        
         rospy.Timer(rospy.Duration(1./40), self.pub_timer_callback)
 
 
@@ -53,6 +62,7 @@ class stm_node(STMprotocol):
 
 
     def send(self, action_name, action_type, args):
+        
         # Lock() is used to prevent mixing bytes of diff commands to STM
         self.mutex.acquire()
         # send command to STM32
@@ -60,21 +70,21 @@ class stm_node(STMprotocol):
         self.mutex.release()
 
         # high-level commands handling
-        if action_type in self.action_types:
-            # store action_name
-            self.actions_in_progress[self.action_types[action_type]] = action_name
+        if action_type == ODOMETRY_MOVEMENT:
+            self.odometry_movement_id = action_name
+            rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
+        if action_type == TAKE_CUBE:
+            if args[0] == 0:
+                self.take_cube0 = action_name
+                rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator0_timer)
+            if args[0] == 1:
+                self.take_cube1 = action_name
+                rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator1_timer)
+            if args[0] == 2:
+                self.take_cube2 = action_name
+                rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator2_timer)
 
         return successfully, args_response
-
-
-    def handle_response(self, status):  # TODO
-        """Handles response for high-lvl commands (only)."""
-        l = len(status)
-        for i in range(l):
-            # mind that indeces in status[] correspond to indexes in actions_in_progress[]
-            if status[i] == '0' and len(self.actions_in_progress[i]) > 0:
-                self.actions_in_progress[i] = ''  # stop storing this action_name
-                self.pub_response.publish(self.actions_in_progress[i] + " done")  # publish response
 
 
     def publish_odom(self, coords, vel):
@@ -109,7 +119,34 @@ class stm_node(STMprotocol):
         if successfully1 and successfully2:
             stm.publish_odom(coords, vel)
         # TODO: status = ...
-        # TODO: stm.handle_response(status)
+
+    
+    def odometry_movement_timer(self, event):
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        if successfully and args_response[0] == 0:
+            self.pub_response.publish(self.odometry_movement_id + 'finished')
+            shutdown() 
+
+
+    def manipulator0_timer(self, event):
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        if successfully and args_response[0] == 0:
+            self.pub_response.publish(self.take_cube0 + 'finished')
+            shutdown() 
+
+
+    def manipulator1_timer(self, event):
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        if successfully and args_response[0] == 0:
+            self.pub_response.publish(self.take_cube1 + 'finished')
+            shutdown() 
+
+
+    def manipulator2_timer(self, event):
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        if successfully and args_response[0] == 0:
+            self.pub_response.publish(self.take_cube2 + 'finished')
+            shutdown() 
 
 
 if __name__ == '__main__':
