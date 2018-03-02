@@ -8,24 +8,42 @@ from numpy import cos, tan
 L = 58
 L2 = 50
 L3 = 72
-A_R = np.array([[-0.5, 0, 0, 0.5],
-                [0, -0.5, -0.5, 0],
-                [0, -1. / (L2 + L3), 1./(L2 + L3), 0]])
+A_R = [None, None, None, None]
+A_R[0] = np.array([[-0.5, 0, 0, 0.5],
+                   [0, -0.5, -0.5, 0],
+                   [0, -1. / (L2 + L3), 1./(L2 + L3), 0]])
+
+A_R[1] = np.array([[-0.5, 0, 0, 0.5],
+                  [0, -1, 0, 0],
+                  [0, 0, 0, 0]])
+
+A_R[2] = np.array([[-0.5, 0, 0, 0.5],
+                  [0, 0, -1, 0],
+                  [0, 0, 0, 0]])
+
+A_R[3] = np.array([[-0.5, 0, 0, 0.5],
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0]])
+
+A_R[4] = np.array([[0, 0, 0, 0],
+                   [0, 0, 0, 0],
+                   [0, 0, 0, 0]])
 
 
-def distances(point):
+def distances(point, planes):
     x_0, y_0, alpha_0 = point
     dr = np.zeros(4)
-    dr[0] = 3 * L / 2 - 3 * L / (2 * cos(alpha_0)) - x_0 - y_0 * tan(alpha_0)
-    dr[1] = L / 2 - L / (2 * cos(alpha_0)) - L2 * tan(alpha_0) + x_0 * tan(alpha_0) - y_0
-    dr[2] = L / 2 - L / (2 * cos(alpha_0)) + L3 * tan(alpha_0) + x_0 * tan(alpha_0) - y_0
-    dr[3] = 3 * L / 2 - 3 * L / (2 * cos(alpha_0)) + x_0 + y_0 * tan(alpha_0)
+
+    dr[0] = 3 * L / 2 - (3 * L / 2 - planes[0] * L) / cos(alpha_0) - x_0 - y_0 * tan(alpha_0)
+    dr[1] = L / 2 - (L / 2 - planes[1] * L) / cos(alpha_0) - L2 * tan(alpha_0) + x_0 * tan(alpha_0) - y_0
+    dr[2] = L / 2 - (L / 2 - planes[2] * L) / cos(alpha_0) + L3 * tan(alpha_0) + x_0 * tan(alpha_0) - y_0
+    dr[3] = 3 * L / 2 - (3 * L / 2 - planes[3]) / cos(alpha_0) + x_0 + y_0 * tan(alpha_0)
     return dr
 
 
-def fun(x, r0s, rs):
+def fun(x, r0s, rs, planes):
     print r0s, rs
-    return distances(x) + r0s - rs
+    return distances(x, planes) + r0s - rs
 
 
 def command_callback(data):
@@ -36,18 +54,15 @@ def command_callback(data):
     print("Receive command " + data.data)
 
     if action_type == "MOVETOHEAP":
-        # vm = np.array([0.3, 0.3, 0.5])
-        # x_last = np.array([0, 0, 0])
+        config = int(data_splitted[2])
         while not rospy.is_shutdown():
             x = np.array([0, 0, 0])
             for i in range(1):
-                f = fun(x, start_sensors, sensors)
+                f = fun(x, start_sensors, sensors, planes)
                 dX = A_R.dot(f[:, np.newaxis])[:, 0]
                 x = x - dX
             x[0:2] /= -1000
             print(x)
-            # dx = x - x_last
-            # x_last = x
             dt = 0.3
             v = x / dt
             pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
