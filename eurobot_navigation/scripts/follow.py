@@ -27,6 +27,7 @@ goal_id = ''
 def goal_callback(goal):
     global goal_id
     goal_id = goal.goal_id.id
+    print(goal_id)
 
 def plan_callback(plan):
     path = np.array([[pose.pose.position.x, pose.pose.position.y, tf.transformations.euler_from_quaternion([0,0,pose.pose.orientation.z, pose.pose.orientation.w])[2]] for pose in plan.poses])
