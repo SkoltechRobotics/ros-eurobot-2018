@@ -55,6 +55,7 @@ def command_callback(data):
             if np.all(np.abs(x) < np.array([0.003, 0.003, 0.01])):
                 pub_command.publish("MOVE 8 0 0 0")
                 break
+        pub_response.publish(data_splitted[0] + " finished")
 
 
 def distance_sensors_callback(data):
@@ -79,6 +80,7 @@ if __name__ == '__main__':
         pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
         rospy.Subscriber("/main_robot/move_command", String, command_callback)
         rospy.Subscriber("/distance_sensors/distances", String, distance_sensors_callback)
+        pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
 
         rospy.spin()
     except rospy.ROSInterruptException:
