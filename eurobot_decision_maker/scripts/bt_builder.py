@@ -34,8 +34,8 @@ class BehaviorTreeBuilder:
         self.move_publisher_name = "cmd_publisher"
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
-                self.track_units = "mm"
-                self.move_action_name = str('MOVE')
+                self.track_units = "m"
+                self.move_action_name = str('move')
                 self.move_publisher_name = "move_publisher"
             elif kvargs['move_type'] == 'simple':
                 self.track_units = 'm'
@@ -45,7 +45,8 @@ class BehaviorTreeBuilder:
         for _, action in self.action_places.items():
             for coords in action:
                 coords[:2] = coords[:2][::-1]
-        
+        self.colors_left = {0,1,2,3,4}
+
     def get_next_id(self):
         self.id += 1
         return self.id
@@ -69,19 +70,26 @@ class BehaviorTreeBuilder:
     
     def convert_units(self, dist):
         return BehaviorTreeBuilder.scale[self.opt_units]/BehaviorTreeBuilder.scale[self.track_units]*dist
-    def add_move_action(self, parent_name, *args):
+    def add_move_action(self, parent_name, *args, **kvargs):
+        move_type = "move"
+        if "move_type" in kvargs and kvargs["move_type"] in ["move", "move_odometry"]:
+            move_type = kvargs["move_type"]
+        shift_multiplier = 1
+        if "shift_multiplier" in kvargs:
+            shift_multiplier = kvargs["shift_multiplier"]
         args = list(args) 
         robot_angle = args[-1]
         self.last_coordinates = copy.deepcopy(args)
         rospy.loginfo(args)
         args[:2] = [self.convert_units(a) for a in args[:2]]
         args = np.array(args).reshape(3,1)
-        shift_center = rot_matrix(robot_angle).dot(self.convert_units(self.cube_vector))
+        shift_center = rot_matrix(robot_angle).dot(self.convert_units(self.cube_vector*shift_multiplier))
         rospy.loginfo(shift_center)
         args -= shift_center
         rospy.loginfo(args)
         args = list(args.ravel())
-        args.insert(0, self.move_action_name)
+        # args.insert(0, self.move_action_name)
+        args.insert(0, move_type)
         self.last_angle = args[-1] # saving last angle
         # TEMP cmd_publisher
         self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, *args)
@@ -119,14 +127,44 @@ class BehaviorTreeBuilder:
             self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", parallel_name, sep=' '))
             for m in manipulators:
                 self.add_command_action(parallel_name, self.pick_action_name, m)
+        for c in colors:
+            self.colors_left.remove(c[0])
         return
-    
-    def add_full_heap_pick(self, parent_name, heap_num, cubes2):
-        main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
-        ss = self.construct_string(parent_name, "sequence", main_seq_name, sep=' ')
+    def add_sequence_node(self, parent_name, new_name):
+        ss = self.construct_string(parent_name, "sequence", new_name, sep=' ')
         rospy.loginfo(ss)
         self.bt.add_node_by_string(ss)
+        
+    def add_rf_move(self, parent_name, heap_status):
+        # add heap_status
+        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
 
+    def add_move_to_heap(self, parent_name, heap_num, angle):
+        move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
+        self.add_sequence_node(parent_name, move_seq_name)
+        heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
+        self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=3)
+        self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
+        self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
+
+    def add_heap_rotation(self, parent_name, angle):
+        radius = 0.06       #m
+        linear_speed = 0.05 #m/s
+        self.add_command_action(parent_name, 162, 0, radius*angle, angle, 0, linear_speed, linear_speed/radius)
+
+    def get_heap_status(self, angle):
+        all_colors = {0,1,2,3,4}
+        if len(self.colors_left) == 5:
+            return 0
+        # if len(self.colors_left) == 4:
+        #     picked_color = all_colors - self.colors_left
+            
+
+    def add_full_heap_pick(self, parent_name, heap_num, cubes2):
+        main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name) 
+
+        self.colors_left = {0,1,2,3,4}
         i4 = -1 # hold the step, when we pick central cube
         for i,cubes in enumerate(cubes2):
             for c in cubes:
@@ -134,13 +172,19 @@ class BehaviorTreeBuilder:
                     i4 = i
             manipulators, colors = self.get_mans_and_colors(cubes)
             line_seq_name = self.construct_string("pick", heap_num, *(colors + [self.get_next_id()]))
-            #rospy.loginfo(line_seq_name)
+            # rospy.loginfo(line_seq_name)
             self.bt.add_node_by_string(self.construct_string(main_seq_name, "sequence", line_seq_name,sep=' '))    
-
-            if i4 == -1:
+            
+            if i == 0:
+                # first move from outside to the heap and pick
+                self.add_move_to_heap(main_seq_name, heap_num, self.get_angle_to_cubes(cubes))
+                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
+            elif i4 == -1:
                 # simply rotate and pick
-                #rospy.loginfo(*(self.action_places["heaps"][heap_num][:2].tolist() + [1] ))
-                self.add_move_action(line_seq_name, *(self.action_places["heaps"][heap_num][:2].tolist() + [ self.get_angle_to_cubes(cubes)]))
+                # rospy.loginfo(*(self.action_places["heaps"][heap_num][:2].tolist() + [1] ))
+                # self.add_move_action(line_seq_name, *(self.action_places["heaps"][heap_num][:2].tolist() + [ self.get_angle_to_cubes(cubes) ]))
+                self.add_heap_rotation(line_seq_name, self.get_angle_to_cubes(cubes) - self.last_coordinates[-1])
+                self.add_rf_move(line_seq_name, 0)
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             
             elif i4 == i and i != len(cubes2) - 1:
@@ -155,8 +199,9 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(angle_to_pick_4)
                 coordinate_to_pick_4 = self.action_places["heaps"][heap_num].copy()
                 coordinate_to_pick_4[-1] = angle_to_pick_4
-                self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
-                
+                # self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
+                self.add_heap_rotation(line_seq_name, angle_to_pick_4 - self.last_coordinates[-1])
+
                 # rotate vector [58,0], not robot!!!
                 # delta_xy = rot_matrix(angle_to_pick_4 + np.pi/2).dot(self.cube_vector)
                 delta_xy = rot_matrix(angle_to_pick_4 - np.pi/2*(manipulators[0]-1)).dot(self.cube_vector)
@@ -164,7 +209,10 @@ class BehaviorTreeBuilder:
                 coordinate_to_pick_4 = coordinate_to_pick_4.reshape(3,1)
                 coordinate_to_pick_4 += delta_xy
                 coordinate_to_pick_4[-1] = angle_to_pick_4
-                self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
+                # self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
+                # now relative motion for stm
+                self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel(), move_type="move_odometry")
+
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             
             else:
@@ -173,8 +221,9 @@ class BehaviorTreeBuilder:
                 #rospy.loginfo(self.last_coordinates)
                 coordinate_to_pick_5 = np.array(self.last_coordinates).reshape(3,1)
                 coordinate_to_pick_5 += last_cube_delta_xy
-                coordinate_to_pick_5[-1] = angle_to_pick_4
-                self.add_move_action(line_seq_name, *coordinate_to_pick_5.ravel())
+                # coordinate_to_pick_5[-1] = angle_to_pick_4
+                # now relative motion for stm 
+                self.add_move_action(line_seq_name, *coordinate_to_pick_5.ravel(), move_type="move_odometry")
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
                    
     def add_cubes_sequence(self, cubes2_full):
@@ -225,31 +274,33 @@ if __name__ == "__main__":
     rospy.init_node("btb_node", anonymous=True)
     move_pub = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
     cmd_pub  = rospy.Publisher("/main_robot/stm_command",  String, queue_size=100)
-    move_type = 'simple'
+    move_type = 'standard'
     if len(sys.argv) > 1 and sys.argv[1] in ['simple','standard']:
         move_type = sys.argv[1]
     btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
-    btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
+    # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
+    btb.add_strategy([("heaps",0),("heaps",1),("heaps",2)])
+
     # btb.add_strategy([("heaps",0)])
     
     so = StrategyOperator(file='first_bank.txt')
     
-    btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
-    """
-    btb.add_cubes_sequence([[[0], [1], []],
-                            [[3], [], []],
+    # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
+    
+    btb.add_cubes_sequence([[[], [0], []],
+                            [[1], [2], [3]],
                             [[4], [], []],
                             [[2], [], []],
-                            [[], [3], [0]],
-                            [[], [], [1]],
-                            [[], [4], []],
-                            [[], [2], []],
-                            [[0], [1], [2]],
+                            [[3], [0], [1]],
                             [[], [], [4]],
-                            [[], [], [3]]])
-    """
+                            [[], [], [3]],
+                            [[0], [1], [2]],
+                            [[], [4], []]])
+                            #[[], [], [4]],
+                            #[[], [], [3]]])
+    
     btb.create_tree_from_strategy()
-    rospy.sleep(0.5)
+    rospy.sleep(1)
     btb.bt.root_node.start()
     r = rospy.Rate(10)
     while not rospy.is_shutdown() and btb.bt.root_node.check_status() != "finished":
