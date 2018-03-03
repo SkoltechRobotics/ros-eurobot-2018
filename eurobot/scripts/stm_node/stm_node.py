@@ -12,7 +12,8 @@ RATE = 20
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
 GET_MANIPULATOR_STATUS = 0xa1
-TAKE_CUBE = 0xb0
+# TAKE_CUBE = 0xb0
+MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 
@@ -73,7 +74,7 @@ class stm_node(STMprotocol):
         if action_type == ODOMETRY_MOVEMENT:
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
-        if action_type == TAKE_CUBE:
+        if action_type in MANIPULATOR_JOBS:
             if args[0] == 0:
                 self.take_cube0 = action_name
                 self.timer_m0 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator0_timer)
