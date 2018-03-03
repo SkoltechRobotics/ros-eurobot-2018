@@ -13,7 +13,34 @@ A_R = np.array([[-0.5, 0, 0, 0.5],
                 [0, -1. / (L2 + L3), 1./(L2 + L3), 0]])
 
 
-def distances(point):
+A_R[2] = np.array([[-0.5, 0, 0, 0.5],
+                  [0, 0, -1, 0],
+                  [0, 0, 0, 0]])
+
+A_R[3] = np.array([[-0.5, 0, 0, 0.5],
+                  [0, 0, 0, 0],
+                  [0, 0, 0, 0]])
+
+A_R[4] = np.array([[0, 0, 0, 0],
+                   [0, 0, 0, 0],
+                   [0, 0, 0, 0]])
+
+PLANES = [[0, 0, 0, 0],
+          [1, 1, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 1, 1],
+          [1, 1, 0, 0],
+          [1, 1, 1, 1],
+          [0, 0, 1, 1],
+          [2, 1, 0, 0],
+          [3, 1, 1, 3],
+          [0, 0, 1, 2],
+          [1, 1, 1, 1]]
+
+MATRICES = [0, 2, 0, 1, 2, 3, 1, 2, 4, 1, 3]
+
+
+def distances(point, planes):
     x_0, y_0, alpha_0 = point
     dr = np.zeros(4)
     dr[0] = 3 * L / 2 - 3 * L / (2 * cos(alpha_0)) - x_0 - y_0 * tan(alpha_0)
@@ -41,8 +68,8 @@ def command_callback(data):
         while not rospy.is_shutdown():
             x = np.array([0, 0, 0])
             for i in range(1):
-                f = fun(x, start_sensors, sensors)
-                dX = A_R.dot(f[:, np.newaxis])[:, 0]
+                f = fun(x, start_sensors, sensors, PLANES[config])
+                dX = A_R[MATRICES[config]].dot(f[:, np.newaxis])[:, 0]
                 x = x - dX
             x[0:2] /= -1000
             print(x)
