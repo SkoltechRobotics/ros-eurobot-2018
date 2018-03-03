@@ -23,6 +23,6 @@
 
   </node>
 
-  <node name="path_follower" pkg="eurobot_navigation" type="follow.py"/>
+  <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
 
 </launch>
