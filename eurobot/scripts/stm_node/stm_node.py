@@ -72,17 +72,17 @@ class stm_node(STMprotocol):
         # high-level commands handling
         if action_type == ODOMETRY_MOVEMENT:
             self.odometry_movement_id = action_name
-            rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
+            self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
         if action_type == TAKE_CUBE:
             if args[0] == 0:
                 self.take_cube0 = action_name
-                rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator0_timer)
+                self.timer_m0 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator0_timer)
             if args[0] == 1:
                 self.take_cube1 = action_name
-                rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator1_timer)
+                self.timer_m1 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator1_timer)
             if args[0] == 2:
                 self.take_cube2 = action_name
-                rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator2_timer)
+                self.timer_m2 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator2_timer)
 
         return successfully, args_response
 
@@ -124,29 +124,29 @@ class stm_node(STMprotocol):
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
         if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.odometry_movement_id + 'finished')
-            shutdown() 
+            self.pub_response.publish(self.odometry_movement_id + ' finished')
+            self.timer_odom_move.shutdown() 
 
 
     def manipulator0_timer(self, event):
-        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_MANIPULATOR_STATUS, [0])
         if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.take_cube0 + 'finished')
-            shutdown() 
+            self.pub_response.publish(self.take_cube0 + ' finished')
+            self.timer_m0.shutdown() 
 
 
     def manipulator1_timer(self, event):
-        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_MANIPULATOR_STATUS, [1])
         if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.take_cube1 + 'finished')
-            shutdown() 
+            self.pub_response.publish(self.take_cube1 + ' finished')
+            self.timer_m1.shutdown() 
 
 
     def manipulator2_timer(self, event):
-        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_MANIPULATOR_STATUS, [2])
         if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.take_cube2 + 'finished')
-            shutdown() 
+            self.pub_response.publish(self.take_cube2 + ' finished')
+            self.timer_m2.shutdown() 
 
 
 if __name__ == '__main__':
