@@ -59,7 +59,7 @@ if __name__ == '__main__':
     
     pick_2 = SequenceNode("pick_2")
     radius = 0.06 #m
-    speed  = 0.2  #m/s
+    speed  = 0.05  #m/s
     angle  = 3.14 #m/s
     stm_rot_pi = ActionNode("stm_move2", pub_cmd, "162 " + str(radius*angle)  + " 0 " + str(angle) + " " + str(speed) + " 0 " + str(speed/radius), sub_response_name)
     rf_move2 = ActionNode("rf_move2", pub_rf, "MOVETOHEAP", sub_response_name)
@@ -81,22 +81,21 @@ if __name__ == '__main__':
 #
     bt.add_node(all_actions, "big_robot")
 #
-    bt.add_node(move_to_heap, all_actions.name)
-
-    bt.add_node(nav_move, move_to_heap.name)
-    bt.add_node(stm_move, move_to_heap.name)
-    bt.add_node(rf_move, move_to_heap.name)
+    # bt.add_node(move_to_heap, all_actions.name)
+    #
+    # bt.add_node(nav_move, move_to_heap.name)
+    # bt.add_node(stm_move, move_to_heap.name)
 #    
     bt.add_node(pick_1, all_actions.name)
 
-    bt.add_node(rf_move, pick_1.name)
+    # bt.add_node(rf_move, pick_1.name)
     bt.add_node(pick_1c, pick_1.name)
 
 #
     bt.add_node(pick_2, all_actions.name)
 
     bt.add_node(stm_rot_pi, pick_2.name)
-    bt.add_node(rf_move2,   pick_2.name)
+    # bt.add_node(rf_move2,   pick_2.name)
 
     bt.add_node(pick_012, pick_2.name)
     bt.add_node(pick_0t, pick_012.name)

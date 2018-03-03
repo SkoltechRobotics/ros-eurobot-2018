@@ -74,7 +74,7 @@ def take_cube(manipulator_num):
 if __name__ == '__main__':
     rospy.init_node('cubes_broadcaster')
     pub_cubes = rospy.Publisher("cubes", MarkerArray, queue_size=1)
-    pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
+    pub_response = rospy.Publisher("/main_robot/response_sim", String, queue_size=10)
     coords = np.array([0, 0, 0])
     rospy.Subscriber("/main_robot/coordinates", String, coords_callback, queue_size=1)
     rospy.Subscriber("/main_robot/stm_command", String, command_callback, queue_size=10)
