@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 
 from executor import *
-from optimizer import *
+# from optimizer import *
 import copy
+import numpy as np
 #from cube_picking_optimizer import *
 
 def rot_matrix(rot_angle):
@@ -41,7 +42,14 @@ class BehaviorTreeBuilder:
                 self.track_units = 'm'
                 self.move_action_name = str(0x0E)
                 self.move_publisher_name = "cmd_publisher"
-        self.action_places = copy.deepcopy(StrategyOptimizer.action_places)
+        # self.action_places = copy.deepcopy(StrategyOptimizer.action_places)
+        self.action_places = {
+                "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]], dtype=np.float64),
+                "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
+                "disposal": np.array([[10, 61, 0]],dtype=np.float64),
+                "base": np.array([[15, 15, 0]],dtype=np.float64)
+            }
+
         for _, action in self.action_places.items():
             for coords in action:
                 coords[:2] = coords[:2][::-1]
