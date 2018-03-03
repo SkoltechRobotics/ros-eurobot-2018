@@ -85,7 +85,6 @@ if __name__ == '__main__':
     #
     # bt.add_node(nav_move, move_to_heap.name)
     # bt.add_node(stm_move, move_to_heap.name)
-    # bt.add_node(rf_move, move_to_heap.name)
 #    
     bt.add_node(pick_1, all_actions.name)
 
