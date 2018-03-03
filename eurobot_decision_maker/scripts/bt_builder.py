@@ -177,7 +177,8 @@ class BehaviorTreeBuilder:
             
             if i == 0:
                 # first move from outside to the heap and pick
-                self.add_move_to_heap(main_seq_name, heap_num, self.get_angle_to_cubes(cubes))
+                rospy.loginfo("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                self.add_move_to_heap(line_seq_name, heap_num, self.get_angle_to_cubes(cubes))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             elif i4 == -1:
                 # simply rotate and pick
