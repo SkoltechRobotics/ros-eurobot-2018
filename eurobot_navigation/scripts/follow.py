@@ -49,9 +49,9 @@ def follow_path(path):
 
         # stop and publish response if we reached the goal with the given tolerance
         if func(closest) > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
-            pub_response.publish(goal_id + " finished")
             # stop the robot
             send_cmd(0, 0, 0)
+            pub_response.publish(goal_id + " finished")
             break
 
         # place a carrot on the path for the robot to follow (it is D steps ahead of the robot)
@@ -62,7 +62,7 @@ def follow_path(path):
         # distance to the carrot
         carrot_distance = path[carrot, :] - coords
         carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
-        print 'carrot_distance:\t', carrot_distance
+        #print 'carrot_distance:\t', carrot_distance
 
         # choose speed limits
         # deceleration in the end of the path
@@ -73,33 +73,24 @@ def follow_path(path):
         vel = V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
         if vel[2] > W_MAX:
             vel *= W_MAX / vel[2]
-        print 'vel max\t:', vel
+        #print 'vel max\t:', vel
 
         # consider acceleration and deceleration
         vel = vel * deceleration_coefficient * acceleration_coefficient
-        print 'vel acc\t:', vel
+        #print 'vel acc\t:', vel
 
         # vel in robot frame
         vel_robot_frame = rotation_transform(vel, -coords[2])
-        print 'vel cmd\t:', vel_robot_frame
+        #print 'vel cmd\t:', vel_robot_frame
         
         send_cmd(*vel_robot_frame)
 
         # for debug
         #print 'carrot:', path[carrot,:]
-        print '------------------------'
+        #print '------------------------'
     # stop the robot in case the node is closed
     send_cmd(0, 0, 0)
 
-
-def speed_to_reach_point(point): # TODO
-    """ The speed to reach the point given in robot frame in uniform motion"""
-    x, y, a = point
-    # radius of the path to the point
-    R = np.sqrt(x ** 2 + y ** 2) / 2 / np.abs(np.sin(a / 2))
-    S = R * a
-    angle = np.arctan2(y, x) - a / 2
-    return np.array([S * np.cos(angle), S * np.sin(angle), a])
 
 def rotation_transform(vec, angle):
     M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
@@ -122,7 +113,8 @@ def cmd_callback(data):
     cmd_id = data_splitted[0]
     cmd_type = data_splitted[1]
     cmd_args = data_splitted[2:]
-    if action_type == "move":
+
+    if cmd_type == "move": # movement with navigation
         move_message = MoveBaseActionGoal()
         move_message.goal.target_pose.header.frame_id = 'world'
         move_message.goal.target_pose.pose.position.x = float(cmd_args[0])
@@ -138,7 +130,19 @@ def cmd_callback(data):
         
         # this is a command to the global planner
         pub_goal.publish(move_message)
+    elif cmd_type == "move_odometry": # simple movement by odometry
+        goal = np.array(cmd_args).astype('float')
+        speed = speeds_proportion_to_reach_point(goal - coords)
+        pub_cmd.publish(cmd_id + " 162 " + str(speed[0]) + ' ' + str(speed[1]) + ' ' + str(speed[2]))
 
+def speeds_proportion_to_reach_point(point): # TODO: check
+    """ The speed to reach the point given in robot frame in uniform motion"""
+    x, y, a = point
+    # radius of the path to the point
+    R = np.sqrt(x ** 2 + y ** 2) / 2 / np.abs(np.sin(a / 2))
+    angle = np.arctan2(y, x) - a / 2
+    vel = np.array([R * np.cos(angle), R * np.sin(angle), 1.0])
+    return vel / abs(np.max(vel))
 
 
 if __name__ == "__main__":
@@ -148,7 +152,7 @@ if __name__ == "__main__":
     cmd_pub = rospy.Publisher("/main_robot/cmd_vel", Twist, queue_size = 1)
     pub_goal = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size = 1)
     pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
-
+    pub_cmd = rospy.Publisher("main_robot/stm_command", String, queue_size=10)
     listener = tf.TransformListener()
     rate = rospy.Rate(20.0)
     while not rospy.is_shutdown():
