@@ -145,7 +145,7 @@ class BehaviorTreeBuilder:
         
     def add_rf_move(self, parent_name, heap_status):
         # add heap_status
-        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
+        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP", heap_status)
 
     def add_move_to_heap(self, parent_name, heap_num, angle):
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
@@ -162,11 +162,15 @@ class BehaviorTreeBuilder:
 
     def get_heap_status(self, angle):
         all_colors = {0,1,2,3,4}
+        if angle < 0:
+            angle = 2*np.pi - angle
+        side = np.round(angle/np.pi*2)
         if len(self.colors_left) == 5:
             return 0
-        # if len(self.colors_left) == 4:
-        #     picked_color = all_colors - self.colors_left
-            
+        if len(self.colors_left) == 4:
+            picked_color = list(all_colors - self.colors_left)[0]
+
+        return 0
 
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
         main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
@@ -193,7 +197,7 @@ class BehaviorTreeBuilder:
                 # rospy.loginfo(*(self.action_places["heaps"][heap_num][:2].tolist() + [1] ))
                 # self.add_move_action(line_seq_name, *(self.action_places["heaps"][heap_num][:2].tolist() + [ self.get_angle_to_cubes(cubes) ]))
                 self.add_heap_rotation(line_seq_name, self.get_angle_to_cubes(cubes) - self.last_coordinates[-1])
-                self.add_rf_move(line_seq_name, 0)
+                self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             
             elif i4 == i and i != len(cubes2) - 1:
