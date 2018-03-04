@@ -18,13 +18,18 @@ class STMprotocol(object):
             0x0b: "=BH",
             0x0c: "=B",
             0x0d: "=B",
-            0xa0: "=fff",
-            0xa1: "=fff",
+            0xa0: "=",
+            0xa1: "=B",
             0xb0: "=B",
             0xc0: "=BB",
             0xb1: "=B",
+            0xb2: "=BB",
+            0xb3: "=B",
+            0xb4: "=B",
+            0xb5: "=B",
             0x0e: "=fff",
             0x0f: "=",
+            0xa2: "=ffffff"
         }
 
         self.unpack_format = {
@@ -39,14 +44,21 @@ class STMprotocol(object):
             0x0b: "=BB",
             0x0c: "=f",
             0x0d: "=BB",
-            0xa0: "=Bfff",
-            0xa1: "=BB",
+            0xa0: "=B",
+            0xa1: "=B",
             0xb0: "=BB",
             0xc0: "=BB",
             0xb1: "=BB",
+            0xb2: "=BB",
+            0xb3: "=BB",
+            0xb4: "=BB",
+            0xb5: "=BB",
             0x0e: "=BB",
             0x0f: "=fff",
+            0xa2: "=BB"
         }
+
+
     def pure_send_command(self, cmd, args):
         # Clear buffer
         self.ser.reset_output_buffer()
@@ -58,6 +70,8 @@ class STMprotocol(object):
         crc = sum(msg) % 256
         msg += bytearray([crc])
         self.ser.write(msg)
+        if cmd == 176 or cmd == 162:
+            print cmd, args
         #Receiving data
         data = self.ser.read()
         if len(data) == 0:
@@ -81,7 +95,10 @@ class STMprotocol(object):
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
         return True, args
+
+
     def send_command(self, cmd, args, n_repeats = 5):
+        # print (cmd, args)
         for i in range(n_repeats):
             try:
                 return self.pure_send_command(cmd, args)
@@ -89,5 +106,6 @@ class STMprotocol(object):
                 if i == n_repeats-1:
                     print('Exception:\t', exc)
                     print('At time:\t', datetime.datetime.now())
+                    print('cmd:', cmd, 'args:', args)
                     print('--------------------------')
         return False, None

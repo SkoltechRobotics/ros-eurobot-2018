@@ -1,19 +1,26 @@
 <?xml version="1.0"?>
-<launch>
-  <group ns="main_robot">
-    <!-- NODES -->
-    <node pkg="rviz" name="rviz_laserscan" type="rviz" args="-d $(find eurobot_sim)/config/visualization.rviz" output="screen"/>
+<launch> 
 
+  <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
+
+  <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_vis" args="0 0 0 0 0 0 world map 100"/>
+
+  <group ns="visualization">
+    
+    <node pkg="rviz" name="rviz" type="rviz" args="-d $(find eurobot_sim)/config/visualization.rviz" output="screen"/>
+    <param name="field_description" textfile="$(find eurobot_sim)/models/field.urdf" />
+    
+  </group>
+
+  <group ns="main_robot">
+
+    <!-- Robot model -->
+    <param name="description" command="cat $(find eurobot_sim)/models/main_robot.urdf" />
+    
     <!-- PARAMS -->
+    
     <!-- robot -->
     <param name="robot_name" type="string" value="main_robot" />
-    <param name="field_description" textfile="$(find eurobot_sim)/models/field.urdf" />
-    <param name="robot_by_stm_description" command="cat $(find eurobot_sim)/models/main_robot_by_stm.urdf" />
-    <param name="robot_description" command="cat $(find eurobot_sim)/models/main_robot.urdf" />
-
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false"/>
-    <node pkg="eurobot_sim" name="tf_broadcaster" type="tf_broadcaster.py"  output="screen"/>
     
     <!-- robot size -->
     <param name="dim_x" type="double" value="420" />
@@ -28,30 +35,9 @@
   </group>
 
   <group ns="field">
+  
     <node pkg="eurobot_sim" name="cubes_broadcaster" type="cubes_broadcaster.py"  output="screen"/>
 
-    <param name="color" type="string" value="orange" />
-
-    <!-- cubes coordinates -->
-    <param name="cube1c_x" type="double" value="850" />
-    <param name="cube1c_y" type="double" value="540" />
-
-    <param name="cube2c_x" type="double" value="300" />
-    <param name="cube2c_y" type="double" value="1190" />
-
-    <param name="cube3c_x" type="double" value="1100" />
-    <param name="cube3c_y" type="double" value="1500" />
-
-    <param name="cube4c_x" type="double" value="1900" />
-    <param name="cube4c_y" type="double" value="1500" />
-
-    <param name="cube5c_x" type="double" value="2700" />
-    <param name="cube5c_y" type="double" value="1190" />
-
-    <param name="cube6c_x" type="double" value="2150" />
-    <param name="cube6c_y" type="double" value="540" />
-
   </group>
-
 
 </launch>

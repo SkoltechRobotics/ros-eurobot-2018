@@ -1,20 +1,28 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
-import datetime
 import numpy as np
+import tf
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist
+
 
 class stm_node():
     def __init__(self):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        self.pub_stm_coords = rospy.Publisher('stm/coordinates', String, queue_size=10)
+        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
+        self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
+
+        self.robot_name = rospy.get_param('robot_name')
+        self.br = tf.TransformBroadcaster()
 
         # high-level commands info (for handling response)
-        self.actions_in_progress = [''] # action_names, indexing corresponds to types indexing
-        self.action_types = [] # list of high-level action types only
+        self.actions_in_progress = ['']  # action_names, indexing corresponds to types indexing
+        self.action_types = []  # list of high-level action types only
+        self.actions_with_response = [0x0E]
 
         self.pack_format = {
             0x01: "=BBBB",
@@ -34,7 +42,6 @@ class stm_node():
             0xb1: "=B",
             0x0e: "=fff",
             0x0f: "=",
-            0xb0: "=B",
         }
 
         self.unpack_format = {
@@ -55,15 +62,24 @@ class stm_node():
             0xb1: "=BB",
             0x0e: "=BB",
             0x0f: "=fff",
-            0xb0: "=BB",
         }
 
         self.freq = 100
-        self.rate = rospy.Rate(self.freq) # 100Hz
+        self.rate = rospy.Rate(self.freq)  # 100Hz
 
-        self.coords = np.array([0.0, 0.0, 0.0])
+        self.coords = np.array(
+            [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
         self.vel = np.array([0.0, 0.0, 0.0])
 
+        self.last_integration_time = rospy.get_time()
+        rospy.Timer(rospy.Duration(1. / 80), self.pub_timer_callback)
+
+    def set_twist(self, twist):
+        vel = np.zeros(3)
+        vel[0] = twist.linear.x
+        vel[1] = twist.linear.y
+        vel[2] = twist.angular.z
+        self.set_vel(vel)
 
     def parse_data(self, data):
         data_splitted = data.data.split()
@@ -71,69 +87,109 @@ class stm_node():
         action_type = int(data_splitted[1])
         args_str = data_splitted[2:]
         # TBD: split any chars in Strings like 'ECHO'->['E','C','H','O']
-        action_args_dict = {'B':ord, 'H':int, 'f':float}
-        args = [action_args_dict[t](s) for t,s in zip(self.pack_format[action_type][1:], args_str)]
-        return action_name,action_type,args
+        action_args_dict = {'B': ord, 'H': int, 'f': float}
+        args = [action_args_dict[t](s) for t, s in zip(self.pack_format[action_type][1:], args_str)]
+        return action_name, action_type, args
+
+    def set_vel(self, vel):
+        self.vel = vel
+
+    def set_coords(self, coords):
+        self.coords = coords
 
     def stm_command_callback(self, data):
         # parse data
-        action_name,action_type,args = self.parse_data(data)
+        action_name, action_type, args = self.parse_data(data)
+        rospy.loginfo(str(action_type))
 
-        ## Command handling
         # simulate STM32 response
         successfuly = True
         args_response = "Ok"
         if action_type == 0x08:
-            vel = np.array(args)
-            self.vel[0] = vel[0]*np.cos(self.coords[2]) - vel[1]*np.sin(self.coords[2])
-            self.vel[1] = vel[1]*np.cos(self.coords[2]) + vel[0]*np.sin(self.coords[2])
-            self.vel[2] = vel[2]
+            self.set_vel(np.array(args))
         elif action_type == 0x09:
             args_response = self.vel
         elif action_type == 0x0E:
-            self.coords = np.array(args)
+            self.set_coords(np.array(args))
         elif action_type == 0x0F:
             args_response = self.coords
-            #elif action_type == 0x0:
-            
-
-        #if successfuly:
-        #    print 'STM responded to cmd', action_name, '\twith args:', args_response
 
         # high-level commands handling
         if action_type in self.action_types:
             # store action_name
+            # rospy.loginfo(str(action_type))
             self.actions_in_progress[self.action_types[action_type]] = action_name
 
-        # low-level commands handling - not required
-        #else:
-        #    self.pub_response.publish(action_name + " ok")
+        # low-level commands handling
+        elif action_type in self.actions_with_response:
+            rospy.loginfo(action_name + " finished")
 
-        # pub stm/coordinates whenever stm status is requested
-        if action_type == 0x0f:
-            if successfuly:
-                 self.pub_stm_coords.publish(' '.join(map(str, [args_response[0]*1000, args_response[1]*1000, args_response[2]])))
-            #self.handle_response()
+            def delayed_cb(e):
+                self.pub_response.publish(action_name + " finished")
+
+            rospy.Timer(rospy.Duration(0.2), delayed_cb, oneshot=True)
 
     def handle_response(self, status):
         """Handles response for high-lvl commands (only)."""
         l = len(status)
         for i in range(l):
             # mind that indeces in status[] correspond to indeces in actions_in_progress[]
+            rospy.loginfo(status[i] + ' ' + str(self.action_in_progress[i]))
             if status[i] == '0' and len(self.actions_in_progress[i]) > 0:
-                self.actions_in_progress[i] = ''                                    # stop storing this action_name
-                self.pub_response.publish(self.actions_in_progress[i] + " done")    # publish responce
+                self.actions_in_progress[i] = ''  # stop storing this action_name
+                self.pub_response.publish(self.actions_in_progress[i] + " done")  # publish responce
 
             self.rate.sleep()
 
     def integrate(self):
         while not rospy.is_shutdown():
-            noise = np.random.normal(size=3)
-            noise *= 0.1 * self.vel / self.freq
-            #noise *= 0.96
-            self.coords = self.coords + self.vel / self.freq + noise
+            # time between iterations
+            now = rospy.get_time()
+            dt = now - self.last_integration_time
+            self.last_integration_time = now
+
+            # matrix for conveting into world frame
+            a = self.coords[2]
+            M = np.array([[np.cos(a), -np.sin(a)],
+                          [np.sin(a), np.cos(a)]])  # TODO
+            vel = self.vel.copy()
+            vel[:2] = np.matmul(M, vel[:2].reshape((2, 1))).reshape((2,))
+
+            # process noise
+            noise = np.random.normal(size=3) * 0.1 * vel
+            # noise *= 0.96 # simulate bad estimation of wheel size, etc.
+
+            # add dx and noise to coords
+            self.coords += (vel + noise) * dt
             self.coords[2] = self.coords[2] % (2 * np.pi)
             self.rate.sleep()
+
+    def pub_timer_callback(self, event):
+        odom = Odometry()
+        odom.header.frame_id = 'odom'
+        odom.child_frame_id = self.robot_name
+        odom.pose.pose.position.x = self.coords[0]
+        odom.pose.pose.position.y = self.coords[1]
+        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2])
+        odom.pose.pose.orientation.z = quat[2]
+        odom.pose.pose.orientation.w = quat[3]
+        odom.twist.twist.linear.x = self.vel[0]
+        odom.twist.twist.linear.x = self.vel[1]
+        odom.twist.twist.angular.z = self.vel[2]
+        self.pub_odom.publish(odom)
+
+        self.br.sendTransform((self.coords[0], self.coords[1], 0),
+                              tf.transformations.quaternion_from_euler(0, 0, self.coords[2]),
+                              rospy.Time.now(),
+                              self.robot_name,
+                              "odom")
+
+        self.br.sendTransform((0, 0.06, 0.41),
+                              tf.transformations.quaternion_from_euler(0, 0, 1.570796),
+                              rospy.Time.now(),
+                              'laser',
+                              self.robot_name)
+
 
 if __name__ == '__main__':
     try:

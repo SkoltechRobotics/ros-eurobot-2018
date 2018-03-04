@@ -1,6 +1,15 @@
+This version of ROS-BT works on ROS Kinetic (with fixed xdot and rqt_dot packages)
+-----------
+
 NEWS!
 -----------
 The Preprint of our book titled "**Behavior Trees in Robotics and AI**" is available here: https://arxiv.org/abs/1709.00084
+
+
+NOTE:
+------
+The [YARP version](https://github.com/miccol/YARP-Behavior-Trees) of this library has a GUI as the following:
+![alt tag](https://github.com/miccol/YARP-Behavior-Trees/blob/master/YARPBTRun.JPG)
 
 
 ROS-Behavior-Tree ![License MIT](https://img.shields.io/dub/l/vibe-d.svg)
@@ -124,12 +133,15 @@ which the tree is published. The default topic is `/bt_dotcode`.
 ```
 rosrun rqt_dot rqt_dot
 ```
+NOTES
+-------
+In case you are puzzled about why a sequence (or fallback) node with 2 or more actions as children never get past the first action, see [this](https://github.com/miccol/ROS-Behavior-Tree/issues/16) discussion.
 
 LICENSE
 -------
 The MIT License (MIT)
 
-Copyright (c) 2014-2017 Michele Colledanchise
+Copyright (c) 2014-2018 Michele Colledanchise
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

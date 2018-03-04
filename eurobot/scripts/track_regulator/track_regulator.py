@@ -4,13 +4,15 @@ from std_msgs.msg import String
 from TrackRegulator import TrackRegulator
 import numpy as np
 
-c_p = np.array([0,0,0])
+c_p = np.array([0, 0, 0])
 cmd_id = None
+
 
 def coordinates_callback(data):
     data_splitted = data.data.split()
     global c_p
     c_p = np.array([float(data_splitted[i]) for i in range(3)])
+
 
 def command_callback(data):
     global c_p
@@ -21,7 +23,7 @@ def command_callback(data):
     data_splitted = data.data.split()
     cmd_id = data_splitted[0]
     action_type = data_splitted[1]
-    print("Receive command " + data.data) 
+    print("Receive command " + data.data)
     if action_type == "MOVE":
         # parse args
         args = data_splitted[2:]
@@ -29,7 +31,7 @@ def command_callback(data):
         t_p = np.array(args)
 
         # start movement
-        regulator.start_move(t_p, c_p) 
+        regulator.start_move(t_p, c_p)
     elif action_type == "STOP":
         regulator.is_moving = False
         pub_command.publish("SETSPEED 8 0 0 0")
@@ -46,26 +48,29 @@ def command_callback(data):
         y = rospy.get_param("/field/cube" + str(n_cube) + "c_y")
         t_p = np.array([x, y, 0])
         regulator.start_move(t_p, c_p)
-        
+
 
 if __name__ == '__main__':
     try:
         regulator = TrackRegulator()
         rospy.init_node('track_regulator', anonymous=True)
         rate = rospy.Rate(10)
-        pub_command = rospy.Publisher("stm_command", String, queue_size=10) 
-        pub_response = rospy.Publisher("response", String, queue_size=10) 
+        pub_command = rospy.Publisher("stm_command", String, queue_size=10)
+        pub_response = rospy.Publisher("response", String, queue_size=10)
+        pub_speed = rospy.Publisher("track_regulator/speed", String, queue_size=1)
         rospy.Subscriber("move_command", String, command_callback)
-        rospy.Subscriber("stm/coordinates", String, coordinates_callback)
+        coords_source = rospy.get_param("track_regulator/coords_source")
+        rospy.Subscriber("%s/coordinates" % coords_source, String, coordinates_callback)
 
         while not rospy.is_shutdown():
-            if not cmd_id is None:
+            if cmd_id is not None:
                 # regulation
-                while regulator.is_moving:
+                while not rospy.is_shutdown() and regulator.is_moving:
                     speeds = regulator.regulate(c_p)
                     print("speeds", speeds)
                     speeds = str(speeds[0]) + ' ' + str(speeds[1]) + ' ' + str(speeds[2])
                     pub_command.publish("SETSPEED 8 " + speeds)
+                    pub_speed.publish(str(speeds))
                     rate.sleep()
                 # publish response
                 pub_response.publish(cmd_id + " finished")
@@ -73,4 +78,3 @@ if __name__ == '__main__':
             rate.sleep()
     except rospy.ROSInterruptException:
         pass
-

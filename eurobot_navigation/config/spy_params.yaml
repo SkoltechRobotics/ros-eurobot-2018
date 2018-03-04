@@ -1,0 +1,5 @@
+R: 0.04
+
+clustering:
+    eps: 0.06
+    min_samples: 5
