@@ -27,6 +27,8 @@ goal_id = ''
 def plan_callback(plan):
     path = np.array([[pose.pose.position.x, pose.pose.position.y, tf.transformations.euler_from_quaternion([0,0,pose.pose.orientation.z, pose.pose.orientation.w])[2]] for pose in plan.poses])
     rospy.loginfo('Recieved a path to ' + str(path[-1]))
+    global t_prev
+    t_prev = rospy.get_time()
     follow_path(path)
 
 
@@ -41,6 +43,7 @@ def follow_path(path):
         return np.sum((path[int(x),:2] - coords[:2])**2) ** .5
 
     while not rospy.is_shutdown():
+        t0 = rospy.get_time()
         rospy.loginfo('STARTED NEW ITERATION')
         # current linear and angular goal distance
         goal_distance = np.sum((path[-1][:2] - coords[:2])**2) ** .5
@@ -96,6 +99,11 @@ def follow_path(path):
         
         send_cmd(*vel_robot_frame)
 
+        t = rospy.get_time()
+        global t_prev
+        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec)  of  iteration: ' + str(t - t0))
+        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec) betw iteration: ' + str(t - t_prev))
+        t_prev = t
         # for debug
         rospy.loginfo('------------------------')
     # stop the robot in case the node is closed
