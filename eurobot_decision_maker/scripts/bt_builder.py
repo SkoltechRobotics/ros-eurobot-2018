@@ -80,13 +80,20 @@ class BehaviorTreeBuilder:
         return BehaviorTreeBuilder.scale[self.opt_units]/BehaviorTreeBuilder.scale[self.track_units]*dist
     def add_move_action(self, parent_name, *args, **kvargs):
         move_type = "move"
-        if "move_type" in kvargs and kvargs["move_type"] in ["move", "move_odometry"]:
+        if "move_type" in kvargs and kvargs["move_type"] in ["move", "move_odometry", "move_stm"]:
             move_type = kvargs["move_type"]
         shift_multiplier = 1
         if "shift_multiplier" in kvargs:
             shift_multiplier = kvargs["shift_multiplier"]
         args = list(args) 
         robot_angle = args[-1]
+        if move_type == "move_stm":
+            stm_vel = 0.15
+            shift_since_last = np.array(args).reshape(3,1) - np.array(last_coordinates).reshape(3,1)
+            shift_since_last[:2] = [self.convert_units(a) for a in args[:2]]
+            shift_since_last = list(shift_since_last.ravel())
+            sh = shift_since_last
+            self.add_command_action(parent_name,162,sh[0],sh[1],0,0.15,0.15,0)
         self.last_coordinates = copy.deepcopy(args)
         rospy.loginfo(args)
         args[:2] = [self.convert_units(a) for a in args[:2]]
@@ -97,10 +104,12 @@ class BehaviorTreeBuilder:
         rospy.loginfo(args)
         args = list(args.ravel())
         # args.insert(0, self.move_action_name)
-        args.insert(0, move_type)
         self.last_angle = args[-1] # saving last angle
+        if move_type in ["move", "move_odometry"]:
+            args.insert(0, move_type)
+            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, *args)
+
         # TEMP cmd_publisher
-        self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, *args)
     def add_command_action(self, parent_name, *args):
         self.add_action_node(parent_name, "cmd", "cmd_publisher", self.cmd_response, *args)
     def add_big_action(self, parent_name, action_name, place):
@@ -273,7 +282,7 @@ class BehaviorTreeBuilder:
                 coordinate_to_pick_4[-1] = angle_to_pick_4
                 # self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
                 # now relative motion for stm
-                self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel(), move_type="move_odometry")
+                self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel(), move_type="move_stm")
 
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             
@@ -285,7 +294,7 @@ class BehaviorTreeBuilder:
                 coordinate_to_pick_5 += last_cube_delta_xy
                 # coordinate_to_pick_5[-1] = angle_to_pick_4
                 # now relative motion for stm 
-                self.add_move_action(line_seq_name, *coordinate_to_pick_5.ravel(), move_type="move_odometry")
+                self.add_move_action(line_seq_name, *coordinate_to_pick_5.ravel(), move_type="move_stm")
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
                    
     def add_cubes_sequence(self, cubes2_full):
