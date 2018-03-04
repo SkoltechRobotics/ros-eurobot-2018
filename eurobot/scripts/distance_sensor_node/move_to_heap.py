@@ -3,90 +3,59 @@ import rospy
 import sys
 from std_msgs.msg import String
 import numpy as np
-from numpy import cos, tan
 
 L = 58
-L2 = 50
-L3 = 72
+L2 = 107 / 2
 
-A_R = [None, None, None, None, None]
-A_R[0] = np.array([[-0.5, 0, 0, 0.5],
-                [0, -0.5, -0.5, 0],
-                [0, -1. / (L2 + L3), 1./(L2 + L3), 0]])
+A_R = np.zeros((12, 3, 5))
+A_R[0] = A_R[2] = np.array([[-0.5, 0, 0, 0, 0.5],
+                            [0, -1. / 3, -1. / 3, -1. / 3, 0],
+                            [0, -1. / 2 / L2, 0, 1. / 2 / L2, 0]])
 
+A_R[1] = A_R[4] = np.array([[-0.5, 0, 0, 0, 0.5],
+                            [0, 0, -1, 0, 0],
+                            [0, 0, -1. / L2, 1. / L2, 0]])
 
-A_R[1] = np.array([[-0.5, 0, 0, 0.5],
-                  [0, -1, 0, 0],
-                  [0, 0, 0, 0]])
+A_R[3] = A_R[6] = np.array([[-0.5, 0, 0, 0, 0.5],
+                            [0, 0, -1, 0, 0],
+                            [0, -1. / L2, 1. / L2, 0, 0]])
 
-A_R[2] = np.array([[-0.5, 0, 0, 0.5],
-                  [0, 0, -1, 0],
-                  [0, 0, 0, 0]])
+A_R[5] = A_R[10] = np.array([[-0.5, 0, 0, 0, 0.5],
+                            [0, 0, -1, 0, 0],
+                            [0, 0, 0, 0, 0]])
 
-A_R[3] = np.array([[-0.5, 0, 0, 0.5],
-                  [0, 0, 0, 0],
-                  [0, 0, 0, 0]])
+A_R[7] = np.array([[-0.5, 0, 0, 0, 0.5],
+                   [0, -1, 0, 0, 0],
+                   [0, 0, 0, 0, 0]])
 
-A_R[4] = np.array([[0, 0, 0, 0],
-                   [0, 0, 0, 0],
-                   [0, 0, 0, 0]])
+A_R[9] = np.array([[-0.5, 0, 0, 0, 0.5],
+                   [0, 0, 0, -1, 0],
+                   [0, 0, 0, 0, 0]])
 
-PLANES = [[0, 0, 0, 0],
-          [1, 1, 0, 0],
-          [0, 0, 0, 0],
-          [0, 0, 1, 1],
-          [1, 1, 0, 0],
-          [1, 1, 1, 1],
-          [0, 0, 1, 1],
-          [2, 1, 0, 0],
-          [3, 1, 1, 3],
-          [0, 0, 1, 2],
-          [1, 1, 1, 1],
-          [0.5, 1, 1, 0.5]]
+A_R[8] = np.array([[0, 0, 0, 0, 0],
+                   [0, 0, -1, 0, 0],
+                   [0, 0, 0, 0, 0]])
 
-MATRICES = [0, 2, 0, 1, 2, 3, 1, 2, 4, 1, 3, 3]
+A_R[11] = np.array([[-0.5, 0, 0, 0, 0.5],
+                   [0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0]])
 
-
-def distances(point, planes):
-    x_0, y_0, alpha_0 = point
-    dr = np.zeros(4)
-    dr[0] = 3 * L / 2 - (3 * L / 2 - L * planes[0]) / cos(alpha_0) - x_0 - y_0 * tan(alpha_0)
-    dr[1] = L / 2 - (L / 2 - L * planes[1]) / cos(alpha_0) - L2 * tan(alpha_0) + x_0 * tan(alpha_0) - y_0
-    dr[2] = L / 2 - (L / 2 - L * planes[2]) / cos(alpha_0) + L3 * tan(alpha_0) + x_0 * tan(alpha_0) - y_0
-    dr[3] = 3 * L / 2 - (3 * L / 2 - L * planes[3]) / cos(alpha_0) + x_0 + y_0 * tan(alpha_0)
-    return dr
+PLANES = np.array([[0, 0, 0, 0, 0],
+                   [1, 1, 0, 0, 0],
+                   [0, 0, 1, 0, 0],
+                   [0, 0, 0, 1, 1],
+                   [1, 1, 1, 0, 0],
+                   [1, 1, 0, 1, 1],
+                   [0, 0, 1, 1, 1],
+                   [2, 1, 2, 0, 0],
+                   [3, 1, 0, 1, 3],
+                   [0, 0, 2, 1, 2],
+                   [1, 1, 1, 1, 1],
+                   [0.5, 1, 1, 1, 0.5]])
 
 
-def fun(x, r0s, rs, planes):
-    print r0s, rs
-    return distances(x, planes) + r0s - rs
-
-
-def command_callback(data):
-    global sensors
-    global start_sensors
-    data_splitted = data.data.split()
-    action_type = data_splitted[1]
-    print("Receive command " + data.data)
-
-    if action_type == "MOVETOHEAP":
-        config = int(data_splitted[2])
-        while not rospy.is_shutdown():
-            x = np.array([0, 0, 0])
-            for i in range(1):
-                f = fun(x, start_sensors, sensors, PLANES[config])
-                dX = A_R[MATRICES[config]].dot(f[:, np.newaxis])[:, 0]
-                x = x - dX
-            x[0:2] /= -1000
-            print(x)
-            dt = 0.3
-            v = x / dt
-            pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
-            rate.sleep()
-            if np.all(np.abs(x) < np.array([0.003, 0.003, 0.01])):
-                pub_command.publish("MOVE 8 0 0 0")
-                break
-        pub_response.publish(data_splitted[0] + " finished")
+def fun(r0s, rs, planes):
+    return L * planes + r0s - rs
 
 
 def distance_sensors_callback(data):
@@ -101,9 +70,33 @@ def distance_sensors_callback(data):
     sensors = a * sensors1 + (1 - a) * sensors
 
 
+def command_callback(data):
+    global sensors
+    global start_sensors
+    data_splitted = data.data.split()
+    action_type = data_splitted[1]
+    print("Receive command " + data.data)
+
+    if action_type == "MOVETOHEAP":
+        config = int(data_splitted[2])
+        while not rospy.is_shutdown():
+            f = fun(start_sensors, sensors, PLANES[config])
+            x = -A_R[config].dot(f[:, np.newaxis])[:, 0]
+            x[0:2] /= -1000
+            print(x)
+            dt = 0.3
+            v = x / dt
+            pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
+            rate.sleep()
+            if np.all(np.abs(x) < np.array([0.003, 0.003, 0.01])):
+                pub_command.publish("MOVE 8 0 0 0")
+                break
+        pub_response.publish(data_splitted[0] + " finished")
+
+
 if __name__ == '__main__':
     try:
-        sensors = np.zeros(4)
+        sensors = np.zeros(5)
         start_sensors = np.array(list(map(int, sys.argv[1:])))
         rospy.init_node('read_data_node', anonymous=True)
         rate = rospy.Rate(20)
