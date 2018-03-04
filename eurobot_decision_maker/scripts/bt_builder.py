@@ -145,7 +145,7 @@ class BehaviorTreeBuilder:
         
     def add_rf_move(self, parent_name, heap_status):
         # add heap_status
-        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP " + str(heap_status))
+        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP", heap_status)
 
     def add_move_to_heap(self, parent_name, heap_num, angle):
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
@@ -153,7 +153,8 @@ class BehaviorTreeBuilder:
         heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
         self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=3)
         self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
-        self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
+        self.add_rf_move(move_seq_name, 0)
+        # self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
 
     def add_heap_rotation(self, parent_name, angle):
         radius = 0.06       #m
