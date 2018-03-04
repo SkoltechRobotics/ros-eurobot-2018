@@ -26,7 +26,9 @@ goal_id = ''
 
 def plan_callback(plan):
     path = np.array([[pose.pose.position.x, pose.pose.position.y, tf.transformations.euler_from_quaternion([0,0,pose.pose.orientation.z, pose.pose.orientation.w])[2]] for pose in plan.poses])
-    rospy.loginfo('Got a new path that ends in ' + str(path[-1]))
+    rospy.loginfo('Recieved a path to ' + str(path[-1]))
+    global t_prev
+    t_prev = rospy.get_time()
     follow_path(path)
 
 
@@ -41,55 +43,69 @@ def follow_path(path):
         return np.sum((path[int(x),:2] - coords[:2])**2) ** .5
 
     while not rospy.is_shutdown():
+        t0 = rospy.get_time()
+        rospy.loginfo('STARTED NEW ITERATION')
         # current linear and angular goal distance
         goal_distance = np.sum((path[-1][:2] - coords[:2])**2) ** .5
         goal_yaw_distance = abs(path[-1][2] - coords[2])
+        rospy.loginfo('goal_distance = ' + str(goal_distance) + ' ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
         closest = int(fminbound(func, 0, goal))
+        rospy.loginfo('closest: ' + str(closest))
 
         # stop and publish response if we reached the goal with the given tolerance
         if func(closest) > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
             # stop the robot
             send_cmd(0, 0, 0)
-            rospy.loginfo(goal_id + " finished")
             pub_response.publish(goal_id + " finished")
+            if func(closest) > FAR:
+                rospy.loginfo(goal_id + " terminated, path deviation")
+            else:
+                rospy.loginfo(goal_id + " finished, reached the goal")
             break
+        rospy.loginfo('funk(closest) = ' + str(closest))
 
         # place a carrot on the path for the robot to follow (it is D steps ahead of the robot)
         carrot = min(closest + D, goal)
+        rospy.loginfo('carrot = ' + str(carrot))
 
         # VELOCITY REGULATION.
         # Here we assume W * T << 1, where W is angular speed and T is the time of one iteration of the control loop. Otherwice the path of the robot during one iteration will be an arc, not a line.
         # distance to the carrot
         carrot_distance = path[carrot, :] - coords
         carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
-        print 'carrot_distance:\t', carrot_distance
+        rospy.loginfo('carrot_distance:\t' + str(carrot_distance))
 
         # choose speed limits
         # deceleration in the end of the path
         acceleration_coefficient = min(1.0, 0.2 + float(closest) / D_ACCELERATION)
         deceleration_coefficient = min(1.0, float(goal-closest) / D_DECELERATION)
-
+        rospy.loginfo('acc, dec coefficients = ' + str(acceleration_coefficient) + ' ' + str(deceleration_coefficient))
+        
         # maximum possible speed in carrot distance proportion
         vel = V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
         if abs(vel[2]) > W_MAX:
             vel *= W_MAX / abs(vel[2])
-        print 'vel max\t:', vel
+        rospy.loginfo('vel max\t:' + str(vel))
 
         # consider acceleration and deceleration
         vel = vel * deceleration_coefficient * acceleration_coefficient
-        print 'vel acc\t:', vel
+        rospy.loginfo('vel*coef\t:' + str(vel))
 
         # vel in robot frame
         vel_robot_frame = rotation_transform(vel, -coords[2])
-        print 'vel cmd\t:', vel_robot_frame
+        rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
         
         send_cmd(*vel_robot_frame)
 
+        t = rospy.get_time()
+        global t_prev
+        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec)  of  iteration: ' + str(t - t0))
+        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec) betw iteration: ' + str(t - t_prev))
+        t_prev = t
         # for debug
-        print 'carrot:', path[carrot,:]
-        print '------------------------'
+        rospy.loginfo('------------------------')
     # stop the robot in case the node is closed
     send_cmd(0, 0, 0)
 
@@ -167,6 +183,7 @@ if __name__ == "__main__":
             (trans,rot) = listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
             coords = np.array([trans[0], trans[1], yaw])
+            rospy.loginfo('got new coords: ' + str(coords))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
 

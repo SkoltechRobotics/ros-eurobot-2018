@@ -5,11 +5,11 @@ from std_msgs.msg import String
 import numpy as np
 
 L = 58
-L2 = 107 / 2
+L2 = 117 / 2
 
 A_R = np.zeros((12, 3, 5))
 A_R[0] = A_R[2] = np.array([[-0.5, 0, 0, 0, 0.5],
-                            [0, -1. / 3, -1. / 3, -1. / 3, 0],
+                            [0, -1. / 2, 0, -1. / 2, 0],
                             [0, -1. / 2 / L2, 0, 1. / 2 / L2, 0]])
 
 A_R[1] = A_R[4] = np.array([[-0.5, 0, 0, 0, 0.5],
