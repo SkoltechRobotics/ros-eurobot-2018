@@ -167,6 +167,8 @@ class BehaviorTreeBuilder:
 
     def get_heap_status(self, angle):
         all_colors = {0,1,2,3,4}
+        # !!
+        angle = 2*np.pi - angle
         if angle < 0:
             angle = 2*np.pi - angle
         side = np.round(angle/np.pi*2)
