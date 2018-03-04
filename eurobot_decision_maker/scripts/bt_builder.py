@@ -159,6 +159,8 @@ class BehaviorTreeBuilder:
     def add_heap_rotation(self, parent_name, angle):
         radius = 0.06       #m
         linear_speed = 0.05 #m/s
+        self.last_coordinates[-1] += angle
+        self.last_coordinates[-1] %= 2*np.pi
         angle = angle % (2*np.pi)
         angle = np.fix(angle*1000)/1000
         self.add_command_action(parent_name, 162, radius*angle, 0, angle,  linear_speed, 0, linear_speed/radius)
@@ -201,7 +203,9 @@ class BehaviorTreeBuilder:
                 if side == (first + 3) % 4:
                     return 6
         if len(self.colors_left) == 2:
-            pass
+            last = list(self.colors_left - {4})[0]
+            if last == side:
+                pass
         if len(self.colors_left) == 1:
             color_left = list(self.colors_left)[0]
             if color_left == 4:
