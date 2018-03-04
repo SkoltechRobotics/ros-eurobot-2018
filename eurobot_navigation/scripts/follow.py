@@ -26,6 +26,7 @@ goal_id = ''
 
 def plan_callback(plan):
     path = np.array([[pose.pose.position.x, pose.pose.position.y, tf.transformations.euler_from_quaternion([0,0,pose.pose.orientation.z, pose.pose.orientation.w])[2]] for pose in plan.poses])
+    rospy.loginfo('Got a new path that ends in ' + str(path[-1]))
     follow_path(path)
 
 
@@ -36,8 +37,8 @@ def follow_path(path):
     
     # A function for fminbound algorithm to seek the closest path point index
     def func(x):
-        """Distances from path point with index x to robot coords in metric L1."""
-        return np.sum((path[int(x),:2] - coords[:2])**2)
+        """Distance from path point with index x to robot coords in metric L1."""
+        return np.sum((path[int(x),:2] - coords[:2])**2) ** .5
 
     while not rospy.is_shutdown():
         # current linear and angular goal distance
@@ -51,6 +52,7 @@ def follow_path(path):
         if func(closest) > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
             # stop the robot
             send_cmd(0, 0, 0)
+            rospy.loginfo(goal_id + " finished")
             pub_response.publish(goal_id + " finished")
             break
 
@@ -62,7 +64,7 @@ def follow_path(path):
         # distance to the carrot
         carrot_distance = path[carrot, :] - coords
         carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
-        #print 'carrot_distance:\t', carrot_distance
+        print 'carrot_distance:\t', carrot_distance
 
         # choose speed limits
         # deceleration in the end of the path
@@ -71,26 +73,25 @@ def follow_path(path):
 
         # maximum possible speed in carrot distance proportion
         vel = V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
-        if vel[2] > W_MAX:
-            vel *= W_MAX / vel[2]
-        #print 'vel max\t:', vel
+        if abs(vel[2]) > W_MAX:
+            vel *= W_MAX / abs(vel[2])
+        print 'vel max\t:', vel
 
         # consider acceleration and deceleration
         vel = vel * deceleration_coefficient * acceleration_coefficient
-        #print 'vel acc\t:', vel
+        print 'vel acc\t:', vel
 
         # vel in robot frame
         vel_robot_frame = rotation_transform(vel, -coords[2])
-        #print 'vel cmd\t:', vel_robot_frame
+        print 'vel cmd\t:', vel_robot_frame
         
         send_cmd(*vel_robot_frame)
 
         # for debug
-        #print 'carrot:', path[carrot,:]
-        #print '------------------------'
+        print 'carrot:', path[carrot,:]
+        print '------------------------'
     # stop the robot in case the node is closed
     send_cmd(0, 0, 0)
-
 
 def rotation_transform(vec, angle):
     M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
@@ -104,7 +105,7 @@ def send_cmd(vx, vy, wz):
     tw.linear.x = vx
     tw.linear.y = vy
     tw.angular.z = wz
-    cmd_pub.publish(tw)
+    pub_twist.publish(tw)
 
 
 def cmd_callback(data):
@@ -130,10 +131,16 @@ def cmd_callback(data):
         
         # this is a command to the global planner
         pub_goal.publish(move_message)
+
     elif cmd_type == "move_odometry": # simple movement by odometry
         goal = np.array(cmd_args).astype('float')
-        speed = speeds_proportion_to_reach_point(goal - coords)
-        pub_cmd.publish(cmd_id + " 162 " + str(speed[0]) + ' ' + str(speed[1]) + ' ' + str(speed[2]))
+        d = goal - coords
+        vel = d[:2] / abs(np.max(d)) * 0.2
+        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 0.2 0.2 0'
+        #speed = 0.2 * speeds_proportion_to_reach_point(d)
+        #cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' ' + str(d[2]) + ' ' + str(speed[0]) + ' ' + str(speed[1]) + ' ' + str(speed[2])
+        print cmd
+        pub_cmd.publish(cmd)
 
 def speeds_proportion_to_reach_point(point): # TODO: check
     """ The speed to reach the point given in robot frame in uniform motion"""
@@ -149,7 +156,7 @@ if __name__ == "__main__":
     rospy.init_node("follower", anonymous=True)
     rospy.Subscriber("/move_base/GlobalPlanner/plan", Path, plan_callback, queue_size = 1)
     rospy.Subscriber("/main_robot/move_command", String, cmd_callback, queue_size = 1)
-    cmd_pub = rospy.Publisher("/main_robot/cmd_vel", Twist, queue_size = 1)
+    pub_twist = rospy.Publisher("/main_robot/cmd_vel", Twist, queue_size = 1)
     pub_goal = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size = 1)
     pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
     pub_cmd = rospy.Publisher("main_robot/stm_command", String, queue_size=10)

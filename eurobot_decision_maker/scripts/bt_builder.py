@@ -296,7 +296,7 @@ if __name__ == "__main__":
 
     # btb.add_strategy([("heaps",0)])
     
-    so = StrategyOperator(file='first_bank.txt')
+    #so = StrategyOperator(file='first_bank.txt')
     
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
     
