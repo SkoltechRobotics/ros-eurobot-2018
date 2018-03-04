@@ -159,6 +159,7 @@ class BehaviorTreeBuilder:
     def add_heap_rotation(self, parent_name, angle):
         radius = 0.06       #m
         linear_speed = 0.05 #m/s
+        angle = angle % np.pi
         self.add_command_action(parent_name, 162, radius*angle, 0, angle,  linear_speed, 0, linear_speed/radius)
 
     def get_heap_status(self, angle):
@@ -170,6 +171,21 @@ class BehaviorTreeBuilder:
             return 0
         if len(self.colors_left) == 4:
             picked_color = list(all_colors - self.colors_left)[0]
+            dif = side - picked_color
+            if dif == 0:
+                return 2
+            if abs(dif) == 2:
+                return 0
+            if dif == 1:
+                return 3
+            if dif == -1:
+                return 1
+        if len(self.colors_left) == 3:
+            pass
+        if len(self.colors_left) == 1:
+            color_left = list(self.colors_left)[0]
+            if color_left == 4:
+                return 10
 
         return 0
 
