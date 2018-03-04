@@ -201,7 +201,7 @@ class BehaviorTreeBuilder:
                 if side == (first + 3) % 4:
                     return 6
         if len(self.colors_left) == 2:
-
+            pass
         if len(self.colors_left) == 1:
             color_left = list(self.colors_left)[0]
             if color_left == 4:
