@@ -89,8 +89,10 @@ class BehaviorTreeBuilder:
         robot_angle = args[-1]
         if move_type == "move_stm":
             stm_vel = 0.15
-            shift_since_last = np.array(args).reshape(3,1) - np.array(last_coordinates).reshape(3,1)
-            shift_since_last[:2] = [self.convert_units(a) for a in args[:2]]
+            shift_since_last = np.array(args).reshape(3,1) - np.array(self.last_coordinates).reshape(3,1)
+            for i in range(2):
+                shift_since_last[i] = self.convert_units(shift_since_last[i])
+            #shift_since_last[:2] = [self.convert_units(a) for a in args[:2]]
             shift_since_last = list(shift_since_last.ravel())
             sh = shift_since_last
             self.add_command_action(parent_name,162,sh[0],sh[1],0,0.15,0.15,0)
@@ -171,6 +173,7 @@ class BehaviorTreeBuilder:
         self.last_coordinates[-1] += angle
         self.last_coordinates[-1] %= 2*np.pi
         angle = angle % (2*np.pi)
+        angle = (angle - np.pi) % (2*np.pi) + np.pi
         angle = np.fix(angle*1000)/1000
         self.add_command_action(parent_name, 162, radius*angle, 0, angle,  linear_speed, 0, linear_speed/radius)
 
