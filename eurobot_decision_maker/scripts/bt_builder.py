@@ -145,7 +145,7 @@ class BehaviorTreeBuilder:
         
     def add_rf_move(self, parent_name, heap_status):
         # add heap_status
-        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP", heap_status)
+        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP " + str(heap_status))
 
     def add_move_to_heap(self, parent_name, heap_num, angle):
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
