@@ -171,6 +171,7 @@ class BehaviorTreeBuilder:
         self.last_coordinates[-1] += angle
         self.last_coordinates[-1] %= 2*np.pi
         angle = angle % (2*np.pi)
+        angle = (angle - np.pi) % (2 * np.pi) + np.pi
         angle = np.fix(angle*1000)/1000
         self.add_command_action(parent_name, 162, radius*angle, 0, angle,  linear_speed, 0, linear_speed/radius)
 
