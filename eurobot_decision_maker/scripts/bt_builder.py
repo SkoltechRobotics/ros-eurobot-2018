@@ -230,7 +230,11 @@ class BehaviorTreeBuilder:
             color_left = list(self.colors_left)[0]
             if color_left == 4:
                 return 10
-
+            if side == color_left:
+                return 8
+            if side == (color_left + 1) % 4:
+                return 9
+            return 7
         return 0
 
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
@@ -286,7 +290,7 @@ class BehaviorTreeBuilder:
                 # self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
                 # now relative motion for stm
                 self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel(), move_type="move_stm")
-
+                self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             
             else:
@@ -298,6 +302,7 @@ class BehaviorTreeBuilder:
                 # coordinate_to_pick_5[-1] = angle_to_pick_4
                 # now relative motion for stm 
                 self.add_move_action(line_seq_name, *coordinate_to_pick_5.ravel(), move_type="move_stm")
+                self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
                    
     def add_cubes_sequence(self, cubes2_full):
