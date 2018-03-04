@@ -106,6 +106,8 @@ def follow_path(path):
         t_prev = t
         # for debug
         rospy.loginfo('------------------------')
+        if t - t0 < 0.05:
+            rospy.sleep(0.05)
     # stop the robot in case the node is closed
     send_cmd(0, 0, 0)
 
@@ -150,9 +152,9 @@ def cmd_callback(data):
 
     elif cmd_type == "move_odometry": # simple movement by odometry
         goal = np.array(cmd_args).astype('float')
-        d = goal - coords
-        vel = d[:2] / abs(np.max(d)) * 0.2
-        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 0.2 0.2 0'
+        d = rotation_transform((goal[:2] - coords[:2]), -coords[2])
+        #vel = d[:2] / abs(np.max(d[:2])) * 0.2
+        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 0.15 0.15 0'
         #speed = 0.2 * speeds_proportion_to_reach_point(d)
         #cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' ' + str(d[2]) + ' ' + str(speed[0]) + ' ' + str(speed[1]) + ' ' + str(speed[2])
         print cmd
@@ -175,7 +177,7 @@ if __name__ == "__main__":
     pub_twist = rospy.Publisher("/main_robot/cmd_vel", Twist, queue_size = 1)
     pub_goal = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size = 1)
     pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
-    pub_cmd = rospy.Publisher("main_robot/stm_command", String, queue_size=10)
+    pub_cmd = rospy.Publisher("main_robot/stm_command", String, queue_size=1)
     listener = tf.TransformListener()
     rate = rospy.Rate(20.0)
     while not rospy.is_shutdown():
@@ -183,7 +185,7 @@ if __name__ == "__main__":
             (trans,rot) = listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
             coords = np.array([trans[0], trans[1], yaw])
-            rospy.loginfo('got new coords: ' + str(coords))
+            # rospy.loginfo('got new coords: ' + str(coords))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
 
