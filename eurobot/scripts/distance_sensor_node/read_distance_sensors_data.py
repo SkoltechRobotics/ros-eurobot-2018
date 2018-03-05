@@ -9,17 +9,21 @@ if __name__ == '__main__':
     try:
         rospy.init_node('read_data_node', anonymous=True)
         pub_raw = rospy.Publisher('distance_sensors/distances/raw', Float32MultiArray, queue_size=2)
-        pub_smooth = rospy.Publisher('distance_sensors/distances/smooth', Float32MultiArray, queue_size=2)
-        ser = serial.Serial("/dev/ttyACM0")
+        pub_smooth = rospy.Publisher('distance_sensors/distances/smooth', Float32MultiArray, queue_size=3)
+        ser = serial.Serial("/dev/ttyACM0", timeout=0.2)
 
         rospy.loginfo("Connect to /dev/ttyACM0 for rangefinder data successfully")
-        a = 0.8
+        a = 0.7
         rospy.loginfo("Smooth value for exponential filter is " + str(a))
-        sensors_smooth = np.array([255, 255, 255, 255, 255])
+        
+        sensors_smooth = np.array([255., 255., 255., 255., 255.], dtype=np.float32)
+        rospy.sleep(2.2)
         while not rospy.is_shutdown():
             s = ser.readline()
+            if len(s) == 0:
+                rospy.logwarn("Serial port doesn't read any rangefinders data")
             try:
-                sensors_raw = np.array(map(int, s.split()))
+                sensors_raw = np.array(map(float, s.split()), dtype=np.float32)
             except ValueError:
                 pass
             else:
