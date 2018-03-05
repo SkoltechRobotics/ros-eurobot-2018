@@ -13,11 +13,13 @@ if __name__ == '__main__':
         ser = serial.Serial("/dev/ttyACM0", timeout=0.2)
 
         rospy.loginfo("Connect to /dev/ttyACM0 for rangefinder data successfully")
-        a = 0.7
-        rospy.loginfo("Smooth value for exponential filter is " + str(a))
-        
-        sensors_smooth = np.array([255., 255., 255., 255., 255.], dtype=np.float32)
         rospy.sleep(2.2)
+        n = 4
+        sensors_smooth = np.ones((n, 5)) * 255
+        #window = np.array([0.0083, 0.0462, 0.1115, 0.1115, 0.0462, 0.0083])
+        #window = np.array([0.0083, 0.0462, 0.1115])
+        window = np.ones(n)
+        window /= np.sum(window)
         while not rospy.is_shutdown():
             s = ser.readline()
             if len(s) == 0:
@@ -29,7 +31,9 @@ if __name__ == '__main__':
             else:
                 if sensors_raw.shape[0] == 5:
                     pub_raw.publish(Float32MultiArray(data=sensors_raw))
-                    sensors_smooth = a * sensors_smooth + (1 - a) * sensors_raw
-                    pub_smooth.publish(Float32MultiArray(data=sensors_smooth))
+                    sensors_smooth = np.roll(sensors_smooth, -1, axis=0)
+                    sensors_smooth[n - 1] = sensors_raw
+                    smooth_data = (window[np.newaxis, :].dot(sensors_smooth))[0]
+                    pub_smooth.publish(Float32MultiArray(data=smooth_data))
     except rospy.ROSInterruptException:
         pass
