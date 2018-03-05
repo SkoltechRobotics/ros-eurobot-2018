@@ -79,20 +79,30 @@ def command_callback(data):
 
     if action_type == "MOVETOHEAP":
         config = int(data_splitted[2])
+        rospy.sleep(1)
         while not rospy.is_shutdown():
+            rospy.loginfo("------------------")
+            rospy.loginfo("sensors = " + str(sensors))
+            rospy.loginfo("start_sensors = " + str(start_sensors))
             f = fun(start_sensors, sensors, PLANES[config])
             x = -A_R[config].dot(f[:, np.newaxis])[:, 0]
             x[0:2] /= -1000
-            print(x)
+            rospy.loginfo("x, y, a = " + str(x.round(4)))
             dt = 0.3
             v = x / dt
             pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
             rate.sleep()
             if np.all(np.abs(x) < np.array([0.003, 0.003, 0.01])):
                 pub_command.publish("MOVE 8 0 0 0")
+                pub_response.publish(data_splitted[0] + " finished")
+                rospy.loginfo("MOVETOHEAP finished")
                 break
-        pub_response.publish(data_splitted[0] + " finished")
-
+            if np.any(np.abs(x) > np.array([0.03, 0.03, 0.15])):
+                pub_command.publish("MOVE 8 0 0 0")
+                rospy.loginfo("MOVETOHEAP failed")
+                break
+                
+        pub_command.publish("MOVE 8 0 0 0")
 
 if __name__ == '__main__':
     try:
