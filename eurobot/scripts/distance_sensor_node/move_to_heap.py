@@ -26,11 +26,11 @@ A_R[5] = A_R[10] = np.array([[-0.5, 0, 0, 0, 0.5],
                             [0, 0, 0, 0, 0]])
 
 A_R[7] = np.array([[-0.5, 0, 0, 0, 0.5],
-                   [0, -1, 0, 0, 0],
+                   [0, 0, 0, -1, 0],
                    [0, 0, 0, 0, 0]])
 
 A_R[9] = np.array([[-0.5, 0, 0, 0, 0.5],
-                   [0, 0, 0, -1, 0],
+                   [0, -1, 0, 0, 0],
                    [0, 0, 0, 0, 0]])
 
 A_R[8] = np.array([[0, 0, 0, 0, 0],
@@ -81,7 +81,8 @@ def command_callback(data):
             # rospy.loginfo("x, y, a = " + str(x.round(4)))
             pub_movement.publish(Float32MultiArray(data=x))
             dt = 0.3
-            v = x / dt
+            kp = np.array([1, 1, 0.5])
+            v = x * kp
             pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
             rate.sleep()
             if np.all(np.abs(x) < np.array([0.003, 0.003, 0.01])):
@@ -89,7 +90,7 @@ def command_callback(data):
                 pub_response.publish(data_splitted[0] + " finished")
                 rospy.loginfo("MOVETOHEAP finished")
                 break
-            if np.any(np.abs(x) > np.array([0.03, 0.03, 0.15])):
+            if np.any(np.abs(x) > np.array([0.04, 0.04, 0.4])):
                 pub_command.publish("MOVE 8 0 0 0")
                 rospy.logerr("MOVETOHEAP failed")
                 break
@@ -100,7 +101,7 @@ def command_callback(data):
 if __name__ == '__main__':
     try:
         sensors = np.zeros(5)
-        start_sensors = np.array(list(map(int, sys.argv[1:])))
+        start_sensors = np.array(list(map(float, sys.argv[1:])))
         rospy.init_node('read_data_node', anonymous=True)
         rate = rospy.Rate(20)
 
