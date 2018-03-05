@@ -99,10 +99,11 @@ def command_callback(data):
                 break
             if np.any(np.abs(x) > np.array([0.03, 0.03, 0.15])):
                 pub_command.publish("MOVE 8 0 0 0")
-                rospy.loginfo("MOVETOHEAP failed")
+                rospy.logerr("MOVETOHEAP failed")
                 break
                 
         pub_command.publish("MOVE 8 0 0 0")
+
 
 if __name__ == '__main__':
     try:

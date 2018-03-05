@@ -32,3 +32,8 @@
 `2. For each computer (XXX - this computer IP):` <br/>
 `$ export ROS_IP=192.168.2.XXX` <br/>
 `3. Now everything should work properly. For further instructions comment to "ROS nodes for electronics".` <br/>
+
+
+`To start move to heap using rangefinder node:`<br/>
+`1. Put robot on heap` <br/>
+`2. See topic /distances`
