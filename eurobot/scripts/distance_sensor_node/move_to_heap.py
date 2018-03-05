@@ -3,6 +3,7 @@ import rospy
 import sys
 from std_msgs.msg import String
 import numpy as np
+from std_msgs.msg import Float32MultiArray
 
 L = 58
 L2 = 117 / 2
@@ -60,14 +61,7 @@ def fun(r0s, rs, planes):
 
 def distance_sensors_callback(data):
     global sensors
-    global start_sensors
-    a = 0.8
-    try:
-        sensors1 = np.array(map(int, data.data.split()))
-    except ValueError:
-        sensors1 = start_sensors
-
-    sensors = a * sensors1 + (1 - a) * sensors
+    sensors = np.array(data.data)
 
 
 def command_callback(data):
@@ -81,13 +75,11 @@ def command_callback(data):
         config = int(data_splitted[2])
         rospy.sleep(1)
         while not rospy.is_shutdown():
-            rospy.loginfo("------------------")
-            rospy.loginfo("sensors = " + str(sensors))
-            rospy.loginfo("start_sensors = " + str(start_sensors))
             f = fun(start_sensors, sensors, PLANES[config])
             x = -A_R[config].dot(f[:, np.newaxis])[:, 0]
             x[0:2] /= -1000
-            rospy.loginfo("x, y, a = " + str(x.round(4)))
+            # rospy.loginfo("x, y, a = " + str(x.round(4)))
+            pub_movement.publish(Float32MultiArray(data=x))
             dt = 0.3
             v = x / dt
             pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
@@ -114,8 +106,9 @@ if __name__ == '__main__':
 
         pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
         rospy.Subscriber("/main_robot/move_command", String, command_callback)
-        rospy.Subscriber("/distance_sensors/distances", String, distance_sensors_callback)
+        rospy.Subscriber("/distance_sensors/distances/smooth", Float32MultiArray, distance_sensors_callback)
         pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
+        pub_movement = rospy.Publisher("/main_robot/mov_from_rangefinders", Float32MultiArray, queue_size=2)
 
         rospy.spin()
     except rospy.ROSInterruptException:
