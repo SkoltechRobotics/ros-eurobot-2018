@@ -370,7 +370,7 @@ if __name__ == "__main__":
         move_type = sys.argv[1]
     btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
-    btb.add_strategy([("heaps",1),("heaps",0),("heaps",2)])
+    btb.add_strategy([("heaps",0),("heaps",1),("heaps",2)])
 
     # btb.add_strategy([("heaps",0)])
     
@@ -384,15 +384,15 @@ if __name__ == "__main__":
                             [[2], [], []],
                             [[3], [0], [1]],
                             [[], [], [4]],
-                            [[], [], [3]],
-                            [[0], [1], [2]],
+                            [[], [], [1]],
+                            [[0], [3], [2]],
                             [[], [4], []]])
                             #[[], [], [4]],
                             #[[], [], [3]]])
     
     btb.create_tree_from_strategy()
     rospy.sleep(1)
-    # btb.bt.root_node.start()
+    btb.bt.root_node.start()
     r = rospy.Rate(10)
     while not rospy.is_shutdown() and btb.bt.root_node.check_status() != "finished":
         r.sleep()
