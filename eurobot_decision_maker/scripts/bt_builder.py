@@ -114,11 +114,17 @@ class BehaviorTreeBuilder:
         # TEMP cmd_publisher
     def add_command_action(self, parent_name, *args):
         self.add_action_node(parent_name, "cmd", "cmd_publisher", self.cmd_response, *args)
+
     def add_big_action(self, parent_name, action_name, place):
         main_seq_name = self.construct_string(action_name, self.get_next_id())
         self.bt.add_node_by_string(self.construct_string(parent_name, "sequence", main_seq_name, sep=' ')) 
         self.add_move_action(main_seq_name, *place)
-    
+
+    def add_sleep_time(self, parent_name, time):
+        node_name = self.construct_string('sleep', self.get_next_id())
+        node_description = self.construct_string(parent_name, 'timeout', node_name, time, sep=' ')
+        rospy.loginfo(node_description)
+        self.bt.add_node_by_string(node_description)
 
     def get_angle_to_cubes(self, cubes):
         manipulator = 0
@@ -127,10 +133,12 @@ class BehaviorTreeBuilder:
             if len(c) > 0:
                 manipulator = m
                 color = c[0]
-
-        angle =  (color-manipulator+1) % 4 * np.pi/2 + self.black_angle
+        manipulator = 2 - manipulator
+        angle = (color-manipulator+1) % 4 * np.pi/2 + self.black_angle
         rospy.loginfo(self.construct_string(cubes,manipulator,color,(color-manipulator+1) % 4 ,sep=' '))
-        return 2*np.pi - angle
+#        return 2*np.pi - angle
+        return angle
+
     def get_mans_and_colors(self, cubes):
         mans_colors = [(i,c) for i,c in enumerate(cubes) if len(c) > 0]
         manipulators = list(zip(*mans_colors)[0])
@@ -138,17 +146,31 @@ class BehaviorTreeBuilder:
         return manipulators, colors
 
 
-    def add_cubes_pick(self, parent_name, heap_num, manipulators, colors):
+    def add_cubes_pick(self, parent_name, heap_num, manipulators, colors, **kvargs):
+        delay = 0
+        if "delay" in kvargs:
+            delay = kvargs["delay"]
         if len(manipulators) == 1:
             self.add_command_action(parent_name, self.pick_action_name, manipulators[0])
         else:
             parallel_name = self.construct_string("parallel", heap_num, *manipulators)
             self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", parallel_name, sep=' '))
-            for m in manipulators:
-                self.add_command_action(parallel_name, self.pick_action_name, m)
+            if delay > 0 and 0 in manipulators and 2 in manipulators:
+                for m in manipulators:
+                    if m == 2:
+                        seq_name = self.construct_string("delay_for_2",self.get_next_id())
+                        self.add_sequence_node(parallel_name, seq_name)
+                        self.add_sleep_time(seq_name,delay)
+                        self.add_command_action(seq_name, self.pick_action_name, m)
+                    else:
+                        self.add_command_action(parallel_name, self.pick_action_name, m)
+            else:
+                for m in manipulators:
+                    self.add_command_action(parallel_name, self.pick_action_name, m)
         for c in colors:
             self.colors_left.remove(c[0])
         return
+
     def add_sequence_node(self, parent_name, new_name):
         ss = self.construct_string(parent_name, "sequence", new_name, sep=' ')
         rospy.loginfo(ss)
@@ -180,9 +202,9 @@ class BehaviorTreeBuilder:
     def get_heap_status(self, angle, mans = []):
         all_colors = {0,1,2,3,4}
         # !!
-        angle = 2*np.pi - angle
+        # angle from 0 to 2 pi
         if angle < 0:
-            angle = 2*np.pi - angle
+            angle = np.pi - angle
         side = np.round(angle/np.pi*2)
         if len(self.colors_left) == 5:
             return 0
@@ -260,14 +282,15 @@ class BehaviorTreeBuilder:
                 # first move from outside to the heap and pick
                 rospy.loginfo("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 self.add_move_to_heap(line_seq_name, heap_num, self.get_angle_to_cubes(cubes))
-                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
+                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1)
             elif i4 == -1:
                 # simply rotate and pick
                 # rospy.loginfo(*(self.action_places["heaps"][heap_num][:2].tolist() + [1] ))
                 # self.add_move_action(line_seq_name, *(self.action_places["heaps"][heap_num][:2].tolist() + [ self.get_angle_to_cubes(cubes) ]))
                 self.add_heap_rotation(line_seq_name, self.get_angle_to_cubes(cubes) - self.last_coordinates[-1])
+                self.add_sleep_time(line_seq_name, 5)
                 self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
-                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
+                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1)
             
             elif i4 == i and i != len(cubes2) - 1:
                 # hmm....
