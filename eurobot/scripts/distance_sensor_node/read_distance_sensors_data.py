@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
         rospy.loginfo("Connect to /dev/ttyACM0 for rangefinder data successfully")
         rospy.sleep(2.2)
-        n = 4
+        n = 8
         sensors_smooth = np.ones((n, 5)) * 255
         #window = np.array([0.0083, 0.0462, 0.1115, 0.1115, 0.0462, 0.0083])
         #window = np.array([0.0083, 0.0462, 0.1115])
