@@ -18,7 +18,7 @@ ACCELERATION = np.array([3, 3, 6])
 D = 20
 D_ACCELERATION = 10
 D_DECELERATION = 20
-FAR = 0.05
+FAR = 0.07
 XY_GOAL_TOLERANCE = 0.01
 YAW_GOAL_TOLERANCE = 0.05
 goal_id = ''
@@ -46,20 +46,22 @@ def follow_path(path):
         t0 = rospy.get_time()
         rospy.loginfo('STARTED NEW ITERATION')
         # current linear and angular goal distance
-        goal_distance = np.sum((path[-1][:2] - coords[:2])**2) ** .5
+        goal_distance = func(goal)
         goal_yaw_distance = abs(path[-1][2] - coords[2])
         rospy.loginfo('goal_distance = ' + str(goal_distance) + ' ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
         closest = int(fminbound(func, 0, goal))
+        path_deviation = func(closest)
         rospy.loginfo('closest: ' + str(closest))
+        rospy.loginfo('path_deviation: ' + str(path_deviation))
 
         # stop and publish response if we reached the goal with the given tolerance
-        if func(closest) > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
+        if path_deviation > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
             # stop the robot
             send_cmd(0, 0, 0)
             pub_response.publish(goal_id + " finished")
-            if func(closest) > FAR:
+            if path_deviation > FAR:
                 rospy.loginfo(goal_id + " terminated, path deviation")
             else:
                 rospy.loginfo(goal_id + " finished, reached the goal")
