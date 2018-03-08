@@ -151,14 +151,17 @@ def cmd_callback(data):
         pub_goal.publish(move_message)
 
     elif cmd_type == "move_odometry": # simple movement by odometry
+        rospy.loginfo('=========================== (sleep)')
+        rospy.sleep(1.0)
+        rospy.loginfo('MOVE ODOM')
         goal = np.array(cmd_args).astype('float')
+        rospy.loginfo('goal: ' + str(goal))
         d = rotation_transform((goal[:2] - coords[:2]), -coords[2])
-        #vel = d[:2] / abs(np.max(d[:2])) * 0.2
-        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 0.15 0.15 0'
-        #speed = 0.2 * speeds_proportion_to_reach_point(d)
-        #cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' ' + str(d[2]) + ' ' + str(speed[0]) + ' ' + str(speed[1]) + ' ' + str(speed[2])
-        print cmd
+        v = np.abs(d[:2]) / np.abs(np.max(d[:2])) * 0.2
+        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 ' + str(v[0]) + ' ' + str(v[1]) + ' 0'
+        rospy.loginfo('stm cmd: ' + str(cmd))
         pub_cmd.publish(cmd)
+        rospy.loginfo('===========================')
 
 def speeds_proportion_to_reach_point(point): # TODO: check
     """ The speed to reach the point given in robot frame in uniform motion"""
