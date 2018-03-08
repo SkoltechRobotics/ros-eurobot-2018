@@ -18,7 +18,7 @@ ACCELERATION = np.array([3, 3, 6])
 D = 20
 D_ACCELERATION = 10
 D_DECELERATION = 20
-FAR = 0.05
+FAR = 0.07
 XY_GOAL_TOLERANCE = 0.01
 YAW_GOAL_TOLERANCE = 0.05
 goal_id = ''
@@ -46,20 +46,22 @@ def follow_path(path):
         t0 = rospy.get_time()
         rospy.loginfo('STARTED NEW ITERATION')
         # current linear and angular goal distance
-        goal_distance = np.sum((path[-1][:2] - coords[:2])**2) ** .5
+        goal_distance = func(goal)
         goal_yaw_distance = abs(path[-1][2] - coords[2])
         rospy.loginfo('goal_distance = ' + str(goal_distance) + ' ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
         closest = int(fminbound(func, 0, goal))
+        path_deviation = func(closest)
         rospy.loginfo('closest: ' + str(closest))
+        rospy.loginfo('path_deviation: ' + str(path_deviation))
 
         # stop and publish response if we reached the goal with the given tolerance
-        if func(closest) > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
+        if path_deviation > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
             # stop the robot
             send_cmd(0, 0, 0)
             pub_response.publish(goal_id + " finished")
-            if func(closest) > FAR:
+            if path_deviation > FAR:
                 rospy.loginfo(goal_id + " terminated, path deviation")
             else:
                 rospy.loginfo(goal_id + " finished, reached the goal")
@@ -151,14 +153,17 @@ def cmd_callback(data):
         pub_goal.publish(move_message)
 
     elif cmd_type == "move_odometry": # simple movement by odometry
+        rospy.loginfo('=========================== (sleep)')
+        rospy.sleep(1.0)
+        rospy.loginfo('MOVE ODOM')
         goal = np.array(cmd_args).astype('float')
+        rospy.loginfo('goal: ' + str(goal))
         d = rotation_transform((goal[:2] - coords[:2]), -coords[2])
-        #vel = d[:2] / abs(np.max(d[:2])) * 0.2
-        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 0.15 0.15 0'
-        #speed = 0.2 * speeds_proportion_to_reach_point(d)
-        #cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' ' + str(d[2]) + ' ' + str(speed[0]) + ' ' + str(speed[1]) + ' ' + str(speed[2])
-        print cmd
+        v = np.abs(d[:2]) / np.abs(np.max(d[:2])) * 0.2
+        cmd = cmd_id + " 162 " + str(d[0]) + ' ' + str(d[1]) + ' 0 ' + str(v[0]) + ' ' + str(v[1]) + ' 0'
+        rospy.loginfo('stm cmd: ' + str(cmd))
         pub_cmd.publish(cmd)
+        rospy.loginfo('===========================')
 
 def speeds_proportion_to_reach_point(point): # TODO: check
     """ The speed to reach the point given in robot frame in uniform motion"""
