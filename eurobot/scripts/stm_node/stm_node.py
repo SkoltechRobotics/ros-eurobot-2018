@@ -67,7 +67,7 @@ class stm_node(STMprotocol):
         # Lock() is used to prevent mixing bytes of diff commands to STM
         self.mutex.acquire()
         # send command to STM32
-        rospy.loginfo('Sednid to STM: ' + str(action_type) + '|with args: ' + str(args))
+        #rospy.loginfo('Sendid to STM: ' + str(action_type) + '|with args: ' + str(args))
         successfully, args_response = self.send_command(action_type, args)
         self.mutex.release()
 

@@ -3,7 +3,9 @@ import numpy as np
 import time
 import logging
 import math
-import scipy.optimize
+from sklearn.cluster import DBSCAN
+from scipy.optimize import least_squares
+
 
 # Dimensions of the playing field
 WORLD_X = 3000
@@ -194,8 +196,7 @@ class ParticleFilter:
         # mean version
         weights = self.gaus(np.mean(beacon_error_sum, axis=1), mu=0, sigma=self.sense_noise)
         # check weights
-        #if self.warning is False and np.sum(weights) < self.gaus(self.sense_noise * 15.0, mu=0,
-                                                                 sigma=self.sense_noise) * particles.shape[0]:
+        #if self.warning is False and np.sum(weights) < self.gaus(self.sense_noise * 15.0, mu=0, sigma=self.sense_noise) * particles.shape[0]:
             #logging.info("Dangerous Situation")
             # self.warning = True
 
@@ -212,10 +213,10 @@ class ParticleFilter:
 
         if self.reset is True:
             # reset particles from scratch according to reset flag
-            x, y, a = self.evaluate_coords(lidar_data)
-            self.reset_particles(x, y, a)
+            successfully, coords  = self.evaluate_coords(lidar_data)
+            if successfully: # TODO behavior in case of failing to reset
+                self.reset_particles(coords)
             self.reset = False
-            rospy.loginfo('PF reset particles.')
         else:
             # move particles according to estimated movemen
             self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
@@ -270,33 +271,74 @@ class ParticleFilter:
         return (angles + LIDAR_START_ANGLE) % (2 * np.pi), distances
 
     @staticmethod
-    def p_trans(agl, pit):
-        # x_beac = pit*np.cos(agl) # multiply by minus in our robot
-        # y_beac = pit*np.sin(agl)
-        x_beac = pit * np.cos(agl)
-        y_beac = pit * np.sin(agl)
+    def p_trans(a, d):
+        x_beac = d * np.cos(a)
+        y_beac = d * np.sin(a)
         return x_beac, y_beac
 
     def start_over(self):
         self.reset = True
 
-    @staticmethod
-    def fun(coords, scan):
-        """ Function for optimization to evaluate coords when reseting particles."""
-        particle = coords.reshape((1,3))
-        angle, distance = self.get_landmarks(scan)
-        x_coords, y_coords = self.p_trans(angle, distance)
-        return self.weights(x_coords, y_coords, particle)[0]
+    def get_center(self, landmarks):
+        def fun(point, landmarks):
+                return np.sum((landmarks - point) ** 2, axis=1) ** .5 - BEAC_R
+        med = np.median(landmarks, axis=0)
+        dist = np.sum(med ** 2) ** .5
+        center_by_med = med + BEAC_R * np.array([med[0] / dist, med[1] / dist])
+        center = least_squares(fun, center_by_med, args=[landmarks])#, loss="linear", bounds = bounds, args = [landmarks], ftol = 1e-3)
+        return center
 
+    def cvt_local2global(self, points, pose):
+        """ Transformation of list of points from local to global frame by given robot pose in global frame."""
+        angle = pose[2]
+        M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+        ans = [np.matmul(M, point.reshape((2,1))).reshape(2) + pose[:2] for point in points]
+        return ans
 
-    def evaluate_coords(self, lidar_data):
-        bounds = ([0, 3000], [0, 2000], [0, 2 * np.pi])
-        point = [500, 500, 0]
-        coords = scipy.optimize.least_squares(self.fun, point, loss="linear", bounds=bounds, args=[lidar_data])
-        rospy.loginfo('PF optimization evaluation of coords: ' + str(coords))
-        return coords
+    def evaluate_coords(self, scan):
+        # landmarks
+        angles, distances = self.get_landmarks(scan)
+        angles = (angles + np.pi / 2) % (2 * np.pi)
+        x_landm, y_landm = self.p_trans(angles, distances)
+        landmarks = np.array([x_landm, y_landm]).T
 
-    def reset_particles(self, inp_x, inp_y, inp_a):
+        # clustering
+        db = DBSCAN(eps=40, min_samples=7).fit(landmarks)
+        labels = db.labels_
+        unique_labels = set(labels)
+
+        # beacon centers in LIDAR frame
+        centers = []
+        for l in unique_labels:
+            if l == -1:
+                # noise
+                continue
+
+            class_member_mask = (labels == l)
+
+            center = self.get_center(landmarks[class_member_mask])
+            centers.append(center.x)
+
+        if len(centers) < 2 or len(centers) > 3:
+            return False, []
+        else:
+            # Evaluate robot pose by finding minimum of sum of beacon offset.
+            def fun(pose, centers):
+                x, y, a = pose
+                centers_global = self.cvt_local2global(centers, pose)
+                weight = 0
+                for center in centers_global:
+                    l_sqr = np.min(np.sum((BEACONS - center) ** 2, axis=1))
+                    weight += l_sqr
+                return weight
+            x0 = (500, 500, 3.14)
+            bounds = ([0, 0, 0], [3000, 2000, 2 * np.pi])
+            res = least_squares(fun, x0, loss="linear", bounds=bounds, args=[centers])
+            print res
+            return True, res.x
+
+    def reset_particles(self, coords):
+        inp_x, inp_y, inp_a = coords
         x = np.random.normal(inp_x, self.reset_factor * self.distance_noise, self.particles.shape[0])
         y = np.random.normal(inp_y, self.reset_factor * self.distance_noise, self.particles.shape[0])
         orient = np.random.normal(inp_a, self.reset_factor * self.angle_noise, self.particles.shape[0]) % (2 * np.pi)
