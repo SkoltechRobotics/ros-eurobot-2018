@@ -326,11 +326,12 @@ class ParticleFilter:
             def fun(pose, centers):
                 x, y, a = pose
                 centers_global = self.cvt_local2global(centers, pose)
-                weight = 0
+                l = []
                 for center in centers_global:
                     l_sqr = np.min(np.sum((BEACONS - center) ** 2, axis=1))
-                    weight += l_sqr
-                return weight
+                    l.append(l_sqr)
+                return l
+            
             x0 = (500, 500, 3.14)
             bounds = ([0, 0, 0], [3000, 2000, 2 * np.pi])
             res = least_squares(fun, x0, loss="linear", bounds=bounds, args=[centers])
