@@ -1,0 +1,8 @@
+<library path="lib/libcarrot_local_planner">
+	<class name="carrot_local_planner/CarrotLocalPlanner" type="carrot_local_planner::CarrotLocalPlanner" base_class_type="nav_core::BaseLocalPlanner">
+		<description>
+			The carrot_local_planner package implements a plugin
+			to the base_local_planner of the 2D navigation stack.
+		</description>
+	</class>
+</library>
