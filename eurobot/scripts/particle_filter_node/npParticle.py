@@ -4,7 +4,7 @@ import time
 import logging
 import math
 from sklearn.cluster import DBSCAN
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, basinhopping
 
 
 # Dimensions of the playing field
@@ -26,7 +26,7 @@ LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
 LIDAR_START_ANGLE = np.pi + np.pi / 4 # relatively to the robot
 class ParticleFilter:
     def __init__(self, particles=500, sense_noise=50, distance_noise=5, angle_noise=0.02, in_x=293, in_y=425,
-                 in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0, reset_factor=5.0):
+                 in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0, reset_factor=10.0):
         global BEACONS
         if color == 'green':
             BEACONS = np.array([[-(WORLD_BORDER + BEAC_BORDER + BEAC_L / 2.), WORLD_Y / 2.],
@@ -285,7 +285,7 @@ class ParticleFilter:
         med = np.median(landmarks, axis=0)
         dist = np.sum(med ** 2) ** .5
         center_by_med = med + BEAC_R * np.array([med[0] / dist, med[1] / dist])
-        center = least_squares(fun, center_by_med, args=[landmarks])#, loss="linear", bounds = bounds, args = [landmarks], ftol = 1e-3)
+        center = least_squares(fun, center_by_med, args=[landmarks])
         return center
 
     def cvt_local2global(self, points, pose):
@@ -322,21 +322,37 @@ class ParticleFilter:
         if len(centers) < 2 or len(centers) > 3:
             return False, []
         else:
-            # Evaluate robot pose by finding minimum of sum of beacon offset.
-            def fun(pose, centers):
-                x, y, a = pose
-                centers_global = self.cvt_local2global(centers, pose)
-                l = []
-                for center in centers_global:
-                    l_sqr = np.min(np.sum((BEACONS - center) ** 2, axis=1))
-                    l.append(l_sqr)
-                return l
+            found = False
+            if len(centers) == 2:
+                if np.abs(np.linalg.norm(centers[0] - centers[1]) - (WORLD_Y - BEAC_L)) < BEAC_L / 2:
+                    A = centers[1]
+                    B = centers[0]
+                    found = True
+            elif len(centers) == 3:
+                # find beacons A and B
+                for i in range(3):
+                    j = (i + 1) % 3
+                    if np.abs(np.linalg.norm(centers[i] - centers[j]) - (WORLD_Y - BEAC_L)) < BEAC_L / 2:
+                        A = centers[j]
+                        B = centers[i]
+                        found = True
+                        break
+            if found == False:
+                return False, []
+            R = np.array([0, 0])
+            AR = np.linalg.norm(A - R)
+            cosRAB = np.sum((B - A) * (R - A)) / np.linalg.norm(B - A) / np.linalg.norm(R - A)
+            sinRAB = (1 - cosRAB ** 2) ** .5
+            x = AR * sinRAB - WORLD_BORDER - BEAC_BORDER - BEAC_L / 2
+            y = AR * cosRAB + BEAC_L / 2
+
+            eY = np.array([0, 1])
+            cosa = np.sum(eY * (B - A)) / np.linalg.norm(B - A)
+            a = np.arccos(cosa)
+            if (B - A)[0] < 0:
+                a = 2 * np.pi - a
             
-            x0 = (500, 500, 3.14)
-            bounds = ([0, 0, 0], [3000, 2000, 2 * np.pi])
-            res = least_squares(fun, x0, loss="linear", bounds=bounds, args=[centers])
-            print res
-            return True, res.x
+            return True, np.array([x, y, a])
 
     def reset_particles(self, coords):
         inp_x, inp_y, inp_a = coords
