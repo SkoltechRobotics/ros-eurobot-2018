@@ -16,16 +16,22 @@ if __name__ == '__main__':
     pub_stm = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
     rospy.Subscriber("/main_robot/response", String, response_callback)
     rate = rospy.Rate(100)
-    for i in range(10):
-        x = random.uniform(-0.03, 0.03)
-        y = random.uniform(-0.03, 0.03)
-        a = random.uniform(-0.3, 0.3)
+    rospy.loginfo("Start test move to heap")
+    rospy.sleep(1.5)
+    for i in range(1):
+        x = random.uniform(-0.015, 0.015)
+        y = random.uniform(-0.02, 0.02)
+        a = random.uniform(-0.15, 0.15)
         is_response = False
         pub_stm.publish("move_stm_rand 162 " + str(x) + " " + str(y) + " " + str(a) + " 0.2 0.2 0.5")
-        while not is_response:
+        rospy.loginfo("move to " + str(x) + " " + str(y) + " " + str(a))
+        while not is_response and not rospy.is_shutdown():
             rate.sleep()
+        rospy.loginfo("movement done")
 
         is_response = False
         pub_move.publish("move_to_heap_rand MOVETOHEAP 0")
-        while not is_response:
+        rospy.loginfo("move to heap")
+        while not is_response and not rospy.is_shutdown():
             rate.sleep()
+        rospy.loginfo("move to heap done")

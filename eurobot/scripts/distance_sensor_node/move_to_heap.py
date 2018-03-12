@@ -5,6 +5,7 @@ from std_msgs.msg import String
 import numpy as np
 from std_msgs.msg import Float32MultiArray
 import time
+import tf
 
 KP = np.array([3, 3, 2], dtype=np.float32)
 KD = np.array([0.5, 0.5, 0.5])
@@ -13,7 +14,8 @@ DT = 1. / 20
 SIGMA_V = np.array([0.01, 0.01, 0.01])
 SIGMA_X = np.array([0.003, 0.003, 0.03])
 N_CONFIDENT = 10
-MAX_SENSOR_DISTANCE = 250
+MAX_SENSOR_DISTANCE = 30
+A = 0.75
 
 L = 58
 L2 = 117 / 2
@@ -166,12 +168,23 @@ def command_callback(data):
         # G[:3] *= DT
         # Q = G[:, np.newaxis].dot(G[np.newaxis, :]) * SIGMA_V ** 2
         # kalman = Kalman()
+
+        # prev_time = time.time()
+        # x = None
         while not rospy.is_shutdown():
             f = fun(start_sensors, sensors, PLANES[config])
-            x = -A_R[config].dot(f[:, np.newaxis])[:, 0]
+            x = A_R[config].dot(f[:, np.newaxis])[:, 0]
             x[0:2] /= -1000
+
+            (trans, rot) = listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+            yaw = tf.transformations.euler_from_quaternion(rot)[2]
+            yaw = yaw % (np.pi / 2)
+            x[2] = yaw if yaw < np.pi / 4 else yaw - np.pi / 2
+
             pub_movement.publish(Float32MultiArray(data=x))
-            v = pid.regulate(-x)
+            v = pid.regulate(x)
+
+            # prev_time = time.time()
             pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
             rate.sleep()
             if np.all(np.abs(x) < np.array([0.001, 0.001, 0.02])):
@@ -203,6 +216,7 @@ if __name__ == '__main__':
         rospy.Subscriber("/distance_sensors/distances/smooth", Float32MultiArray, distance_sensors_callback)
         pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
         pub_movement = rospy.Publisher("/main_robot/rangefinder_movement", Float32MultiArray, queue_size=2)
+        listener = tf.TransformListener()
 
         rospy.spin()
     except rospy.ROSInterruptException:
