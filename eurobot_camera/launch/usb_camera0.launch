@@ -1,0 +1,13 @@
+<launch>
+<node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video0" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="image_width" value="320" />
+    <param name="image_height" value="240" />
+    <param name="focus" value="10" />
+    <param name="brightness" value="50"/>
+    <param name="camera_info_url" value="file:///home/pi/Documents/calibration_cam0.yaml"/>
+    <param name="camera_frame_id" value="world" />
+</node>
+</launch>
+
