@@ -372,7 +372,8 @@ class ParticleFilter:
     def find_beacons(self, scan, pose_index):
         """ Determine beacon coords from scan. """
         if pose_index == 0:
-            pose = np.array([214, 158, 0])
+            a = self.last[2]
+            pose = np.array([214, 158, a])
         else:
             return False
 
@@ -438,7 +439,6 @@ class ParticleFilter:
     def set_beacons(self):
         global beacons, beacon_storage
         mean = np.nanmean(beacon_storage, axis=0)
-        mean[1,1] = np.nan
         if mean.shape != (3, 2) or np.any(np.isnan(mean)):
             return False, []
         else:
