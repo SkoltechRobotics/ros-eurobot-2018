@@ -17,7 +17,7 @@
     <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
 
     <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
-    <!--rosparam file="$(find eurobot_navigation)/config/teb_local_planner_params.yaml" command="load" /-->
+    <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
     <remap from="cmd_vel" to="main_robot/cmd_vel1"/>
     <remap from="odom" to="main_robot/odom"/>
 
