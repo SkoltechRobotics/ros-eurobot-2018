@@ -48,8 +48,6 @@ def plan_callback(plan):
         path = np.concatenate((path, extra_path), axis=0)
         heap_approaching = False
 
-    print np.array([np.linalg.norm(path[i+1][:2] - path[i][:2]) for i in range(path.shape[0] - 1)])
-    
     rospy.loginfo('Recieved a path to ' + str(path[-1]))
     follow_path(path)
     rospy.loginfo('Arrived to ' + str(path[-1]))
@@ -166,10 +164,16 @@ def cmd_callback(data):
     cmd_type = data_splitted[1]
     cmd_args = data_splitted[2:]
 
-    if cmd_type == "move": # movement with navigation
+    
+    if cmd_type == "move" or cmd_type == "move_heap": # movement with navigation
         global goal_point, via_point
-        goal_point = np.array([float(cmd_args[0]), float(cmd_args[1]), float(cmd_args[2])])
-        
+        if cmd_type == "move":
+            goal_point = np.array([float(cmd_args[0]), float(cmd_args[1]), float(cmd_args[2])])
+        else:
+            goal_point = np.append(heap_coords[int(cmd_args[0])], float(cmd_args[1]))
+            goal_point[:2] -= rotation_transform(np.array([0, 0.060]), goal_point[2])
+   
+        print goal_point
         # check if the goal pose is close to any cube heap
         is_close, closest_coords = close_to_heap(goal_point[:2])
         if is_close:

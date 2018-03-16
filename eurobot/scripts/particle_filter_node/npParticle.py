@@ -15,7 +15,10 @@ BEAC_R = 44
 BEAC_L = 100
 BEAC_BORDER = 20
 
-# for color == 'orange'
+calibrate_times = 0
+beacon_storage = []
+
+# ideal beacon coords for color == 'orange'
 BEACONS = np.array([[WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., WORLD_Y / 2.],
                     [-(WORLD_BORDER + BEAC_BORDER + BEAC_L / 2.), WORLD_Y - BEAC_L / 2.],
                     [-(WORLD_BORDER + BEAC_BORDER + BEAC_L / 2.), BEAC_L / 2.]])
@@ -32,6 +35,8 @@ class ParticleFilter:
             BEACONS = np.array([[-(WORLD_BORDER + BEAC_BORDER + BEAC_L / 2.), WORLD_Y / 2.],
                                 [WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., WORLD_Y - BEAC_L / 2.],
                                 [WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., BEAC_L / 2.]])
+        global beacons
+        beacons = BEACONS
 
         #stamp = time.time()
         self.particles_num = particles
@@ -138,6 +143,8 @@ class ParticleFilter:
             # return self.particles
         particles = particles[self.resample(weights), :]
         #logging.info('particle_sense time :' + str(time.time() - stamp) + " points: " + str(len(x_coords)))
+        global beacon_storage
+        global beacon_storage
         return particles
 
     def weights(self, x_beac, y_beac, particles):
@@ -209,7 +216,15 @@ class ParticleFilter:
         # TODO if odometry works very bad and weights are small use only lidar
 
     def localisation(self, delta_coords, lidar_data):
-        # tmstmp = time.time() - self.start_time
+
+        # beacon calibration
+        global calibrate_times
+        if calibrate_times > 0:
+            beac = self.find_beacons(lidar_data, 0)
+            calibrate_times -= 1
+            global beacon_storage
+            beacon_storage.append(beac)
+            return self.last
 
         if self.reset is True:
             # reset particles from scratch according to reset flag
@@ -288,13 +303,6 @@ class ParticleFilter:
         center = least_squares(fun, center_by_med, args=[landmarks])
         return center
 
-    def cvt_local2global(self, points, pose):
-        """ Transformation of list of points from local to global frame by given robot pose in global frame."""
-        angle = pose[2]
-        M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-        ans = [np.matmul(M, point.reshape((2,1))).reshape(2) + pose[:2] for point in points]
-        return ans
-
     def evaluate_coords(self, scan):
         # landmarks
         angles, distances = self.get_landmarks(scan)
@@ -360,3 +368,78 @@ class ParticleFilter:
         y = np.random.normal(inp_y, self.reset_factor * self.distance_noise, self.particles.shape[0])
         orient = np.random.normal(inp_a, self.reset_factor * self.angle_noise, self.particles.shape[0]) % (2 * np.pi)
         self.particles = np.array([x, y, orient]).T 
+
+    def find_beacons(self, scan, pose_index):
+        """ Determine beacon coords from scan. """
+        if pose_index == 0:
+            a = self.last[2]
+            pose = np.array([214, 158, a])
+        else:
+            return False
+
+        beac = []
+        
+        # landmarks
+        angles, distances = self.get_landmarks(scan)
+        angles = (angles + np.pi / 2) % (2 * np.pi)
+        x_landm, y_landm = self.p_trans(angles, distances)
+        landmarks = np.array([x_landm, y_landm]).T
+
+        # clustering
+        db = DBSCAN(eps=40, min_samples=5).fit(landmarks)
+        labels = db.labels_
+        unique_labels = set(labels)
+
+        # beacon centers in LIDAR frame
+        centers = []
+        for l in unique_labels:
+            if l == -1:
+                # noise
+                continue
+
+            class_member_mask = (labels == l)
+
+            center = self.get_center(landmarks[class_member_mask])
+            centers.append(center.x)
+
+        #print 'beacons in LIDAR frame:', centers
+        
+        # beacon centers in world frame
+        centers = self.cvt_local2global(centers, pose)
+       
+        #print 'beacons in world frame:',  centers
+
+        for beacon in BEACONS:
+            distances = np.linalg.norm(centers - beacon, axis=1)
+            closest = np.argmin(distances)
+            if distances[closest] < BEAC_L:
+                beac.append(centers[closest])
+            else:
+                beac.append([np.nan, np.nan])
+        #print 'beac:', beac
+        return beac
+
+
+    def cvt_local2global(self, points, pose):
+        """ Transformation of list of points from local to global frame by given robot pose in global frame."""
+        angle = pose[2]
+        M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+        ans = [np.matmul(M, point.reshape((2,1))).reshape(2) + pose[:2] for point in points]
+        return ans
+
+
+    def clean_storage(self):
+        global beacon_storage
+        beacon_storage = []
+
+    def calibrate_beacons(self):
+        global calibrate_times
+        calibrate_times = 30
+
+    def set_beacons(self):
+        global beacons, beacon_storage
+        mean = np.nanmean(beacon_storage, axis=0)
+        if mean.shape != (3, 2) or np.any(np.isnan(mean)):
+            return False, []
+        else:
+            return True, mean
