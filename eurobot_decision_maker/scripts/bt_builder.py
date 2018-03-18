@@ -24,6 +24,7 @@ class BehaviorTreeBuilder:
         self.cmd_response = cmd_response
         self.black_angle = 0 #angle for black cube to be picked by central manipulator
         self.pick_action_name = str(176)
+        self.last_cube_pick_action_name = str(0xb5)
         self.last_coordinates = []
         self.last_angle = self.black_angle
         self.heaps_sequences = []
@@ -54,6 +55,7 @@ class BehaviorTreeBuilder:
             for coords in action:
                 coords[:2] = coords[:2][::-1]
         self.colors_left = {0,1,2,3,4}
+        self.man_load = [0,0,0]
 
     def get_next_id(self):
         self.id += 1
@@ -145,13 +147,19 @@ class BehaviorTreeBuilder:
         colors = list(zip(*mans_colors)[1])
         return manipulators, colors
 
+    def add_pick_action(self, parent_name, m):
+        if self.man_load[m] < 4:
+            self.add_command_action(parent_name,self.pick_action_name,m)
+        else:
+            self.add_command_action(parent_name, self.last_cube_pick_action_name, m)
+        self.man_load[m] += 1
 
     def add_cubes_pick(self, parent_name, heap_num, manipulators, colors, **kvargs):
         delay = 0
         if "delay" in kvargs:
             delay = kvargs["delay"]
         if len(manipulators) == 1:
-            self.add_command_action(parent_name, self.pick_action_name, manipulators[0])
+            self.add_pick_action(parent_name, manipulators[0])
         else:
             parallel_name = self.construct_string("parallel", heap_num, *manipulators)
             self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", parallel_name, sep=' '))
@@ -161,12 +169,12 @@ class BehaviorTreeBuilder:
                         seq_name = self.construct_string("delay_for_2",self.get_next_id())
                         self.add_sequence_node(parallel_name, seq_name)
                         self.add_sleep_time(seq_name,delay)
-                        self.add_command_action(seq_name, self.pick_action_name, m)
+                        self.add_pick_action(seq_name, m)
                     else:
-                        self.add_command_action(parallel_name, self.pick_action_name, m)
+                        self.add_pick_action(parallel_name, m)
             else:
                 for m in manipulators:
-                    self.add_command_action(parallel_name, self.pick_action_name, m)
+                    self.add_pick_action(parallel_name,  m)
         for c in colors:
             self.colors_left.remove(c[0])
         return
@@ -288,7 +296,7 @@ class BehaviorTreeBuilder:
                 # rospy.loginfo(*(self.action_places["heaps"][heap_num][:2].tolist() + [1] ))
                 # self.add_move_action(line_seq_name, *(self.action_places["heaps"][heap_num][:2].tolist() + [ self.get_angle_to_cubes(cubes) ]))
                 self.add_heap_rotation(line_seq_name, self.get_angle_to_cubes(cubes) - self.last_coordinates[-1])
-                self.add_sleep_time(line_seq_name, 5)
+                #self.add_sleep_time(line_seq_name, 5)
                 self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1)
             
@@ -393,7 +401,7 @@ if __name__ == "__main__":
         move_type = sys.argv[1]
     btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
-    btb.add_strategy([("heaps",1),("heaps",0),("heaps",2)])
+    btb.add_strategy([("heaps",0),("heaps",1),("heaps",2)])
 
     # btb.add_strategy([("heaps",0)])
     
@@ -402,20 +410,20 @@ if __name__ == "__main__":
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
     
     btb.add_cubes_sequence([[[], [0], []],
-                            [[1], [2], [3]],
+                            [[3], [2], [1]],
                             [[4], [], []],
                             [[2], [], []],
-                            [[3], [0], [1]],
+                            [[1], [0], [3]],
                             [[], [], [4]],
                             [[], [], [3]],
-                            [[0], [1], [2]],
+                            [[2], [1], [0]],
                             [[], [4], []]])
                             #[[], [], [4]],
                             #[[], [], [3]]])
     
     btb.create_tree_from_strategy()
     rospy.sleep(1)
-    # btb.bt.root_node.start()
+    btb.bt.root_node.start()
     r = rospy.Rate(10)
     while not rospy.is_shutdown() and btb.bt.root_node.check_status() != "finished":
         r.sleep()

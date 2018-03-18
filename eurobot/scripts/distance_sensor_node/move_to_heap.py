@@ -5,14 +5,17 @@ from std_msgs.msg import String
 import numpy as np
 from std_msgs.msg import Float32MultiArray
 import time
+import tf
 
-KP = np.array([1, 1, 0.5])
-KD = np.array([0.3, 0.3, 0.3])
+KP = np.array([3, 3, 2], dtype=np.float32)
+KD = np.array([0.5, 0.5, 0.5])
 MAX_VELOCITY = np.array([0.3, 0.3, 0.5])
 DT = 1. / 20
 SIGMA_V = np.array([0.01, 0.01, 0.01])
 SIGMA_X = np.array([0.003, 0.003, 0.03])
-
+N_CONFIDENT = 10
+MAX_SENSOR_DISTANCE = 30
+A = 0.75
 
 L = 58
 L2 = 117 / 2
@@ -73,7 +76,7 @@ class PIDRegulator(object):
         self.max_integral = max_integral
         self.target = np.zeros_like(k_p)
         self.error_i = np.zeros_like(k_p)
-        self.prev_error = np.zeros_like(k_p)
+        self.prev_error = None
         self.prev_time = time.time()
 
     def set_target(self, target):
@@ -84,6 +87,8 @@ class PIDRegulator(object):
         self.prev_time = time.time()
 
         error_p = self.target - feedback
+        if self.prev_error is None:
+            self.prev_error = error_p 
 
         self.error_i += error_p * dt
         error_i = self.error_i
@@ -94,7 +99,11 @@ class PIDRegulator(object):
 
         self.error_i = np.where(self.error_i > -self.max_integral, self.error_i, -self.max_integral)
         self.error_i = np.where(self.error_i < self.max_integral, self.error_i, self.max_integral)
-        print(error_p, error_d, error_i, self.k_p, self.k_d, self.k_i)
+        rospy.loginfo("----------")
+        rospy.loginfo("error_p = " + str(error_p.round(3)))
+        rospy.loginfo("error_d = " + str(error_d.round(3)))
+        rospy.loginfo("k_p =     " + str(self.k_p))
+        rospy.loginfo("k_d =     " + str(self.k_d))
         response = error_p * self.k_p + error_i * self.k_i + error_d * self.k_d
         response = np.where(response > -self.max_response, response, -self.max_response)
         response = np.where(response < self.max_response, response, self.max_response)
@@ -124,7 +133,8 @@ class PIDRegulator(object):
 
 
 def fun(r0s, rs, planes):
-    return L * planes + r0s - rs
+    f = L * planes + r0s - rs
+    return np.where(np.abs(f) < MAX_SENSOR_DISTANCE, f, 0)
 
 
 def distance_sensors_callback(data):
@@ -145,7 +155,8 @@ def command_callback(data):
         rospy.loginfo("Start move to heap by rangefinders")
         pid = PIDRegulator(KP, KD, np.zeros(3), MAX_VELOCITY, np.zeros(3))
         pid.set_target(np.zeros(3))
-
+        
+        n_confident = 0
         # # Init Kalman
         # T = np.eye(6)
         # T[3:, :3] = np.eye(3) * DT
@@ -157,19 +168,34 @@ def command_callback(data):
         # G[:3] *= DT
         # Q = G[:, np.newaxis].dot(G[np.newaxis, :]) * SIGMA_V ** 2
         # kalman = Kalman()
+
+        # prev_time = time.time()
+        # x = None
         while not rospy.is_shutdown():
             f = fun(start_sensors, sensors, PLANES[config])
-            x = -A_R[config].dot(f[:, np.newaxis])[:, 0]
+            x = A_R[config].dot(f[:, np.newaxis])[:, 0]
             x[0:2] /= -1000
+
+            (trans, rot) = listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+            yaw = tf.transformations.euler_from_quaternion(rot)[2]
+            yaw = yaw % (np.pi / 2)
+            x[2] = yaw if yaw < np.pi / 4 else yaw - np.pi / 2
+
             pub_movement.publish(Float32MultiArray(data=x))
             v = pid.regulate(x)
+
+            # prev_time = time.time()
             pub_command.publish("MOVE 8 " + ' '.join(map(str, v)))
             rate.sleep()
-            if np.all(np.abs(x) < np.array([0.001, 0.001, 0.01])):
-                pub_command.publish("MOVE 8 0 0 0")
-                pub_response.publish(data_splitted[0] + " finished")
-                rospy.loginfo("MOVETOHEAP finished")
-                break
+            if np.all(np.abs(x) < np.array([0.001, 0.001, 0.02])):
+                n_confident += 1
+                if n_confident >= N_CONFIDENT:
+                    pub_command.publish("MOVE 8 0 0 0")
+                    pub_response.publish(data_splitted[0] + " finished")
+                    rospy.loginfo("MOVETOHEAP finished")
+                    break
+            else:
+                n_confident = 0
             if np.any(np.abs(x) > np.array([0.04, 0.04, 0.4])):
                 pub_command.publish("MOVE 8 0 0 0")
                 rospy.logerr("MOVETOHEAP failed")
@@ -190,6 +216,7 @@ if __name__ == '__main__':
         rospy.Subscriber("/distance_sensors/distances/smooth", Float32MultiArray, distance_sensors_callback)
         pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
         pub_movement = rospy.Publisher("/main_robot/rangefinder_movement", Float32MultiArray, queue_size=2)
+        listener = tf.TransformListener()
 
         rospy.spin()
     except rospy.ROSInterruptException:
