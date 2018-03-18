@@ -220,7 +220,7 @@ class ParticleFilter:
         # beacon calibration
         global calibrate_times
         if calibrate_times > 0:
-            beac = self.find_beacons(lidar_data, 0)
+            beac = self.find_beacons(lidar_data)
             calibrate_times -= 1
             global beacon_storage
             beacon_storage.append(beac)
@@ -369,11 +369,14 @@ class ParticleFilter:
         orient = np.random.normal(inp_a, self.reset_factor * self.angle_noise, self.particles.shape[0]) % (2 * np.pi)
         self.particles = np.array([x, y, orient]).T 
 
-    def find_beacons(self, scan, pose_index):
+    def find_beacons(self, scan):
         """ Determine beacon coords from scan. """
-        if pose_index == 0:
-            a = self.last[2]
+        a = self.last[2]
+        global calibrate_pose
+        if calibrate_pose == 0:
             pose = np.array([214, 158, a])
+        elif calibrate_pose == 1:
+            pose = np.array([58 * 2 + 214, 2000 - 158, a])
         else:
             return False
 
@@ -432,8 +435,9 @@ class ParticleFilter:
         global beacon_storage
         beacon_storage = []
 
-    def calibrate_beacons(self):
-        global calibrate_times
+    def calibrate_beacons(self, n):
+        global calibrate_times, calibrate_pose
+        calibrate_pose = n
         calibrate_times = 30
 
     def set_beacons(self):

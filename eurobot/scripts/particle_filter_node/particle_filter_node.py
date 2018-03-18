@@ -11,7 +11,9 @@ from nav_msgs.msg import Odometry
 
 
 def pf_cmd_callback(data):
-    cmd = data.data
+    data_splitted = data.data.split()
+    cmd = data_splitted[0]
+    cmd_args = data_splitted[1:]
     if cmd == 'reset':
         particle_filter.start_over()
     elif cmd == 'clean':
@@ -20,7 +22,7 @@ def pf_cmd_callback(data):
         rospy.loginfo('PF calibration storage cleaned.')
     elif cmd == 'calibrate':
         rospy.loginfo('PF is collecting calibration data.')
-        particle_filter.calibrate_beacons()
+        particle_filter.calibrate_beacons(int(cmd_args[0]))
         rospy.loginfo('PF finished collecting calibration data.')
     elif cmd == 'set':
         success, beacons = particle_filter.set_beacons()
