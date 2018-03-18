@@ -1,7 +1,7 @@
 import cv2
 import skimage.filters
 import numpy as np
-from numba import njit
+#from numba import njit
 from EnemiesRecognition import K, D
 
 K1 = K.copy()
@@ -10,14 +10,14 @@ K2 = K1.copy()
 K2[:2, :2] /= 2
 
 
-@njit
+#@njit
 def edge_cost_func(edge, params, beta):
     N = (params[1] - params[0]) * (params[3] - params[2])
     n = np.sum(edge[params[0]:params[1], params[2]:params[3]])
     return N - n * beta
 
 
-@njit
+#@njit
 def get_new_params(old_params, j, k):
     params = old_params.copy()
     params[j] -= (1 - 2 * (j % 2)) * k
@@ -27,7 +27,7 @@ def get_new_params(old_params, j, k):
     return diff_params, params
 
 
-@njit
+#@njit
 def local_search(init_params, edge, beta):
     params = init_params.copy()
     for i in range(200):

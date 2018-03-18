@@ -8,7 +8,8 @@ from EnemiesRecognition import K, D
 from CubeLocalisation import search_cube
 from sensor_msgs.msg import Image
 import tf
-
+import io
+import picamera
 
 K1 = K.copy()
 K1[:2] /= 4
@@ -49,17 +50,25 @@ def command_callback(data):
         yaw = yaw % (np.pi / 2)
         a = - (yaw if yaw < np.pi / 4 else yaw - np.pi / 2)
 
+        rospy.loginfo("rotation on angle " + str(a))
         is_moved = False
         pub_command.publish("move_heap_121 162 0 0 " + str(a) + ' 0 0 0.5')
         while not is_moved:
             rate.sleep()
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+        rospy.loginfo("rotation finished")
+
+        stream = io.BytesIO()
+        camera = picamera.PiCamera()
+        camera.resolution = (320, 240)
         rospy.sleep(0.8)
+        rospy.loginfo("video started")
 
         while True:
-            ret, raw_img = cap.read()
+            camera.capture(stream, format="jpeg")
+            data = np.fromstring(stream.getvalue(), dtype=np.uint8)
+            raw_img = cv2.imdecode(data, 1)
+
+            rospy.loginfo("new img " + str(hash(str(raw_img))))
             img = cv2.fisheye.undistortImage(raw_img, K1, D, Knew=K2)
             params, edge = search_cube(img)
 
