@@ -20,16 +20,6 @@ KX = -3.
 Y0 = 173.5
 
 
-def get_params(labels):
-    h, w = labels.shape[0:2]
-    x = np.arange(w)
-    y = np.arange(h)
-    m = np.count_nonzero(labels)
-    xc = np.sum(x[np.newaxis, :] * labels) / m
-    yc = np.sum(y[:, np.newaxis] * labels) / m
-    return int(m ** 0.5), int(xc), int(yc)
-
-
 def img_callback(data):
     raw_img = bridge.imgmsg_to_cv2(data, "bgr8")
 
