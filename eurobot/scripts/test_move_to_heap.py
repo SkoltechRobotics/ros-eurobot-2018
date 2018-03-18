@@ -5,9 +5,11 @@ from std_msgs.msg import String
 import random
 
 
-def response_callback(msg):
+def response_callback(data):
     global is_response
-    is_response = True
+    data_splitted = data.data.split()
+    if data_splitted[0] == "move_stm_rand":
+        is_response = True
 
 
 if __name__ == '__main__':
@@ -30,7 +32,7 @@ if __name__ == '__main__':
         rospy.loginfo("movement done")
 
         is_response = False
-        pub_move.publish("move_to_heap_rand MOVETOHEAP 0")
+        pub_move.publish("move_stm_rand MOVETOHEAP 0")
         rospy.loginfo("move to heap")
         while not is_response and not rospy.is_shutdown():
             rate.sleep()

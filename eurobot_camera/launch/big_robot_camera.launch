@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <group ns="corner_camera">
+        <node pkg="image_transport" name="republish" type="republish" args="compressed in:=/usb_cam/image_raw raw out:=/usb_cam/image_2"/>
+        <node pkg="eurobot_camera" name="big_robot_camera_node" type="big_robot_camera.py" output="screen"/>
+    </group>
+</launch>
