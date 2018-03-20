@@ -3,16 +3,16 @@ import rospy
 import numpy as np
 import serial
 from std_msgs.msg import Int32MultiArray
-
+from std_msgs.msg import String
 
 if __name__ == '__main__':
     try:
         rospy.init_node('barrier_move_node', anonymous=True)
 
-        pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
-        rospy.Subscriber("/main_robot/move_command", String, command_callback)
-        pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
-        pub_movement = rospy.Publisher("/main_robot/barrier_movement", Float32MultiArray, queue_size=2)
+        # pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
+        # rospy.Subscriber("/main_robot/move_command", String, command_callback)
+        # pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
+        pub_movement = rospy.Publisher("/main_robot/barrier_movement", Int32MultiArray, queue_size=2)
 
         ser = serial.Serial("/dev/ttyACM0", timeout=0.2)
 
@@ -27,6 +27,7 @@ if __name__ == '__main__':
             except ValueError:
                 pass
             else:
+                # rospy.loginfo(sensors_raw.shape)
                 if sensors_raw.shape[0] == 6:
                     pub_movement.publish(Int32MultiArray(data=sensors_raw))
 
