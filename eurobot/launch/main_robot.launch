@@ -13,6 +13,6 @@
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/>
 
   </group>
-  <node pkg="eurobot" name="read_distance_sensors_data" type="read_distance_sensors_data.py" output="screen"/>
+  <node pkg="eurobot" name="barrier_move_node" type="read_barrier_data.py" output="screen"/>
 
 </launch>
