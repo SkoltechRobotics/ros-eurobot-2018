@@ -28,9 +28,10 @@ class BarrierNavigator():
     def barrier_sensors_callback(self):
         def cb(data):
             sd = np.array(data.data)
-            self.sensors_queue = np.roll(self.sensors_queue,-1)
+            self.sensors_queue = np.roll(self.sensors_queue,-1, axis=0)
             self.sensors_queue[0] = sd
-            self.sensors = np.amax(self.sensors_queue, axis=0)
+            # print(self.sensors_queue)
+            self.sensors = np.sum(self.sensors_queue, axis=0) >= 3
             # rospy.loginfo(self.sensors_queue)
             # rospy.loginfo(self.sensors)
         return cb
@@ -43,7 +44,7 @@ class BarrierNavigator():
             if np.any(self.sensors[:3]) and phase == 0:
                 rospy.loginfo("FINISHED by y sensor PHASE 0")
                 break
-            if np.all(self.sensors[:3] == 0) and phase == 1:
+            if np.all(self.sensors[:3]) and phase == 1:
                 rospy.loginfo("FINISHED by y sensor PHASE 1")
                 break
             command, dx, dy = self.get_command(phase)
@@ -53,52 +54,119 @@ class BarrierNavigator():
             rospy.loginfo(command)
             self.command_pub.publish(command)
             self.wait_for_movement("MOVEODOM"+str(self.i))
+    
+    def move_cycle_one(self, phases_x, phases_y, case):
+        i_x = 0
+        i_y = 0
+        phase_y = phases_y[0]
+        phase_x = phases_x[0]
+        allowed_mask = self.get_allowed_mask(case)
+        while not rospy.is_shutdown():
+            phase_0_cond = np.any(self.sensors[:3]*allowed_mask) and phase_y == 0
+            phase_1_cond = np.all(self.sensors[:3]*allowed_mask == 0) and phase_y == 1
+            if  phase_0_cond or phase_1_cond: 
+                if i_y == len(phases_y)-1:
+                    phase_y = -1
+                else:
+                    i_y += 1
+                    phase_y = phases_y[i_y]
+            phase_0_cond = np.any(self.sensors[3:]*allowed_mask) and phase_x == 0
+            phase_1_cond = np.all(self.sensors[3:]*allowed_mask == 0) and phase_x == 1
+            if  phase_0_cond or phase_1_cond: 
+                if i_x == len(phases_x)-1:
+                    phase_x = -1
+                else:
+                    i_x += 1
+                    phase_x = phases_x[i_x] if sum(np.array([1,1,0])*allowed_mask) == 1 else 1 - phases_x[i_x]
+
+            command, dx, dy = self.get_command_one(phase_x,phase_y,case)
+            rospy.loginfo(str(phase_x) + ' ' +  str(dx) + ' ' +  str(phase_y)+ ' ' + str(dy))
+            if dx == 0 and dy == 0:
+                rospy.loginfo("FINISED by dx dy")
+                break
+            rospy.loginfo(command)
+            self.command_pub.publish(command)
+            self.wait_for_movement("MOVEODOM"+str(self.i))
+    
+
+
+    def get_allowed_mask(self, case):
+        if case == 0:
+            return np.array([1,1,1])
+        if case == 7:
+            return np.array([1,0,0])
+        if case == 8:
+            return np.array([0,1,0])
+        if case == 9:
+            return np.array([0,0,1])
 
 
     def start_command_callback(self):
         def cb(data):
             data_splitted = data.data.split()
             action_type = data_splitted[1]
-            rospy.loginfo("Receive command " + data.data)
-
-            rospy.sleep(1)
-            
-            (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
-            yaw = tf.transformations.euler_from_quaternion(rot)[2]
-            yaw = yaw % (np.pi / 2)
-            a = - (yaw if yaw < np.pi / 4 else yaw - np.pi / 2)
-
-            rospy.loginfo("rotation on angle " + str(a))
-            
-            self.command_pub.publish("move_heap_121 162 0 0 " + str(a) + ' 0 0 0.5')
-            self.wait_for_movement("move_heap_121")
-            rospy.loginfo("rotation finished")
-
-            
+                        
             if action_type == "MOVETOHEAP":
-                config = int(data_splitted[2])
+                rospy.loginfo("Receive command " + data.data)
+
+                rospy.sleep(1)
+                
+                (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+                yaw = tf.transformations.euler_from_quaternion(rot)[2]
+                yaw = yaw % (np.pi / 2)
+                a = - (yaw if yaw < np.pi / 4 else yaw - np.pi / 2)
+
+                rospy.loginfo("rotation on angle " + str(a))
+                
+                
+                def tm(e):
+                    self.command_pub.publish("move_heap_121 162 0 0 " + str(a) + ' 0 0 0.5')
+                rospy.Timer(rospy.Duration(0.1),tm,oneshot=True)
+                self.wait_for_movement("move_heap_121")
+                rospy.loginfo("rotation finished")
+
+
+                case = int(data_splitted[2])
+                rospy.loginfo(case)
+                yellow_fix = case // 20
+                case = case % 20
+                rospy.loginfo(str(yellow_fix) + ' ' +str(case))
                 rospy.sleep(0.5)
                 rospy.loginfo("Start move to heap by barrier sensors")
                 
+                mask = self.get_allowed_mask(case)
 
-                if not np.any(self.sensors[:3]):
-                    self.set_sensors_goals(0)
-                    self.move_cycle(0)
-                    rospy.loginfo("PHASE 0 FINISHED")
-                
-                # rospy.sleep(5)
-                else:
-                    self.set_sensors_goals(1)
-                    self.move_cycle(1)
-                    rospy.loginfo("PHASE 1 FINISHED")
+                if case == 0:
+                    if not np.any(self.sensors[:3]):
+                        self.set_sensors_goals(0)
+                        self.move_cycle(0)
+                        rospy.loginfo("PHASE 0 FINISHED")
                     
-                    self.set_sensors_goals(0)
-                    self.move_cycle(0)
-                    rospy.loginfo("PHASE 0 FINISHED")
-                
+                    # rospy.sleep(5)
+                    else:
+                        self.set_sensors_goals(1)
+                        self.move_cycle(1)
+                        rospy.loginfo("PHASE 1 FINISHED")
+                        
+                        self.set_sensors_goals(0)
+                        self.move_cycle(0)
+                        rospy.loginfo("PHASE 0 FINISHED")
 
+                if case in [7,8,9]:
+                    mask = self.get_allowed_mask(case)
+                    phases_y = [0] if sum(self.sensors[:3]*mask) == 0 else [1,0]
+                    phases_x = [0] if sum(self.sensors[3:]*mask) == 0 else [1,0]
+                    rospy.loginfo(phases_x)
+                    rospy.loginfo(phases_y)
+                    self.move_cycle_one(phases_x,phases_y,case)
+
+                if case == 9 and yellow_fix == 1:
+                    cmd, dx, dy = self.get_command_dx_dy(0.004, 0)
+                    self.command_pub.publish(cmd)
+                    self.wait_for_movement("MOVEODOM"+str(self.i))
 
                 self.response_pub.publish(data_splitted[0] + ' finished')
+
         return cb
 
     def wait_for_movement(self,name="MOVEODOM"):
@@ -139,6 +207,37 @@ class BarrierNavigator():
         command_string += str(self.speed_xy) + ' ' + str(self.speed_xy) + ' ' + str(self.speed_z)
         return command_string, dx ,dy
 
+    def get_command_dx_dy(self, dx, dy):
+        dz = 0
+        self.i+=1
+        command_string = "MOVEODOM"+str(self.i)+" " + self.command_name + ' '
+        command_string += str(dx) + ' ' + str(dy) + ' ' + str(dz) + ' '
+        command_string += str(self.speed_xy) + ' ' + str(self.speed_xy) + ' ' + str(self.speed_z)
+        return command_string, dx ,dy
+
+
+    def get_command_one(self, phase_x, phase_y, case):
+        rospy.loginfo(self.sensors)
+
+        if case in [7,8,9]:
+            if phase_x == 0:
+                dx = -self.dx_quant 
+            elif phase_x == 1:
+                dx = +self.dx_quant
+            else:
+                dx = 0
+            
+            if case == 9:
+                dx = -dx
+            if phase_y == 0:
+                dy = +self.dy_quant
+            elif phase_y == 1:
+                dy = -self.dy_quant
+            else:
+                dy = 0
+            return self.get_command_dx_dy(dx,dy)
+
+        
 
 
 def get_sensor_goal_values(sensor_data):
