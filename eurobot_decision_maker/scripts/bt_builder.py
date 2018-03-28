@@ -60,6 +60,7 @@ class BehaviorTreeBuilder:
     def get_next_id(self):
         self.id += 1
         return self.id
+    
     def construct_string(self, *args, **kvargs):
         sep = "_"
         if "sep" in kvargs:
@@ -68,6 +69,7 @@ class BehaviorTreeBuilder:
         for a in args[:-1]:
             node_name += str(a) + sep
         return node_name + str(args[-1])
+    
     def add_action_node(self, parent_name,prefix, str_pub,str_response, *args):
         # node_name = prefix+str(self.get_next_id())
         node_name = self.construct_string(prefix, self.get_next_id())
@@ -80,6 +82,7 @@ class BehaviorTreeBuilder:
     
     def convert_units(self, dist):
         return BehaviorTreeBuilder.scale[self.opt_units]/BehaviorTreeBuilder.scale[self.track_units]*dist
+    
     def add_move_action(self, parent_name, *args, **kvargs):
         move_type = "move"
         if "move_type" in kvargs and kvargs["move_type"] in ["move", "move_odometry", "move_stm"]:
@@ -122,6 +125,10 @@ class BehaviorTreeBuilder:
         self.bt.add_node_by_string(self.construct_string(parent_name, "sequence", main_seq_name, sep=' ')) 
         self.add_move_action(main_seq_name, *place)
 
+    def add_wire_start(self, parent_name):
+        node_name = self.construct_string('wire_start', self.get_next_id())
+        self.add_command_action(parent_name, node_name, self.wire_start_name)
+    
     def add_sleep_time(self, parent_name, time):
         node_name = self.construct_string('sleep', self.get_next_id())
         node_description = self.construct_string(parent_name, 'timeout', node_name, time, sep=' ')
@@ -396,10 +403,13 @@ class BehaviorTreeBuilder:
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
 
-    def create_tree_from_strategy(self):
+    def create_tree_from_strategy(self, wire_start=False):
         ss = self.construct_string(self.bt.name, "sequence", self.root_seq_name,sep=' ')
         rospy.loginfo(ss)
         self.bt.add_node_by_string(ss)
+        
+        if wire_start:
+            self.add_
 
         for name, num in self.strategy_sequence:
             if name == 'base':
@@ -451,7 +461,7 @@ if __name__ == "__main__":
                             #[[], [], [4]],
                             #[[], [], [3]]])
     
-    btb.create_tree_from_strategy()
+    btb.create_tree_from_strategy(wire_start=False)
     rospy.sleep(1)
     btb.bt.root_node.start()
     r = rospy.Rate(10)
