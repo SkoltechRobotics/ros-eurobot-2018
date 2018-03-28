@@ -61,7 +61,7 @@ class BarrierNavigator():
             action_type = data_splitted[1]
             rospy.loginfo("Receive command " + data.data)
 
-            rospy.sleep(1)
+            # rospy.sleep(0)
             
             (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
@@ -77,7 +77,10 @@ class BarrierNavigator():
             
             if action_type == "MOVETOHEAP":
                 config = int(data_splitted[2])
-                rospy.sleep(0.5)
+                if config in [4,5,6]:
+                    config += 3
+
+                # rospy.sleep(0.0)
                 rospy.loginfo("Start move to heap by barrier sensors")
                 
 
@@ -108,7 +111,7 @@ class BarrierNavigator():
                 self.has_moved = True
         rospy.Subscriber(self.response_pub_name, String, cb)
         while not self.has_moved:
-            rospy.sleep(0.1)
+            rospy.sleep(0.05)
             # msg = rospy.wait_for_message(self.response_pub_name, String, timeout=3)
             # if msg.data == name + " finished":
             #    break
