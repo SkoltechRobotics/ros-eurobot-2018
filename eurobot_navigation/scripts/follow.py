@@ -27,7 +27,7 @@ goal_point = np.zeros(3)
 via_point = np.zeros(3)
 
 approaching_distance = 0.1
-heap_radius = 0.092
+heap_radius = 0.07#0.092
 path_pixel = 0.005
 
 
@@ -63,6 +63,7 @@ def follow_path(path):
         """Distance from path point with index x to robot coords in metric L1."""
         return np.sum((path[int(x),:2] - coords[:2])**2) ** .5
 
+    closest_prev = 0
     while not rospy.is_shutdown():
         t0 = rospy.get_time()
         #rospy.loginfo('STARTED NEW ITERATION')
@@ -72,7 +73,8 @@ def follow_path(path):
         #rospy.loginfo('goal_distance = ' + str(goal_distance) + ' ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
-        closest = int(fminbound(func, 0, goal))
+        closest = int(fminbound(func, closest_prev, goal))
+        closest_prev = closest
         path_deviation = func(closest)
         #rospy.loginfo('closest: ' + str(closest))
         #rospy.loginfo('path_deviation: ' + str(path_deviation))
@@ -131,6 +133,7 @@ def follow_path(path):
         #rospy.loginfo('------------------------')
         if t - t0 < 0.05:
             rospy.sleep(0.05)
+
     # stop the robot in case the node is closed
     speed_cmd(0, 0, 0)
 

@@ -192,8 +192,8 @@ class BehaviorTreeBuilder:
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
         self.add_sequence_node(parent_name, move_seq_name)
         heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
-        self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=3)
-        self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
+        self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1) #3
+        # self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
         self.add_rf_move(move_seq_name, 0)
         # self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
 
@@ -298,7 +298,7 @@ class BehaviorTreeBuilder:
                 self.add_heap_rotation(line_seq_name, self.get_angle_to_cubes(cubes) - self.last_coordinates[-1])
                 #self.add_sleep_time(line_seq_name, 5)
                 self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
-                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1)
+                self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1.5)
             
             elif i4 == i and i != len(cubes2) - 1:
                 # hmm....
@@ -325,7 +325,7 @@ class BehaviorTreeBuilder:
                 # self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel())
                 # now relative motion for stm
                 self.add_move_action(line_seq_name, *coordinate_to_pick_4.ravel(), move_type="move_stm")
-                self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
+                self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]) + 20)
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
             
             else:
@@ -363,7 +363,35 @@ class BehaviorTreeBuilder:
         for h in self.heaps_sequence:
             print(h)
         
-            
+    def add_disposal_action(self, parent_name, odometry_shift=False):
+        main_seq_name = self.construct_string("disposal",  self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name) 
+        
+        coordinates_first = np.array([80.0,10.0,3.14])
+        #self.add_command_action(parent_name, 0xb2, 2, 0)
+        #self.add_command_action(parent_name, 0xb2, 1, 0)
+        if odometry_shift:
+             self.add_command_action(main_seq_name , 162, 0, 0.3, 0, 0, 0.1, 0)
+        self.add_move_action(main_seq_name, *coordinates_first)
+        self.add_command_action(main_seq_name , 0xb2, 0, 1) # open left
+        self.add_command_action(main_seq_name , 177, 0)
+        self.add_command_action(main_seq_name , 0xb3, 0)
+        self.add_command_action(main_seq_name , 162, -0.15, 0, 0, 0.2, 0, 0)
+        self.add_command_action(main_seq_name , 162, 0.04, 0, 0, 0.1, 0, 0)
+        self.add_command_action(main_seq_name , 162, 0, -0.2, 0, 0, 0.2, 0)
+        self.add_command_action(main_seq_name , 162, 0.36, 0, 0, 0.2, 0, 0)
+        self.add_command_action(main_seq_name , 162, 0, 0.22, 0, 0, 0.2, 0)
+        self.add_command_action(main_seq_name , 177, 1)
+        self.add_command_action(main_seq_name , 0xb3, 1)
+        self.add_command_action(main_seq_name , 0xb2, 2, 1) # open right
+        self.add_command_action(main_seq_name , 177, 2)
+        self.add_command_action(main_seq_name , 0xb3, 2)
+        self.add_command_action(main_seq_name , 162, -0.07, 0, 0, 0.1, 0, 0)
+        self.add_command_action(main_seq_name , 162, 0, -0.5, 0, 0, 0.3, 0)
+        self.add_command_action(main_seq_name , 0xb2, 0, 0) # close
+        self.add_command_action(main_seq_name , 0xb2, 2, 0) # close
+ 
+
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
@@ -376,7 +404,9 @@ class BehaviorTreeBuilder:
         for name, num in self.strategy_sequence:
             if name == 'base':
                 continue
-            elif name in ['funny','disposal']:
+            elif name == 'disposal':
+                self.add_disposal_action(self.root_seq_name, True or (len(self.strategy_sequence) > 2))
+            elif name in ['funny']:
                 self.add_big_action(self.root_seq_name, self.construct_string(name,num), self.action_places[name][num])
             elif name == 'heaps':
                 self.add_full_heap_pick(self.root_seq_name, num, self.heaps_sequence[num])
@@ -401,8 +431,8 @@ if __name__ == "__main__":
         move_type = sys.argv[1]
     btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
-    btb.add_strategy([("heaps",0),("heaps",1),("heaps",2)])
-
+    btb.add_strategy([("heaps",0),("heaps",1),("heaps",2),("disposal",0)])
+    # btb.add_strategy([("disposal",0)])
     # btb.add_strategy([("heaps",0)])
     
     #so = StrategyOperator(file='first_bank.txt')
