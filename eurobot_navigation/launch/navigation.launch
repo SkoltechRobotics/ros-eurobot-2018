@@ -28,6 +28,7 @@
       <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
       <remap from="cmd_vel" to="cmd_vel_void"/>
       <remap from="odom" to="odom"/>
+      <remap from="map" to="/map"/>
     </node>
     <!-- Custom local path planner writen in python -->
     <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
@@ -51,6 +52,7 @@
       <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
       <remap from="cmd_vel" to="cmd_vel_void"/>
       <remap from="odom" to="odom"/>
+      <remap from="map" to="/map"/>
     </node>
     <!-- Custom local path planner writen in python -->
     <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>

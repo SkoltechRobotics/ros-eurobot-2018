@@ -111,6 +111,7 @@ class MapServer():
                 self.grid.data = self.field.flatten()
                 self.pub()
         print cmd_id + " finished"
+        rospy.sleep(0.1) # TODO: delete
         self.pub_response.publish(cmd_id + " finished")
 
 
