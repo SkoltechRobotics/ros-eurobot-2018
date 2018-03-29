@@ -10,6 +10,7 @@ from sensor_msgs.msg import Image
 import tf
 import io
 import picamera
+import threading
 
 K1 = K.copy()
 K1[:2] /= 4
@@ -32,8 +33,26 @@ def response_callback(data):
         is_moved = True
 
 
+def get_raw_img():
+    global is_done
+    global raw_img
+    stream = io.BytesIO()
+    camera = picamera.PiCamera()
+    camera.resolution = (320, 240)
+    rospy.sleep(0.8)
+    rospy.loginfo("video started")
+    is_done = False
+    while not is_done:
+        camera.capture(stream, format="jpeg")
+        data = np.fromstring(stream.getvalue(), dtype=np.uint8)
+        raw_img = cv2.imdecode(data, 1)
+
+        rospy.loginfo("new img " + str(hash(str(raw_img))))
+
+
 def command_callback(data):
     global is_moved
+    global raw_img
     data_splitted = data.data.split()
     action_type = data_splitted[1]
     rospy.loginfo("Receive command " + data.data)
@@ -57,18 +76,8 @@ def command_callback(data):
             rate.sleep()
         rospy.loginfo("rotation finished")
 
-        stream = io.BytesIO()
-        camera = picamera.PiCamera()
-        camera.resolution = (320, 240)
-        rospy.sleep(0.8)
-        rospy.loginfo("video started")
-
+        threading.Thread()
         while True:
-            camera.capture(stream, format="jpeg")
-            data = np.fromstring(stream.getvalue(), dtype=np.uint8)
-            raw_img = cv2.imdecode(data, 1)
-
-            rospy.loginfo("new img " + str(hash(str(raw_img))))
             img = cv2.fisheye.undistortImage(raw_img, K1, D, Knew=K2)
             params, edge = search_cube(img)
 
@@ -106,6 +115,7 @@ if __name__ == '__main__':
         is_moved = False
         rate = rospy.Rate(20)
         listener = tf.TransformListener()
+        raw_img = 0
 
         pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
         pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
