@@ -234,14 +234,16 @@ def speeds_proportion_to_reach_point(point): # TODO: check
 
 
 if __name__ == "__main__":
-    rospy.init_node("follower", anonymous=True)
-    rospy.Subscriber("/move_base/GlobalPlanner/plan", Path, plan_callback, queue_size = 1)
-    rospy.Subscriber("/main_robot/move_command", String, cmd_callback, queue_size = 1)
-    pub_twist = rospy.Publisher("/main_robot/cmd_vel", Twist, queue_size = 1)
-    pub_goal = rospy.Publisher("/move_base/goal", MoveBaseActionGoal, queue_size = 1)
-    pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
-    pub_cmd = rospy.Publisher("main_robot/stm_command", String, queue_size=1)
+    rospy.init_node("path_follower", anonymous=True)
+    rospy.Subscriber("move_base/GlobalPlanner/plan", Path, plan_callback, queue_size = 1)
+    rospy.Subscriber("move_command", String, cmd_callback, queue_size = 1)
+    pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size = 1)
+    pub_goal = rospy.Publisher("move_base/goal", MoveBaseActionGoal, queue_size = 1)
+    pub_response = rospy.Publisher("response", String, queue_size=10)
+    pub_cmd = rospy.Publisher("stm_command", String, queue_size=1)
     
+    robot_name = rospy.get_param("robot_name")
+
     # get initial cube heap coordinates
     n_heaps = 6
     heap_coords = np.zeros((n_heaps, 2))
@@ -253,7 +255,7 @@ if __name__ == "__main__":
     rate = rospy.Rate(20.0)
     while not rospy.is_shutdown():
         try:
-            (trans,rot) = listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+            (trans,rot) = listener.lookupTransform('/map', '/' + robot_name, rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
             coords = np.array([trans[0], trans[1], yaw])
             # rospy.loginfo('got new coords: ' + str(coords))
