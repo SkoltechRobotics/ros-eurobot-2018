@@ -19,8 +19,8 @@
 
     <!-- Move base -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_main_robot.yaml" command="load" ns="global_costmap" />
+      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_main_robot.yaml" command="load" ns="local_costmap" />
       <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
@@ -43,8 +43,8 @@
 
     <!-- Move base -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_secondary_robot.yaml" command="load" ns="global_costmap" />
+      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_secondary_robot.yaml" command="load" ns="local_costmap" />
       <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
