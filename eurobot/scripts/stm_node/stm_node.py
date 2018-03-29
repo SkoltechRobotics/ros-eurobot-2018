@@ -101,7 +101,7 @@ class stm_node(STMprotocol):
                                     tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                                     rospy.Time.now(),
                                     self.robot_name,
-                                    "odom")
+                                    "%s_odom" % robot_name)
 
         self.br.sendTransform((0, 0.06, 0.41),
                                     tf.transformations.quaternion_from_euler(0, 0, 1.570796),
