@@ -9,7 +9,9 @@
 
     <!-- NODES -->
     <node pkg="eurobot" name="stm_node" type="stm_node.py" output="screen"/>
-    <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen"/>
+    <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen">
+      <param name="frame_id" value="/main_robot_laser"/>
+    </node>
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/>
 
   </group>

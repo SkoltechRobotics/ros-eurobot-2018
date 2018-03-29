@@ -101,12 +101,12 @@ class stm_node(STMprotocol):
                                     tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                                     rospy.Time.now(),
                                     self.robot_name,
-                                    "%s_odom" % robot_name)
+                                    "%s_odom" % self.robot_name)
 
         self.br.sendTransform((0, 0.06, 0.41),
                                     tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                                     rospy.Time.now(),
-                                    'laser',
+                                    '%s_laser' % self.robot_name,
                                     self.robot_name)
 
     def pub_timer_callback(self, event):
