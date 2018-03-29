@@ -4,10 +4,10 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /TF1
+        - /MainLaserScan1/Status1
         - /TF1/Frames1
         - /TF1/Tree1
-      Splitter Ratio: 0.427672952
+      Splitter Ratio: 0.626834393
     Tree Height: 1799
   - Class: rviz/Selection
     Name: Selection
@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: MainLaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -64,10 +64,10 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 8524
+      Max Intensity: 7214
       Min Color: 0; 0; 0
-      Min Intensity: 176
-      Name: LaserScan
+      Min Intensity: 111
+      Name: MainLaserScan
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -84,17 +84,21 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        laser:
-          Value: true
         main_robot:
+          Value: true
+        main_robot_laser:
+          Value: true
+        main_robot_odom:
           Value: true
         main_robot_pf:
           Value: false
         map:
           Value: true
-        odom:
-          Value: true
         secondary_robot:
+          Value: true
+        secondary_robot_laser:
+          Value: true
+        secondary_robot_odom:
           Value: true
         secondary_robot_pf:
           Value: false
@@ -110,11 +114,13 @@ Visualization Manager:
           main_robot_pf:
             {}
           map:
-            odom:
+            main_robot_odom:
               main_robot:
-                {}
+                main_robot_laser:
+                  {}
+            secondary_robot_odom:
               secondary_robot:
-                laser:
+                secondary_robot_laser:
                   {}
           secondary_robot_pf:
             {}
@@ -309,7 +315,7 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: Map Global
+      Name: Main Global Map
       Topic: /main_robot/move_base/global_costmap/costmap
       Unreliable: false
       Use Timestamp: false
@@ -319,7 +325,7 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: Map Global Secondary
+      Name: Secondary Global Map
       Topic: /secondary_robot/move_base/global_costmap/costmap
       Unreliable: false
       Use Timestamp: false
@@ -441,6 +447,36 @@ Visualization Manager:
       Unreliable: false
       Use Timestamp: false
       Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 8475
+      Min Color: 0; 0; 0
+      Min Intensity: 103
+      Name: SecondaryLaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.00999999978
+      Style: Flat Squares
+      Topic: /secondary_robot/scan
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -466,16 +502,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.81772995
+      Distance: 4.83543968
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.30833185
-        Y: 0.685419202
-        Z: 0.0334044248
+        X: 1.24679863
+        Y: 0.984403014
+        Z: 0.0334641449
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
