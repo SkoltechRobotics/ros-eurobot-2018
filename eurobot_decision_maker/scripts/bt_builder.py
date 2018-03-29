@@ -14,12 +14,13 @@ def rot_matrix(rot_angle):
 
 class BehaviorTreeBuilder:
     scale = {"m":1000.0,"dm":100.0,"cm":10.0,"mm":1.0 }
-    def __init__(self, bt_name, move_pub, cmd_pub, move_response, cmd_response, **kvargs):
+    def __init__(self, bt_name, move_pub, cmd_pub, map_pub, move_response, cmd_response, **kvargs):
         self.id = 0
         self.bt = BehaviorTree(bt_name)
         self.root_seq_name = 'strategy'
         self.bt.add_publisher("move_publisher", move_pub)
         self.bt.add_publisher("cmd_publisher", cmd_pub)
+        self.bt.add_publisher("map_publisher", map_pub)
         self.move_response = move_response
         self.cmd_response = cmd_response
         self.black_angle = 0 #angle for black cube to be picked by central manipulator
@@ -120,6 +121,9 @@ class BehaviorTreeBuilder:
     def add_command_action(self, parent_name, *args):
         self.add_action_node(parent_name, "cmd", "cmd_publisher", self.cmd_response, *args)
 
+    def add_remove_heap_request(self, parent_name, heap_num):
+        self.add_action(parent_name, "remove_heap", "map_publisher", self.cmd_response, "rm", heap_num)
+    
     def add_big_action(self, parent_name, action_name, place):
         main_seq_name = self.construct_string(action_name, self.get_next_id())
         self.bt.add_node_by_string(self.construct_string(parent_name, "sequence", main_seq_name, sep=' ')) 
@@ -354,6 +358,8 @@ class BehaviorTreeBuilder:
                 self.add_move_action(line_seq_name, *coordinate_to_pick_5.ravel(), move_type="move_stm")
                 self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1] , manipulators))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors)
+
+        self.add_remove_heap_request(parent_name, heap_num)
                    
     def add_cubes_sequence(self, cubes2_full):
         self.heaps_sequence = []
@@ -436,10 +442,11 @@ if __name__ == "__main__":
     rospy.init_node("btb_node", anonymous=True)
     move_pub = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
     cmd_pub  = rospy.Publisher("/main_robot/stm_command",  String, queue_size=100)
+    map_pub  = rospy.Publisher("/map_server/cmd", String, queue_size=10)
     move_type = 'standard'
     if len(sys.argv) > 1 and sys.argv[1] in ['simple','standard']:
         move_type = sys.argv[1]
-    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
+    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, "/main_robot/response", "/main_robot/response", move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     btb.add_strategy([("heaps",0),("heaps",1),("heaps",2),("disposal",0)])
     # btb.add_strategy([("disposal",0)])
