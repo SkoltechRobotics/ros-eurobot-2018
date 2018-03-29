@@ -78,7 +78,7 @@ class stm_node(STMprotocol):
         if action_type in MANIPULATOR_JOBS:
             n = args[0]
             self.take_cube[n] = action_name
-            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer[n])
+            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n))
 
         return successfully, args_response
 
@@ -132,7 +132,8 @@ class stm_node(STMprotocol):
                 status = args_response[0]
                 # if error 
                 if status > 1:
-                    self.pub_response.publish(self.take_cube[n] + ' error ' + str(status)
+                    rospy.logerr("Manipulator " + str(n) + " error. Code: " + str(status))
+                    self.pub_response.publish(self.take_cube[n] + ' error ' + str(status))
                     self.timer_m[n].shutdown()
                 # if action is finished
                 elif status == 0:

@@ -252,10 +252,10 @@ def get_sensor_goal_values(sensor_data):
 if __name__ == '__main__':
     try:
         rospy.init_node('barrier_move_node', anonymous=True)
-        bn = BarrierNavigator("/main_robot/stm_command", "main_robot/response")
+        bn = BarrierNavigator("stm_command", "response")
         # pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
-        rospy.Subscriber("/main_robot/move_command", String, bn.start_command_callback())
-        rospy.Subscriber("/main_robot/barrier_movement", Int32MultiArray, bn.barrier_sensors_callback())
+        rospy.Subscriber("move_command", String, bn.start_command_callback())
+        rospy.Subscriber("barrier_movement", Int32MultiArray, bn.barrier_sensors_callback())
         # pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
          
         rospy.spin()
