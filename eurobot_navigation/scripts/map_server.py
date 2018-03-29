@@ -56,8 +56,6 @@ class MapServer():
         # is the heap picked?
         self.picked = np.array([False, False, False, False, False, False])
 
-        #rospy.Timer(rospy.Duration(0.1), self.pub_timer_callback)
-
         # create grid object
         self.grid = OccupancyGrid()
         self.grid.header.stamp = rospy.Time.now()
@@ -75,6 +73,10 @@ class MapServer():
         #rospy.sleep(1)
         # initial pub
         self.pub()
+
+
+        # this solves some bug with move_base:
+        rospy.Timer(rospy.Duration(2), self.timer_callback)
 
 
     def add_heap(self, n):
@@ -115,15 +117,15 @@ class MapServer():
         self.pub_response.publish(cmd_id + " finished")
 
 
-    def handle_get_map(req):
+    def handle_get_map(self, req):
         rospy.loginfo("Sending map")
         return self.grid
 
 
+    def timer_callback(self, event):
+        map_server.pub()
+
+
 if __name__ == '__main__':
     map_server = MapServer()
-    # this solves some bug with move_base:
-    for i in range(7):
-        rospy.sleep(1)
-        map_server.pub()
     rospy.spin()

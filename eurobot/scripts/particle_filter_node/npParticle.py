@@ -11,9 +11,9 @@ from scipy.optimize import least_squares, basinhopping
 WORLD_X = 3000
 WORLD_Y = 2000
 WORLD_BORDER = 22
-BEAC_R = 44
-BEAC_L = 100
-BEAC_BORDER = 20
+BEAC_R = 96.0 / 2
+BEAC_L = 100.0
+BEAC_BORDER = 22.0
 
 calibrate_times = 0
 beacon_storage = []

@@ -39,6 +39,18 @@ class stm_node(STMprotocol):
         # strorage for timer objects and cmd_names (for 3 manipulators)
         self.timer_m = [None] * 3
         self.take_cube = [''] * 3
+
+        
+        # turn stm inverse kinematics handler ON
+        stm.send("set_inverse_kinematics_ON", 13, [1])
+
+        # set initial coords in STM
+        self.initial_coords = [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')];
+        self.send("set_initial_coords", 14, self.initial_coords)
+
+        # get LIDAR coords
+        self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
+
         rospy.Timer(rospy.Duration(1./40), self.pub_timer_callback)
 
 
@@ -103,7 +115,7 @@ class stm_node(STMprotocol):
                                     self.robot_name,
                                     "%s_odom" % self.robot_name)
 
-        self.br.sendTransform((0, 0.06, 0.41),
+        self.br.sendTransform(self.laser_coords,
                                     tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                                     rospy.Time.now(),
                                     '%s_laser' % self.robot_name,
@@ -145,12 +157,5 @@ class stm_node(STMprotocol):
 if __name__ == '__main__':
     serial_port = "/dev/ttyUSB0"
     stm = stm_node(serial_port)
-
-    # turn stm inverse kinematics handler ON
-    stm.send("set_inverse_kinematics_ON", 13, [1])
-
-    # set initial coords in STM
-    initial_coords = [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')];
-    stm.send("set_initial_coords", 14, initial_coords)
 
     rospy.spin()

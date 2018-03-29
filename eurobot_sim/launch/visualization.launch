@@ -15,10 +15,13 @@
   </group>
 
   <group ns="main_robot">
-
     <!-- Robot model -->
     <param name="description" command="cat $(find eurobot_sim)/models/main_robot.urdf" />
+  </group>
 
+  <group ns="secondary_robot">
+    <!-- Robot model -->
+    <param name="description" command="cat $(find eurobot_sim)/models/secondary_robot.urdf" />
   </group>
 
   <group ns="field">

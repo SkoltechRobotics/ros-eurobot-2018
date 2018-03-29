@@ -1,8 +1,8 @@
 robot_name: "main_robot"
 
 # initial coordinates (robot center, not LIDAR coords)
-start_x: 280.0
-start_y: 110.0
+start_x: 210.0
+start_y: 190.0
 start_a: 3.93
 
 # robot size
