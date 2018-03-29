@@ -2,6 +2,7 @@
 import numpy as np
 import rospy
 from nav_msgs.msg import OccupancyGrid
+from nav_msgs.srv import GetMap
 from std_msgs.msg import String
 
 class MapServer():
@@ -10,6 +11,7 @@ class MapServer():
         self.pub_map = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
         self.pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
         rospy.Subscriber("map_server/cmd", String, self.cmd_callback, queue_size=1)
+        s = rospy.Service('/static_map', GetMap, self.handle_get_map)
 
         self.size = (204, 304)
         self.border = 2
@@ -68,7 +70,9 @@ class MapServer():
         self.grid.info.origin.position.y = -0.02
         self.grid.info.origin.orientation.w = 1
 
-        rospy.sleep(1)
+        self.grid.data = self.field.flatten()
+
+        #rospy.sleep(1)
         # initial pub
         self.pub()
 
@@ -86,7 +90,6 @@ class MapServer():
 
 
     def pub(self):
-        self.grid.data = self.field.flatten()
         self.pub_map.publish(self.grid)
         rospy.loginfo("Published the field map.")
 
@@ -101,13 +104,25 @@ class MapServer():
             n = int(data_splitted[2])
             if cmd == "rm":
                 self.remove_heap(n)
+                self.grid.data = self.field.flatten()
                 self.pub()
-            if cmd == "add":
+            elif cmd == "add":
                 self.add_heap(n)
+                self.grid.data = self.field.flatten()
                 self.pub()
+        print cmd_id + " finished"
         self.pub_response.publish(cmd_id + " finished")
+
+
+    def handle_get_map(req):
+        rospy.loginfo("Sending map")
+        return self.grid
 
 
 if __name__ == '__main__':
     map_server = MapServer()
+    # this solves some bug with move_base:
+    for i in range(7):
+        rospy.sleep(1)
+        map_server.pub()
     rospy.spin()

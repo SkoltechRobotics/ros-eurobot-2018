@@ -122,7 +122,7 @@ class BehaviorTreeBuilder:
         self.add_action_node(parent_name, "cmd", "cmd_publisher", self.cmd_response, *args)
 
     def add_remove_heap_request(self, parent_name, heap_num):
-        self.add_action(parent_name, "remove_heap", "map_publisher", self.cmd_response, "rm", heap_num)
+        self.add_action_node(parent_name, "remove_heap", "map_publisher", self.cmd_response, "rm", heap_num)
     
     def add_big_action(self, parent_name, action_name, place):
         main_seq_name = self.construct_string(action_name, self.get_next_id())

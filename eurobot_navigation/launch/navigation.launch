@@ -3,7 +3,7 @@
   <!-- Map server -->
   <arg name="map_file" default="$(find eurobot_navigation)/map/field.yaml"/>
   <!--node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"  output="screen" /-->
-  <node name="map_server1" pkg="eurobot_navigation" type="map_server.py"  output="screen" />
+  <node name="map_server" pkg="eurobot_navigation" type="map_server.py"  output="screen" />
   <!--node name="obstacle_publisher" pkg="eurobot_navigation" type="obstacle_publisher.py"  output="screen"/-->
   <node name="path_posearray" pkg="eurobot_navigation" type="path_posearray.py"  output="screen"/>
 
