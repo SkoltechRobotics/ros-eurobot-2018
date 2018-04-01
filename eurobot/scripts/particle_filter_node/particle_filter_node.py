@@ -96,7 +96,7 @@ def scan_callback(scan):
     br.sendTransform(((pf_coords[0] - stm_coords_rotated[0]) / 1000, (pf_coords[1] - stm_coords_rotated[1]) / 1000, 0),
                 tf.transformations.quaternion_from_euler(0, 0, pf_coords[2] - stm_coords_rotated[2]),
                 rospy.Time.now(),
-                "odom",
+                "%s_odom" % robot_name,
                 "map")
 
     # create and pub PointArray with particles    

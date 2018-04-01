@@ -1,11 +1,18 @@
 <?xml version="1.0"?>
 <launch>
+  
+  <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
   <rosparam file="$(find eurobot)/config/main_robot_params.yaml" command="load" ns="main_robot" />
   <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
-  <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 map odom 100"/>
 
-  <group ns="main_robot">
-      
+  <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster1" args="0 0 0 0 0 0 map main_robot_odom 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster2" args="0 0 0 0 0 0 map secondary_robot_odom 100"/>
+
+  <group ns="main_robot"> 
+    <node pkg="eurobot_sim" name="stm_node" type="stm_node.py" output="screen"/>
+  </group>
+
+  <group ns="secondary_robot"> 
     <node pkg="eurobot_sim" name="stm_node" type="stm_node.py" output="screen"/>
   </group>
 

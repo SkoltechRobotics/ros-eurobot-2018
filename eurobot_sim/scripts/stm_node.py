@@ -67,8 +67,8 @@ class stm_node():
         self.freq = 100
         self.rate = rospy.Rate(self.freq)  # 100Hz
 
-        self.coords = np.array(
-            [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
+        self.coords = np.array([rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
+        self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
         self.vel = np.array([0.0, 0.0, 0.0])
 
         self.last_integration_time = rospy.get_time()
@@ -182,12 +182,12 @@ class stm_node():
                               tf.transformations.quaternion_from_euler(0, 0, self.coords[2]),
                               rospy.Time.now(),
                               self.robot_name,
-                              "odom")
+                              "%s_odom" % self.robot_name)
 
-        self.br.sendTransform((0, 0.06, 0.41),
+        self.br.sendTransform(self.laser_coords,
                               tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                               rospy.Time.now(),
-                              'laser',
+                              '%s_laser' % self.robot_name,
                               self.robot_name)
 
 

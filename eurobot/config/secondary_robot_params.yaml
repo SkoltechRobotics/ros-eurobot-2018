@@ -1,0 +1,16 @@
+robot_name: "secondary_robot"
+
+# initial coordinates (robot center, not LIDAR coords)
+start_x: 120.0
+start_y: 565.0
+start_a: 4.71
+
+# robot size
+#dim_x:
+#dim_y:
+dim_z: 350.0
+dim_r: 282.0
+
+# LIDAR scanner coordinates in robot frame
+lidar_x: -15.0
+lidar_y: 0.0

@@ -2,6 +2,8 @@
 <launch> 
 
   <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
+  <rosparam file="$(find eurobot)/config/main_robot_params.yaml" command="load" ns="main_robot" />
+  <rosparam file="$(find eurobot)/config/secondary_robot_params.yaml" command="load" ns="secondary_robot" />
 
   <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_vis" args="0 0 0 0 0 0 world map 100"/>
 
@@ -13,25 +15,13 @@
   </group>
 
   <group ns="main_robot">
-
     <!-- Robot model -->
     <param name="description" command="cat $(find eurobot_sim)/models/main_robot.urdf" />
-    
-    <!-- PARAMS -->
-    
-    <!-- robot -->
-    <param name="robot_name" type="string" value="main_robot" />
-    
-    <!-- robot size -->
-    <param name="dim_x" type="double" value="420" />
-    <param name="dim_y" type="double" value="190" />
-    <param name="dim_z" type="double" value="350" />
+  </group>
 
-    <!-- initial coordinates -->
-    <param name="start_x" type="double" value="293.0" />
-    <param name="start_y" type="double" value="425.0" />
-    <param name="start_a" type="double" value="4.71" />
-
+  <group ns="secondary_robot">
+    <!-- Robot model -->
+    <param name="description" command="cat $(find eurobot_sim)/models/secondary_robot.urdf" />
   </group>
 
   <group ns="field">

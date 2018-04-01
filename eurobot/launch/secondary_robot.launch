@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+  <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
+  <rosparam file="$(find eurobot)/config/particle_filter_params.yaml" command="load" ns="secondary_robot/particle_filter" />
+  <rosparam file="$(find eurobot)/config/secondary_robot_params.yaml" command="load" ns="secondary_robot" />
+
+  <group ns="secondary_robot">
+
+    <!-- NODES -->
+    <node pkg="eurobot" name="stm_node" type="stm_node.py" output="screen"/>
+    <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" output="screen">
+      <param name="frame_id" value="/secondary_robot_laser"/>
+    </node>
+    <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" output="screen"/>
+
+  </group>
+
+</launch>
