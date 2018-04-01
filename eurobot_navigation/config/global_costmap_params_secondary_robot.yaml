@@ -1,5 +1,5 @@
 global_costmap:
-  robot_radius: 0.141
+  robot_radius: 0.140
   cost_scaling_factor: 30
   inflation_radius: 0.5
   resolution: 0.01
@@ -12,3 +12,14 @@ global_costmap:
   static_map: true
   width: 3.0
   height: 2.0
+  plugins:
+    - {name: static_layer,        type: "costmap_2d::StaticLayer"}
+    - {name: social_layer,        type: "social_navigation_layers::ProxemicLayer"}
+    - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
+  social_layer:
+    cutoff: 1
+    amplitude: 254
+    covariance: 0.1
+  inflation_layer:
+    cost_scaling_factor: 30
+    inflation_radius: 0.5

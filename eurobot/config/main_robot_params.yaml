@@ -9,6 +9,7 @@ start_a: 3.93
 dim_x: 420.0
 dim_y: 190.0
 dim_z: 350.0
+dim_r: 222.0
 
 # LIDAR scanner coordinates in robot frame
 lidar_x: 0.0

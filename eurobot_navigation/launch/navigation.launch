@@ -8,9 +8,6 @@
   <!-- Obstacles for teb_local_planner - comment if other planner is used -->
   <!--node name="obstacle_publisher" pkg="eurobot_navigation" type="obstacle_publisher.py"  output="screen"/-->
 
-  <!-- Place map frame at odometry frame -->
-  <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_nav" args="0 0 0 0 0 0 world map 100"/>
-
   <!-- MAIN ROBOT -->
   <group ns="main_robot">
 
@@ -20,12 +17,15 @@
     <!-- Move base -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
       <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_main_robot.yaml" command="load" />
+      <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
       <!-- This is actually a void local planner. It is only needed to run move_base. -->
       <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
+      <param name="recovery_behavior_enabled" value="False" />
       <remap from="cmd_vel" to="cmd_vel_void"/>
       <remap from="odom" to="odom"/>
       <remap from="map" to="map"/>
+      <remap from="/people" to="people"/>
     </node>
     <!-- Custom local path planner writen in python -->
     <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
@@ -41,12 +41,15 @@
     <!-- Move base -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
       <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_secondary_robot.yaml" command="load" />
+      <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
       <!-- This is actually a void local planner. It is only needed to run move_base. -->
       <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
+      <param name="recovery_behavior_enabled" value="False" />
       <remap from="cmd_vel" to="cmd_vel_void"/>
       <remap from="odom" to="odom"/>
       <remap from="map" to="map"/>
+      <remap from="/people" to="people"/>
     </node>
     <!-- Custom local path planner writen in python -->
     <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>

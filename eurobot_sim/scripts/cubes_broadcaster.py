@@ -98,7 +98,7 @@ if __name__ == '__main__':
         heap_coords.append([[x, y], [x - d, y], [x, y + d], [x + d, y], [x, y - d]])
         for m in range(n_cubes_in_heap):
             marker = Marker()
-            marker.header.frame_id = "world"
+            marker.header.frame_id = "map"
             marker.ns = 'cubes'
             marker.id = 10 * (n + 1) + (m + 1)
             marker.type = marker.CUBE
