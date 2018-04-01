@@ -1,0 +1,15 @@
+global_costmap:
+  footprint: [[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]
+    #[-0.11, 0.095], [-0.11, -0.045], [0.11, -0.045], [0.11, 0.095]]
+  cost_scaling_factor: 30
+  inflation_radius: 0.5
+  resolution: 0.01
+  robot_base_frame: main_robot
+  global_frame: /map
+  update_frequency: 10
+  publish_frequency: 10
+  static_map: true
+  rolling_window: false
+  static_map: true
+  width: 3.0
+  height: 2.0

@@ -6,8 +6,8 @@ start_y: 565.0
 start_a: 4.71
 
 # robot size
-#dim_x:
-#dim_y:
+dim_x: 240.0
+dim_y: 240.0
 dim_z: 350.0
 dim_r: 282.0
 

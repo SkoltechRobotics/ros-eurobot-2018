@@ -1,7 +1,0 @@
-#footprint: [[0.125, 0.125], [0.125, -0.125], [-0.125, -0.125], [-0.125, 0.125]]
-robot_radius: 0.141 # distance a circular robot should be clear of the obstacle
-cost_scaling_factor: 30
-inflation_radius: 0.5
-resolution: 0.01
-robot_base_frame: secondary_robot
-global_frame: /map

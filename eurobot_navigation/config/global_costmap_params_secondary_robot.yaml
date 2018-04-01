@@ -1,0 +1,14 @@
+global_costmap:
+  robot_radius: 0.141
+  cost_scaling_factor: 30
+  inflation_radius: 0.5
+  resolution: 0.01
+  robot_base_frame: secondary_robot
+  global_frame: /map
+  update_frequency: 10
+  publish_frequency: 10
+  static_map: true
+  rolling_window: false
+  static_map: true
+  width: 3.0
+  height: 2.0

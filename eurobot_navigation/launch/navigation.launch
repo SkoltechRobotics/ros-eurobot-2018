@@ -19,16 +19,13 @@
 
     <!-- Move base -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_main_robot.yaml" command="load" ns="global_costmap" />
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_main_robot.yaml" command="load" ns="local_costmap" />
-      <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
-      <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
+      <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_main_robot.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
       <!-- This is actually a void local planner. It is only needed to run move_base. -->
       <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
       <remap from="cmd_vel" to="cmd_vel_void"/>
       <remap from="odom" to="odom"/>
-      <remap from="map" to="/map"/>
+      <remap from="map" to="map"/>
     </node>
     <!-- Custom local path planner writen in python -->
     <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
@@ -43,16 +40,13 @@
 
     <!-- Move base -->
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_secondary_robot.yaml" command="load" ns="global_costmap" />
-      <rosparam file="$(find eurobot_navigation)/config/costmap_common_params_secondary_robot.yaml" command="load" ns="local_costmap" />
-      <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
-      <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
+      <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_secondary_robot.yaml" command="load" />
       <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
       <!-- This is actually a void local planner. It is only needed to run move_base. -->
       <rosparam file="$(find eurobot_navigation)/config/carrot_local_planner_params.yaml" command="load" />
       <remap from="cmd_vel" to="cmd_vel_void"/>
       <remap from="odom" to="odom"/>
-      <remap from="map" to="/map"/>
+      <remap from="map" to="map"/>
     </node>
     <!-- Custom local path planner writen in python -->
     <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
