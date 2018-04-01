@@ -35,6 +35,15 @@ class BehaviorTreeBuilder:
         self.track_units = "m"
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
+
+        #small_robot
+        self.bottom_sorter = str(0xc3)
+        self.upper_sorter  = str(0xc2)
+        self.wastewater_door = str(0xc1)
+        self.wt_y_shift = np.array([0,20,0],dtype=np.float64)
+        self.wt_x_shift = np.array([20,0,0],dtype=np.float64)
+        self.shooting_motor = str(0xc4)
+
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
                 self.track_units = "m"
@@ -49,7 +58,10 @@ class BehaviorTreeBuilder:
                 "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]], dtype=np.float64),
                 "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
                 "disposal": np.array([[10, 61, 0]],dtype=np.float64),
-                "base": np.array([[15, 15, 0]],dtype=np.float64)
+                "base": np.array([[15, 15, 0]],dtype=np.float64),
+                "wastewater_tower" : np.array([[0,0,0]], dtype=np.float64),
+                "wastewater_reservoir" : np.array([[0,0,0]], dtype=np.float64),
+                "cleanwater_towe" : np.array([[0,0,0]], dtype=np.float64)
             }
 
         for _, action in self.action_places.items():
@@ -405,6 +417,79 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name , 0xb2, 2, 0) # close
  
 
+    def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
+        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 0 if turn == "on" else 1)
+
+    def add_shoot_sort_action(self, parent_name, to="left", delay = 0.5):
+        # small robot
+        main_seq_name = self.construct_string("shoot_sort", self.get_next_id())
+        self.add_sequence_node(parent_name,main_seq_name)
+        self.add_command_action(main_seq_name, self.bottom_sorter, 0 if to=="left" else 1)
+        self.add_sleep_time(main_seq_name, delay)
+        self.add_command_action(main_seq_name, self.bottom_sorter, 2)
+
+    def add_first_sort_action(self, parent_name, to="clean", delay = 0.5):
+        main_seq_name = self.construct_string("first_sort", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+        self.add_command_action(main_seq_name, self.upper_sorter, 0 if to=="clean" else 1)
+        self.add_sleep_time(main_seq_name, delay)
+        self.add_command_action(main_seq_name, self.upper_sorter, 2)
+
+    def add_wastewater_action(self, parent_name, to="release"):
+        self.add_command_action("release_wastewater" if to == "release" else "check_wastewater_closed", self.wastewater_door, 1 if to == "release" else 0)
+
+    def add_move_to_tower_action(self, parent_name, tower_name, only_odom=False):
+        main_seq_name = self.construct_string("move_to_tower", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        wt_coords = self.action_places[tower_name][0]
+
+        if not only_odom:
+            if tower_name == "wastewater_tower":
+                shift = self.wt_y_shift
+                wt_coords_init = wt_coords + shift if wt_coords[1] > 150 else -shift
+            else:
+                shift = self.wt_x_shift
+                wt_coords_init = wt_coords - shift
+            self.add_move_action(main_seq_name, wt_coords_init.tolist())
+
+        self.add_move_action(main_seq_name, wt_coords.tolist(), move_type="move_odometry")
+
+
+    def add_wastewater_tower(self, parent_name, delay=1):
+        main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
+        self.add_command_action(main_seq_name, self.bottom_sorter, 2)
+
+        for _ in range(4):
+            self.add_first_sort_action(parent_name, "clean")
+            self.add_sleep_time(parent_name, delay)
+            self.add_first_sort_action(parent_name, "waste")
+
+    def add_wastewater_reservoir(self, parent_name):
+        main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        self.add_move_action(main_seq_name,self.action_places["wastewater_reservoir"][0].tolist())
+        self.add_wastewater_action(main_seq_name, "release")
+
+    def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):
+        main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        self.add_move_to_tower_action(main_seq_name, "cleanwater", not with_4_balls)
+
+
+        self.add_shooting_motor_action(main_seq_name,to,"on")
+        if with_4_balls:
+            for _ in range(4):
+                self.add_shoot_sort_action(main_seq_name,to)
+        if not only_4_balls:
+            for _ in range(8):
+                self.add_first_sort_action(main_seq_name,"clean")
+                self.add_shoot_sort_action(main_seq_name,to)
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
@@ -415,7 +500,7 @@ class BehaviorTreeBuilder:
         self.bt.add_node_by_string(ss)
         
         if wire_start:
-            self.add_
+            self.add_wire_start(self.root_seq_name)
 
         for name, num in self.strategy_sequence:
             if name == 'base':
@@ -426,7 +511,16 @@ class BehaviorTreeBuilder:
                 self.add_big_action(self.root_seq_name, self.construct_string(name,num), self.action_places[name][num])
             elif name == 'heaps':
                 self.add_full_heap_pick(self.root_seq_name, num, self.heaps_sequence[num])
-
+            elif name == 'cleanwater_tower_after_waste':
+                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", True,False)
+            elif name == 'cleanwater_tower_before_waste':
+                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", False, False)
+            elif name == 'cleanwater_tower_only_shoot4':
+                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", False, True)
+            elif name == "wastewater_tower":
+                self.add_wastewater_tower(self.root_seq_name)
+            elif name == "wastewater_reservoir":
+                self.add_wastewater_reservoir(self.root_seq_name)
         return self.bt
 
 
