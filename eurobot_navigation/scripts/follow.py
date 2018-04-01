@@ -30,10 +30,13 @@ approaching_distance = 0.1
 heap_radius = 0.07#0.092
 path_pixel = 0.005
 
+follow_flag = False
+vel_prev = np.zeros(2)
+
 
 def plan_callback(plan):
+    global path, t_prev
     path = np.array([[pose.pose.position.x, pose.pose.position.y, tf.transformations.euler_from_quaternion([0,0,pose.pose.orientation.z, pose.pose.orientation.w])[2]] for pose in plan.poses])
-    global t_prev
     t_prev = rospy.get_time()
 
     # extrapolate path if approaching a heap
@@ -49,93 +52,100 @@ def plan_callback(plan):
         heap_approaching = False
 
     rospy.loginfo('Recieved a path to ' + str(path[-1]))
-    follow_path(path)
-    rospy.loginfo('Arrived to ' + str(path[-1]))
 
-
-def follow_path(path):
-    # indexes of the closest path point and the last (goal) path point
+    # replanning approach
+    global closest_prev, closest, goal, follow_flag
     closest = 0
     goal = path.shape[0] - 1
-    
-    # A function for fminbound algorithm to seek the closest path point index
-    def func(x):
-        """Distance from path point with index x to robot coords in metric L1."""
-        return np.sum((path[int(x),:2] - coords[:2])**2) ** .5
-
     closest_prev = 0
-    while not rospy.is_shutdown():
-        t0 = rospy.get_time()
-        #rospy.loginfo('STARTED NEW ITERATION')
-        # current linear and angular goal distance
-        goal_distance = func(goal)
-        goal_yaw_distance = abs(path[-1][2] - coords[2])
-        #rospy.loginfo('goal_distance = ' + str(goal_distance) + ' ' + str(goal_yaw_distance))
+    follow_flag = True
 
-        # find index of the closest path point by solving an optimization problem
-        closest = int(fminbound(func, closest_prev, goal))
-        closest_prev = closest
-        path_deviation = func(closest)
-        #rospy.loginfo('closest: ' + str(closest))
-        #rospy.loginfo('path_deviation: ' + str(path_deviation))
+    #follow_path(path)
+    #rospy.loginfo('Arrived to ' + str(path[-1]))
 
-        # stop and publish response if we reached the goal with the given tolerance
-        if path_deviation > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
-            # stop the robot
-            speed_cmd(0, 0, 0)
-            pub_response.publish(goal_id + " finished")
-            #if path_deviation > FAR:
-            #    rospy.loginfo(goal_id + " terminated, path deviation")
-            #else:
-            #    rospy.loginfo(goal_id + " finished, reached the goal")
-            break
-        #rospy.loginfo('funk(closest) = ' + str(closest))
+
+# A function for fminbound algorithm to seek the closest path point index
+def func(x):
+    """Distance from path point with index x to robot coords in metric L1."""
+    return np.sum((path[int(x),:2] - coords[:2])**2) ** .5
+
+
+def follow_iteration():
+    global closest_prev, closest, goal, follow_flag, func, vel_prev
+    t0 = rospy.get_time()
+    #rospy.loginfo('STARTED NEW ITERATION')
+    # current linear and angular goal distance
+    goal_distance = func(goal)
+    goal_yaw_distance = abs(path[-1][2] - coords[2])
+    #rospy.loginfo('goal_distance = ' + str(goal_distance) + ' ' + str(goal_yaw_distance))
+
+    # find index of the closest path point by solving an optimization problem
+    closest = int(fminbound(func, closest_prev, goal))
+    closest_prev = closest
+    path_deviation = func(closest)
+    #rospy.loginfo('closest: ' + str(closest))
+    #rospy.loginfo('path_deviation: ' + str(path_deviation))
+
+    # stop and publish response if we reached the goal with the given tolerance
+    if path_deviation > FAR or (goal_distance < XY_GOAL_TOLERANCE and goal_yaw_distance < YAW_GOAL_TOLERANCE):
+        # stop the robot
+        follow_flag = False
+        speed_cmd(0, 0, 0)
+        vel_prev = 0
+        pub_response.publish(goal_id + " finished")
+        #if path_deviation > FAR:
+        #    rospy.loginfo(goal_id + " terminated, path deviation")
+        #else:
+        #    rospy.loginfo(goal_id + " finished, reached the goal")
+        return
+    #rospy.loginfo('funk(closest) = ' + str(closest))
 
         # place a carrot on the path for the robot to follow (it is D steps ahead of the robot)
         carrot = min(closest + D, goal)
-        #rospy.loginfo('carrot = ' + str(carrot))
+    #rospy.loginfo('carrot = ' + str(carrot))
 
-        # VELOCITY REGULATION.
-        # Here we assume W * T << 1, where W is angular speed and T is the time of one iteration of the control loop. Otherwice the path of the robot during one iteration will be an arc, not a line.
-        # distance to the carrot
-        carrot_distance = path[carrot, :] - coords
-        carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
-        #rospy.loginfo('carrot_distance:\t' + str(carrot_distance))
+    # VELOCITY REGULATION.
+    # Here we assume W * T << 1, where W is angular speed and T is the time of one iteration of the control loop. Otherwice the path of the robot during one iteration will be an arc, not a line.
+    # distance to the carrot
+    carrot_distance = path[carrot, :] - coords
+    carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
+    #rospy.loginfo('carrot_distance:\t' + str(carrot_distance))
 
-        # choose speed limits
-        # deceleration in the end of the path
-        acceleration_coefficient = min(1.0, 0.2 + float(closest) / D_ACCELERATION)
-        deceleration_coefficient = min(1.0, float(goal-closest) / D_DECELERATION)
-        #rospy.loginfo('acc, dec coefficients = ' + str(acceleration_coefficient) + ' ' + str(deceleration_coefficient))
-        
-        # maximum possible speed in carrot distance proportion
-        vel = V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
-        if abs(vel[2]) > W_MAX:
-            vel *= W_MAX / abs(vel[2])
-        #rospy.loginfo('vel max\t:' + str(vel))
+    # choose speed limits
+    # deceleration in the end of the path
+    acceleration_coefficient = min(1.0, 0.2 + float(closest) / D_ACCELERATION)
+    deceleration_coefficient = min(1.0, float(goal-closest) / D_DECELERATION)
+    #rospy.loginfo('acc, dec coefficients = ' + str(acceleration_coefficient) + ' ' + str(deceleration_coefficient))
+    
+    # maximum possible speed in carrot distance proportion
+    vel = V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
+    if abs(vel[2]) > W_MAX:
+        vel *= W_MAX / abs(vel[2])
+    #rospy.loginfo('vel max\t:' + str(vel))
 
-        # consider acceleration and deceleration
-        vel = vel * deceleration_coefficient * acceleration_coefficient
-        #rospy.loginfo('vel*coef\t:' + str(vel))
+    # consider acceleration and deceleration
+    vel = vel * deceleration_coefficient
+    if np.linalg.norm(vel[:2]) <= np.linalg.norm(vel_prev):
+        vel = vel * acceleration_coefficient
+    vel_prev = vel[:2]
+    #rospy.loginfo('vel*coef\t:' + str(vel))
 
-        # vel in robot frame
-        vel_robot_frame = rotation_transform(vel, -coords[2])
-        #rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
-        
-        speed_cmd(*vel_robot_frame)
+    # vel in robot frame
+    vel_robot_frame = rotation_transform(vel, -coords[2])
+    #rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
+    
+    speed_cmd(*vel_robot_frame)
 
-        t = rospy.get_time()
-        global t_prev
-        #rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec)  of  iteration: ' + str(t - t0))
-        #rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec) betw iteration: ' + str(t - t_prev))
-        t_prev = t
-        # for debug
-        #rospy.loginfo('------------------------')
-        if t - t0 < 0.05:
-            rospy.sleep(0.05)
+    t = rospy.get_time()
+    global t_prev
+    #rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec)  of  iteration: ' + str(t - t0))
+    #rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Time (sec) betw iteration: ' + str(t - t_prev))
+    t_prev = t
+    # for debug
+    #rospy.loginfo('------------------------')
+    if t - t0 < 0.05:
+        rospy.sleep(0.05)
 
-    # stop the robot in case the node is closed
-    speed_cmd(0, 0, 0)
 
 def rotation_transform(vec, angle):
     M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
@@ -184,7 +194,7 @@ def cmd_callback(data):
             heap_approaching = True
             dist = (closest_coords - goal_point[:2])
             if np.sum(dist ** 2) ** .5 < 1e-4:
-                # approaching movement diraction
+                # approaching movement direction
                 e = np.array([-np.sin(goal_point[2]), np.cos(goal_point[2])])
             else:
                 e = dist / np.sum(dist ** 2) ** .5
@@ -195,7 +205,7 @@ def cmd_callback(data):
             via_point = goal_point
         # create a message for move_base (to ask for a global plan)
         move_message = MoveBaseActionGoal()
-        move_message.goal.target_pose.header.frame_id = 'world'
+        move_message.goal.target_pose.header.frame_id = 'map'
         move_message.goal.target_pose.pose.position.x = via_point[0]
         move_message.goal.target_pose.pose.position.y = via_point[1]
         
@@ -208,13 +218,15 @@ def cmd_callback(data):
         goal_id = cmd_id
         
         # this is a command to the global planner
-        pub_goal.publish(move_message)
+        global timer
+        timer = rospy.Timer(rospy.Duration(0.3), wr(move_message))
 
     elif cmd_type == "move_odometry": # simple movement by odometry
         #rospy.loginfo('=========================== (sleep)')
         rospy.sleep(1.0)
         #rospy.loginfo('MOVE ODOM')
         goal = np.array(cmd_args).astype('float')
+        coords = pose
         #rospy.loginfo('goal: ' + str(goal))
         d = rotation_transform((goal[:2] - coords[:2]), -coords[2])
         v = np.abs(d[:2]) / np.abs(np.max(d[:2])) * 0.2
@@ -222,6 +234,11 @@ def cmd_callback(data):
         #rospy.loginfo('stm cmd: ' + str(cmd))
         pub_cmd.publish(cmd)
         #rospy.loginfo('===========================')
+
+def wr(move_message):
+    def plan_timer_callback(event):
+        pub_goal.publish(move_message)
+    return plan_timer_callback
 
 def speeds_proportion_to_reach_point(point): # TODO: check
     """ The speed to reach the point given in robot frame in uniform motion"""
@@ -255,6 +272,9 @@ if __name__ == "__main__":
     rate = rospy.Rate(20.0)
     while not rospy.is_shutdown():
         try:
+            if follow_flag == True:
+                print 'iteration--------------'
+                follow_iteration()
             (trans,rot) = listener.lookupTransform('/map', '/' + robot_name, rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
             coords = np.array([trans[0], trans[1], yaw])

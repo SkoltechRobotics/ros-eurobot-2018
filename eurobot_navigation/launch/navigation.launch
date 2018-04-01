@@ -28,7 +28,7 @@
       <remap from="/people" to="people"/>
     </node>
     <!-- Custom local path planner writen in python -->
-    <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
+    <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" output="screen"/>
 
   </group>
 
@@ -52,7 +52,7 @@
       <remap from="/people" to="people"/>
     </node>
     <!-- Custom local path planner writen in python -->
-    <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
+    <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" output="screen"/>
 
   </group>
 
