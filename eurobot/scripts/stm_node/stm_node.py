@@ -84,7 +84,7 @@ class stm_node(STMprotocol):
         self.mutex.release()
 
         # high-level commands handling
-       if action_type == ODOMETRY_MOVEMENT:
+        if action_type == ODOMETRY_MOVEMENT:
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
         if action_type in MANIPULATOR_JOBS:
