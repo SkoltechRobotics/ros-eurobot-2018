@@ -42,7 +42,7 @@ class stm_node(STMprotocol):
 
         
         # turn stm inverse kinematics handler ON
-        stm.send("set_inverse_kinematics_ON", 13, [1])
+        self.send("set_inverse_kinematics_ON", 13, [1])
 
         # set initial coords in STM
         self.initial_coords = [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')];
@@ -84,7 +84,7 @@ class stm_node(STMprotocol):
         self.mutex.release()
 
         # high-level commands handling
-        if action_type == ODOMETRY_MOVEMENT:
+       if action_type == ODOMETRY_MOVEMENT:
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
         if action_type in MANIPULATOR_JOBS:
@@ -122,10 +122,10 @@ class stm_node(STMprotocol):
                                     self.robot_name)
 
     def pub_timer_callback(self, event):
-        successfully1, coords = stm.send('request_stm_coords', 15, [])
-        successfully2, vel = stm.send('request_stm_vel', 9, [])
+        successfully1, coords = self.send('request_stm_coords', 15, [])
+        successfully2, vel = self.send('request_stm_vel', 9, [])
         if successfully1 and successfully2:
-            stm.publish_odom(coords, vel)
+            self.publish_odom(coords, vel)
 
     
     def odometry_movement_timer(self, event):
