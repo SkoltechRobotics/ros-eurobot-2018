@@ -35,13 +35,14 @@ class BehaviorTreeBuilder:
         self.track_units = "m"
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
+        self.side = "orange"
 
         #small_robot
         self.bottom_sorter = str(0xc3)
         self.upper_sorter  = str(0xc2)
         self.wastewater_door = str(0xc1)
-        self.wt_y_shift = np.array([0,20,0],dtype=np.float64)
-        self.wt_x_shift = np.array([20,0,0],dtype=np.float64)
+        self.wt_y_shift = np.array([0,15,0],dtype=np.float64)
+        self.wt_x_shift = np.array([15,0,0],dtype=np.float64)
         self.shooting_motor = str(0xc4)
 
         if 'move_type' in kvargs:
@@ -61,7 +62,7 @@ class BehaviorTreeBuilder:
                 "base": np.array([[15, 15, 0]],dtype=np.float64),
                 "wastewater_tower" : np.array([[0,0,0]], dtype=np.float64),
                 "wastewater_reservoir" : np.array([[0,0,0]], dtype=np.float64),
-                "cleanwater_towe" : np.array([[0,0,0]], dtype=np.float64)
+                "cleanwater_tower" : np.array([[82.6,16.6,4.71]], dtype=np.float64)
             }
 
         for _, action in self.action_places.items():
@@ -97,6 +98,7 @@ class BehaviorTreeBuilder:
         return BehaviorTreeBuilder.scale[self.opt_units]/BehaviorTreeBuilder.scale[self.track_units]*dist
     
     def add_move_action(self, parent_name, *args, **kvargs):
+        rospy.loginfo(args)
         move_type = "move"
         if "move_type" in kvargs and kvargs["move_type"] in ["move", "move_odometry", "move_stm"]:
             move_type = kvargs["move_type"]
@@ -118,6 +120,7 @@ class BehaviorTreeBuilder:
         rospy.loginfo(args)
         args[:2] = [self.convert_units(a) for a in args[:2]]
         args = np.array(args).reshape(3,1)
+        rospy.loginfo(args)
         shift_center = rot_matrix(robot_angle).dot(self.convert_units(self.cube_vector*shift_multiplier))
         rospy.loginfo(shift_center)
         args -= shift_center
@@ -451,9 +454,9 @@ class BehaviorTreeBuilder:
             else:
                 shift = self.wt_x_shift
                 wt_coords_init = wt_coords - shift
-            self.add_move_action(main_seq_name, wt_coords_init.tolist())
+            self.add_move_action(main_seq_name, *wt_coords_init.tolist(), shift_multiplier=0)
 
-        self.add_move_action(main_seq_name, wt_coords.tolist(), move_type="move_odometry")
+        self.add_move_action(main_seq_name, *wt_coords.tolist(), move_type="move_odometry", shift_multiplier=0)
 
 
     def add_wastewater_tower(self, parent_name, delay=1):
@@ -479,17 +482,17 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        self.add_move_to_tower_action(main_seq_name, "cleanwater", not with_4_balls)
+        self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
 
 
-        self.add_shooting_motor_action(main_seq_name,to,"on")
-        if with_4_balls:
-            for _ in range(4):
-                self.add_shoot_sort_action(main_seq_name,to)
-        if not only_4_balls:
-            for _ in range(8):
-                self.add_first_sort_action(main_seq_name,"clean")
-                self.add_shoot_sort_action(main_seq_name,to)
+        # self.add_shooting_motor_action(main_seq_name,to,"on")
+        # if with_4_balls:
+        #    for _ in range(4):
+        #         self.add_shoot_sort_action(main_seq_name,to)
+        # if not only_4_balls:
+        #     for _ in range(8):
+        #         self.add_first_sort_action(main_seq_name,"clean")
+        #         self.add_shoot_sort_action(main_seq_name,to)
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
