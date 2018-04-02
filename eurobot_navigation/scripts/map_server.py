@@ -13,7 +13,6 @@ class MapServer():
         rospy.init_node('map_server', anonymous=True)
         self.pub_main_map = rospy.Publisher("/main_robot/map", OccupancyGrid, queue_size=1)
         self.pub_secondary_map = rospy.Publisher("/secondary_robot/map", OccupancyGrid, queue_size=1)
-        self.pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
         self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
         self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
         rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
@@ -130,7 +129,6 @@ class MapServer():
                 self.pub()
         print cmd_id + " finished"
         rospy.sleep(0.1) # TODO
-        self.pub_response.publish(cmd_id + " finished")
 
 
     def handle_get_map(self, req):

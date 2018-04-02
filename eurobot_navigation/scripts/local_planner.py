@@ -6,7 +6,6 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from scipy.optimize import fminbound
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion
 from std_msgs.msg import String
-from move_base_msgs.msg import MoveBaseActionGoal
 from nav_msgs.srv import GetPlan
 from threading import Lock
 
@@ -48,7 +47,6 @@ class LocalPlanner:
 
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
         self.pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size=1)
-        self.pub_goal = rospy.Publisher("move_base/goal", MoveBaseActionGoal, queue_size=1)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_cmd = rospy.Publisher("stm_command", String, queue_size=1)
         self.listener = TransformListener()
@@ -306,9 +304,9 @@ class LocalPlanner:
         b = PoseStamped(pose=finish)
         b.header.frame_id = 'map'
 
-        rospy.wait_for_service('move_base/make_plan')
+        rospy.wait_for_service('global_planner/planner/make_plan')
         try:
-            make_plan = rospy.ServiceProxy('move_base/make_plan', GetPlan)
+            make_plan = rospy.ServiceProxy('global_planner/planner/make_plan', GetPlan)
             plan = make_plan(a, b, self.GLOBAL_PLAN_TOLERANCE).plan
             path = np.array([[pose.pose.position.x, pose.pose.position.y, euler_from_quaternion([0, 0, pose.pose.orientation.z, pose.pose.orientation.w])[2]] for pose in plan.poses])
             return True, path

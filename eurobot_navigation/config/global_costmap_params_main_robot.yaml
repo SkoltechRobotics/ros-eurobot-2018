@@ -1,27 +1,22 @@
-global_costmap:
-  footprint: [[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]
-    #[-0.11, 0.095], [-0.11, -0.045], [0.11, -0.045], [0.11, 0.095]]
-    #robot_radius: 0.222
-  cost_scaling_factor: 30
-  inflation_radius: 0.5
-  resolution: 0.01
-  robot_base_frame: main_robot
-  global_frame: /map
-  update_frequency: 10
-  publish_frequency: 10
-  static_map: true
-  rolling_window: false
-  static_map: true
-  width: 3.0
-  height: 2.0
-  plugins:
-      - {name: static_layer,        type: "costmap_2d::StaticLayer"}
-      - {name: social_layer,        type: "social_navigation_layers::ProxemicLayer"}
-      - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
-  social_layer:
+footprint: [[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]
+#robot_radius: 0.222
+robot_base_frame: main_robot
+global_frame: /map
+update_frequency: 30
+width: 3.0
+height: 2.0
+resolution: 0.01
+plugins:
+    - {name: static_layer,        type: "costmap_2d::StaticLayer"}
+    - {name: social_layer,        type: "social_navigation_layers::ProxemicLayer"}
+    - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
+social_layer:
     cutoff: 1
     amplitude: 254
     covariance: 0.1
-  inflation_layer:
+    #factor: 5.0
+    #keep_time: 0.75
+inflation_layer:
     cost_scaling_factor: 30
     inflation_radius: 0.5
+    
