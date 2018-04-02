@@ -220,10 +220,10 @@ class MapServer():
             sec_rob.reliability = 1
 
             people.people = [sec_rob]
-            self.pub_social_main.publish(people)
+            #self.pub_social_main.publish(people)
             
             people.people = [main_rob]
-            self.pub_social_secondary.publish(people)
+            #self.pub_social_secondary.publish(people)
 
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             # pub maps without robots in case of tf listener failure
