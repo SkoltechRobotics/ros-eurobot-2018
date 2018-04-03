@@ -441,7 +441,7 @@ class BehaviorTreeBuilder:
     def add_wastewater_action(self, parent_name, to="release"):
         self.add_command_action("release_wastewater" if to == "release" else "check_wastewater_closed", self.wastewater_door, 1 if to == "release" else 0)
 
-    def add_move_to_tower_action(self, parent_name, tower_name, only_odom=False):
+    def add_move_to_tower_action(self, parent_name, tower_name, only_odom=True):
         main_seq_name = self.construct_string("move_to_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
@@ -455,6 +455,12 @@ class BehaviorTreeBuilder:
                 shift = self.wt_x_shift
                 wt_coords_init = wt_coords - shift
             self.add_move_action(main_seq_name, *wt_coords_init.tolist(), shift_multiplier=0)
+
+        if only_odom:
+            wt_shift = wt_coords + (self.wt_y_shift if tower_name == "wastewater_tower" else (self.wt_x_shift if self.side == "orange" else -self.wt_x_shift)) / 5
+            wt_shift += (self.wt_x_shift if wt_coords[1] > 150 else -self.wt_x_shift) if tower_name == "wastewater_tower" else (-self.wt_y_shift)
+
+            self.add_move_action(main_seq_name, *wt_shift.tolist(), move_type="move_odometry", shift_multiplier=0)
 
         self.add_move_action(main_seq_name, *wt_coords.tolist(), move_type="move_odometry", shift_multiplier=0)
 
@@ -482,17 +488,17 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
+        #self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", True) #not with_4balls
 
 
-        # self.add_shooting_motor_action(main_seq_name,to,"on")
-        # if with_4_balls:
-        #    for _ in range(4):
-        #         self.add_shoot_sort_action(main_seq_name,to)
-        # if not only_4_balls:
-        #     for _ in range(8):
-        #         self.add_first_sort_action(main_seq_name,"clean")
-        #         self.add_shoot_sort_action(main_seq_name,to)
+        #self.add_shooting_motor_action(main_seq_name,to,"on")
+        if with_4_balls:
+           for _ in range(4):
+                self.add_shoot_sort_action(main_seq_name,to)
+        if not only_4_balls:
+            for _ in range(8):
+                self.add_first_sort_action(main_seq_name,"clean")
+                self.add_shoot_sort_action(main_seq_name,to)
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy

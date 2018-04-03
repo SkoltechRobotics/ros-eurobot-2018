@@ -12,8 +12,9 @@ RATE = 20
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
 GET_MANIPULATOR_STATUS = 0xa1
+GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
-MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5]
+MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 
@@ -90,7 +91,7 @@ class stm_node(STMprotocol):
         if action_type in MANIPULATOR_JOBS:
             n = args[0]
             self.take_cube[n] = action_name
-            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n))
+            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n, GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type >= 0xc0 else GET_MANIPULATOR_STATUS))
 
         return successfully, args_response
 
@@ -136,9 +137,9 @@ class stm_node(STMprotocol):
                 self.pub_response.publish(self.odometry_movement_id + ' finished')
                 self.timer_odom_move.shutdown() 
 
-    def manipulator_timer(self, n):
+    def manipulator_timer(self, n, GET_COMMAND_NAME = GET_MANIPULATOR_STATUS):
         def m_timer(event):
-            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_MANIPULATOR_STATUS, [n])
+            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_COMMAND_NAME, [n])
             if successfully:
                 # status code: 0 - done; 1 - in progress; >1 - error
                 status = args_response[0]

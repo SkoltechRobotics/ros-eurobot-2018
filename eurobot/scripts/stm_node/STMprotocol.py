@@ -29,7 +29,12 @@ class STMprotocol(object):
             0xb5: "=B",
             0x0e: "=fff",
             0x0f: "=",
-            0xa2: "=ffffff"
+            0xa2: "=ffffff",
+            0xc0: "=",
+            0xc1: "=B",
+            0xc2: "=B",
+            0xc3: "=B",
+            0xc4: "=BB",
         }
 
         self.unpack_format = {
@@ -55,7 +60,12 @@ class STMprotocol(object):
             0xb5: "=BB",
             0x0e: "=BB",
             0x0f: "=fff",
-            0xa2: "=BB"
+            0xa2: "=BB",
+            0xc0: "=B",
+            0xc1: "=BB",
+            0xc2: "=BB",
+            0xc3: "=BB",
+            0xc4: "=BB",
         }
 
 
