@@ -96,6 +96,7 @@ class LocalPlanner:
         # current linear and angular goal distance
         goal_distance = self.distance(self.plan_length - 1)
         goal_yaw_distance = abs(self.plan[-1][2] - self.coords[2])
+        goal_yaw_distance = goal_yaw_distance if goal_yaw_distance < np.pi else np.abs(2 * np.pi - goal_yaw_distance)
         rospy.loginfo('goal_distance: ' + str(goal_distance) + ' ; ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
@@ -105,7 +106,7 @@ class LocalPlanner:
         rospy.loginfo('path_deviation: ' + str(path_deviation))
 
         # stop and publish response if we have reached the goal with the given tolerance
-        if (goal_distance < self.XY_GOAL_TOLERANCE and goal_yaw_distance < self.YAW_GOAL_TOLERANCE):
+        if goal_distance < self.XY_GOAL_TOLERANCE and goal_yaw_distance < self.YAW_GOAL_TOLERANCE:
             # stop the robot
             rospy.loginfo(self.goal_id + " finished, reached the goal")
             self.terminate_following(True)
@@ -133,13 +134,13 @@ class LocalPlanner:
         self.t_prev = t0
 
         # set speed limit
-        if goal_distance < self.D_DECELERATION:
-            speed_limit_coefficient = max(self.V_MIN, goal_distance / self.D_DECELERATION)
-            rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient) + ' (deceleration)')
-        else:
-            speed_limit_coefficient = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt) / self.V_MAX
-            rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient) + ' (acceleration)')
+        speed_limit_coefficient_dec = max(self.V_MIN, goal_distance / self.D_DECELERATION)
+        rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient_dec) + ' (deceleration)')
+        speed_limit_coefficient_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt) / self.V_MAX
+        rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient_acs) + ' (acceleration)')
 
+        speed_limit_coefficient = min(speed_limit_coefficient_dec, speed_limit_coefficient_acs)
+        rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient))
         # maximum possible speed in carrot distance proportion
         vel = self.V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
         if abs(vel[2]) > self.W_MAX:
@@ -166,7 +167,7 @@ class LocalPlanner:
         # cut the part of the path passed
         self.plan = self.plan[closest:]
         self.plan_length = self.plan.shape[0]
-
+        rospy.loginfo("plan length " + str(self.plan_length))
         self.mutex.release()
 
     def terminate_following(self, success):
