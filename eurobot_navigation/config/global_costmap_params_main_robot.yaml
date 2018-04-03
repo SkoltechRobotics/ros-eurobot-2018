@@ -3,6 +3,7 @@ footprint: [[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]
 robot_base_frame: main_robot
 global_frame: /map
 update_frequency: 30
+publish_frequency: 30
 width: 3.0
 height: 2.0
 resolution: 0.01

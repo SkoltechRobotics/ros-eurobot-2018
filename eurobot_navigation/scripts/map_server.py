@@ -89,9 +89,7 @@ class MapServer():
         # initial pub
         self.pub()
 
-
-        # this solves some bug with move_base:
-        rospy.Timer(rospy.Duration(.1), self.timer_callback)
+        rospy.Timer(rospy.Duration(1. / 100), self.timer_callback)
 
 
     def add_heap(self, n):

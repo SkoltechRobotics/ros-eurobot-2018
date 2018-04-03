@@ -14,6 +14,8 @@ class LocalPlanner:
     # maximum linear and rotational speed
     V_MAX = 0.57
     W_MAX = 2.7
+    # minimum speed (when approaching the goal and decelerating)
+    V_MIN = 0.01
     # acceleration of the robot until V_MAX
     ACCELERATION = 1
     # plan resolution
@@ -25,7 +27,7 @@ class LocalPlanner:
     # on which distance to consider that robot lost it's path
     FOLLOW_TOLERANCE = 0.15
     # goal tolerance
-    XY_GOAL_TOLERANCE = 0.001
+    XY_GOAL_TOLERANCE = 0.004
     YAW_GOAL_TOLERANCE = 0.05
     # goal tolerance for global planner (when goal of requested plan is obstructed)
     GLOBAL_PLAN_TOLERANCE = 0
@@ -81,7 +83,7 @@ class LocalPlanner:
             self.pose = Pose(Point(*trans), Quaternion(*rot))
             self.coords = self.pose2coords(self.pose)
         except (LookupException, ConnectivityException, ExtrapolationException):
-            rospy.loginfo("LocalPlanner failed to lookup tf.")
+            #rospy.loginfo("LocalPlanner failed to lookup tf.")
             self.mutex.release()
             return
 
@@ -132,7 +134,7 @@ class LocalPlanner:
 
         # set speed limit
         if goal_distance < self.D_DECELERATION:
-            speed_limit_coefficient = goal_distance / self.D_DECELERATION
+            speed_limit_coefficient = max(self.V_MIN, goal_distance / self.D_DECELERATION)
             rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient) + ' (deceleration)')
         else:
             speed_limit_coefficient = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt) / self.V_MAX
@@ -162,16 +164,8 @@ class LocalPlanner:
         rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rate: ' + str(1. / dt))
 
         # cut the part of the path passed
-        if self.plan_length == 1:
-            pass
-        elif closest == self.plan_length - 1:
-            # this may happen if we went too far (for example, because of a random lag)
-            # leave the last element (otherwise following would be considered finished)
-            self.plan = self.plan[closest-1:]
-            self.plan_length = self.plan.shape[0]
-        else:
-            self.plan = self.plan[closest:]
-            self.plan_length = self.plan.shape[0]
+        self.plan = self.plan[closest:]
+        self.plan_length = self.plan.shape[0]
 
         self.mutex.release()
 
