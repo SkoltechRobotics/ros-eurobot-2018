@@ -163,11 +163,13 @@ class MapServer():
         if a < np.pi / 2 or a > 3 * np.pi / 2:
             robot[y - y1 > (x - x1) * np.tan(coords[2])] = False
             robot[y - y2 < (x - x2) * np.tan(coords[2])] = False
-            robot[y - y3 > (x - x3) * np.tan(np.pi/2 + coords[2])] = False
-            robot[y - y4 < (x - x4) * np.tan(np.pi/2 + coords[2])] = False
         else:
             robot[y - y1 < (x - x1) * np.tan(coords[2])] = False
             robot[y - y2 > (x - x2) * np.tan(coords[2])] = False
+        if a < np.pi:
+            robot[y - y3 < (x - x3) * np.tan(np.pi/2 + coords[2])] = False
+            robot[y - y4 > (x - x4) * np.tan(np.pi/2 + coords[2])] = False
+        else:
             robot[y - y3 > (x - x3) * np.tan(np.pi/2 + coords[2])] = False
             robot[y - y4 < (x - x4) * np.tan(np.pi/2 + coords[2])] = False
 
