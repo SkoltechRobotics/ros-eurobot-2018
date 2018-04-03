@@ -6,13 +6,13 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from scipy.optimize import fminbound
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion
 from std_msgs.msg import String
-from nav_msgs.srv import GetPlan
+from nav_msgs.srv import GetPlan, GetMap
 from threading import Lock
 
 
 class LocalPlanner:
     # maximum linear and rotational speed
-    V_MAX = 0.57
+    V_MAX = 0.3
     W_MAX = 2.7
     # minimum speed (when approaching the goal and decelerating)
     V_MIN = 0.01
@@ -55,6 +55,7 @@ class LocalPlanner:
 
         # get ROS params
         self.robot_name = rospy.get_param("robot_name")
+        self.map_service_name = '/' + self.robot_name + '/static_map'
         self.coords = np.array([rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"), rospy.get_param("/" + self.robot_name + "/start_a")])
         self.pose = self.coords2pose(self.coords)
         self.vel = np.zeros(3)
@@ -302,6 +303,17 @@ class LocalPlanner:
         b = PoseStamped(pose=finish)
         b.header.frame_id = 'map'
 
+        success, occupied = self.are_occupied([a, b])
+        if not success:
+            return False, []
+        if occupied.any():
+            if occupied[1]:
+                rospy.loginfo("Follower failed to request a plan. Goal cell on the map is occupied!")
+            elif occupied[0]:
+                rospy.loginfo("Follower failed to request a plan. Starting point on the map is occupied!")
+            self.fail()
+            return False, []
+
         rospy.wait_for_service('global_planner/planner/make_plan')
         try:
             make_plan = rospy.ServiceProxy('global_planner/planner/make_plan', GetPlan)
@@ -311,6 +323,17 @@ class LocalPlanner:
         except rospy.ServiceException, e:
             rospy.loginfo("Follower failed to request a plan. Exception: " + str(e))
             self.fail()
+            return False, []
+
+    def are_occupied(self, points):
+        rospy.wait_for_service(self.map_service_name)
+        try:
+            get_map = rospy.ServiceProxy(self.map_service_name, GetMap)
+            costmap = get_map().map
+            res = costmap.info.resolution
+            return True, np.array([costmap.data[costmap.info.width * int(point.pose.position.y / res + 2) + int(point.pose.position.x / res + 2)] == 100 for point in points])
+        except Exception, e:
+            rospy.loginfo("Failed to use /static_map service. Exception: " + str(e))
             return False, []
 
     def fail(self):
