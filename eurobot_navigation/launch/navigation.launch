@@ -1,28 +1,36 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- Map server -->
-  <arg name="map_file" default="$(find eurobot_navigation)/map/field.yaml"/>
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
-  <node name="obstacle_publisher" pkg="eurobot_navigation" type="obstacle_publisher.py" />
-  <node name="path_posearray" pkg="eurobot_navigation" type="path_posearray.py" />
+    <!-- Map server -->
+    <node name="map_server" pkg="eurobot_navigation" type="map_server.py"  output="screen" />
 
-  <!-- Place map frame at odometry frame -->
-  <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_nav" args="0 0 0 0 0 0 world map 100"/>
+    <!-- MAIN ROBOT -->
+    <group ns="main_robot"> 
+        <!-- Visualization of the path in form of poses -->
+        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"  output="screen"/>
 
-  <!-- Move base -->
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base">
-    <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find eurobot_navigation)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find eurobot_navigation)/config/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" />
+        <!-- Navigation -->
+        <node pkg="global_planner" type="planner" respawn="true" name="global_planner" output="screen">
+            <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
+            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_main_robot.yaml" command="load" ns="costmap" />
+            <remap from="/people" to="people"/>
+        </node>
+        <!-- Custom local path planner writen in python -->
+        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" output="screen"/>
+    </group>
 
-    <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" />
-    <!--rosparam file="$(find eurobot_navigation)/config/teb_local_planner_params.yaml" command="load" /-->
-    <remap from="cmd_vel" to="main_robot/cmd_vel1"/>
-    <remap from="odom" to="main_robot/odom"/>
+    <!-- SECONDARY ROBOT -->
+    <group ns="secondary_robot">
+        <!-- Visualization of the path in form of poses -->
+        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"  output="screen"/>
 
-  </node>
-
-  <node name="path_follower" pkg="eurobot_navigation" type="follow.py" output="screen"/>
+        <!-- Navigation -->
+        <node pkg="global_planner" type="planner" respawn="true" name="global_planner" output="screen">
+            <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
+            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_secondary_robot.yaml" command="load" ns="costmap" />
+            <remap from="/people" to="people"/>
+        </node>
+        <!-- Custom local path planner writen in python -->
+        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" output="screen"/>
+    </group>
 
 </launch>

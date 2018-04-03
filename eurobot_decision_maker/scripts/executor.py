@@ -181,9 +181,11 @@ class TimeoutNode(TreeNode):
             self.start()
             self.status = "active"
 
-        
-        if self.status == "active" and self.time_worked() >= sleep_time:
+        if self.status == "active" and self.time_worked() >= self.sleep_time:
             self.finish()
+            self.status = "finished"
+
+        return self.status
 
 class SelectorNode(ControlNode):
     def __init__(self, name):

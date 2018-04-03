@@ -12,8 +12,9 @@ RATE = 20
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
 GET_MANIPULATOR_STATUS = 0xa1
+GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
-MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4]
+MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 
@@ -35,10 +36,22 @@ class stm_node(STMprotocol):
 
         # high-level command IDs
         self.odometry_movement_id = ''
-        self.take_cube0 = ''
-        self.take_cube1 = ''
-        self.take_cube2 = ''
+       
+        # strorage for timer objects and cmd_names (for 3 manipulators)
+        self.timer_m = [None] * 3
+        self.take_cube = [''] * 3
+
         
+        # turn stm inverse kinematics handler ON
+        self.send("set_inverse_kinematics_ON", 13, [1])
+
+        # set initial coords in STM
+        self.initial_coords = [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')];
+        self.send("set_initial_coords", 14, self.initial_coords)
+
+        # get LIDAR coords
+        self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
+
         rospy.Timer(rospy.Duration(1./40), self.pub_timer_callback)
 
 
@@ -67,7 +80,7 @@ class stm_node(STMprotocol):
         # Lock() is used to prevent mixing bytes of diff commands to STM
         self.mutex.acquire()
         # send command to STM32
-        rospy.loginfo('Sednid to STM: ' + str(action_type) + '|with args: ' + str(args))
+        #rospy.loginfo('Sendid to STM: ' + str(action_type) + '|with args: ' + str(args))
         successfully, args_response = self.send_command(action_type, args)
         self.mutex.release()
 
@@ -76,15 +89,9 @@ class stm_node(STMprotocol):
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
         if action_type in MANIPULATOR_JOBS:
-            if args[0] == 0:
-                self.take_cube0 = action_name
-                self.timer_m0 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator0_timer)
-            if args[0] == 1:
-                self.take_cube1 = action_name
-                self.timer_m1 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator1_timer)
-            if args[0] == 2:
-                self.take_cube2 = action_name
-                self.timer_m2 = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator2_timer)
+            n = args[0]
+            self.take_cube[n] = action_name
+            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n, GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type in range(0xc1,0xc4) else GET_MANIPULATOR_STATUS))
 
         return successfully, args_response
 
@@ -107,59 +114,49 @@ class stm_node(STMprotocol):
                                     tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                                     rospy.Time.now(),
                                     self.robot_name,
-                                    "odom")
+                                    "%s_odom" % self.robot_name)
 
-        self.br.sendTransform((0, 0.06, 0.41),
+        self.br.sendTransform(self.laser_coords,
                                     tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                                     rospy.Time.now(),
-                                    'laser',
+                                    '%s_laser' % self.robot_name,
                                     self.robot_name)
 
     def pub_timer_callback(self, event):
-        successfully1, coords = stm.send('request_stm_coords', 15, [])
-        successfully2, vel = stm.send('request_stm_vel', 9, [])
+        successfully1, coords = self.send('request_stm_coords', 15, [])
+        successfully2, vel = self.send('request_stm_vel', 9, [])
         if successfully1 and successfully2:
-            stm.publish_odom(coords, vel)
-        # TODO: status = ...
+            self.publish_odom(coords, vel)
 
     
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
-        if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.odometry_movement_id + ' finished')
-            self.timer_odom_move.shutdown() 
+        if successfully:
+            # finished
+            if args_response[0] == 0:
+                self.pub_response.publish(self.odometry_movement_id + ' finished')
+                self.timer_odom_move.shutdown() 
 
-
-    def manipulator0_timer(self, event):
-        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_MANIPULATOR_STATUS, [0])
-        if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.take_cube0 + ' finished')
-            self.timer_m0.shutdown() 
-
-
-    def manipulator1_timer(self, event):
-        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_MANIPULATOR_STATUS, [1])
-        if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.take_cube1 + ' finished')
-            self.timer_m1.shutdown() 
-
-
-    def manipulator2_timer(self, event):
-        successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_MANIPULATOR_STATUS, [2])
-        if successfully and args_response[0] == 0:
-            self.pub_response.publish(self.take_cube2 + ' finished')
-            self.timer_m2.shutdown() 
+    def manipulator_timer(self, n, GET_COMMAND_NAME = GET_MANIPULATOR_STATUS):
+        def m_timer(event):
+            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_COMMAND_NAME, [n] if GET_COMMAND_NAME == GET_MANIPULATOR_STATUS else [])
+            if successfully:
+                # status code: 0 - done; 1 - in progress; >1 - error
+                status = args_response[0]
+                # if error 
+                if status > 1:
+                    rospy.logerr("Manipulator " + str(n) + " error. Code: " + str(status))
+                    self.pub_response.publish(self.take_cube[n] + ' error ' + str(status))
+                    self.timer_m[n].shutdown()
+                # if action is finished
+                elif status == 0:
+                    self.pub_response.publish(self.take_cube[n] + ' finished')
+                    self.timer_m[n].shutdown()
+        return m_timer
 
 
 if __name__ == '__main__':
     serial_port = "/dev/ttyUSB0"
     stm = stm_node(serial_port)
-
-    # turn stm inverse kinematics handler ON
-    stm.send("set_inverse_kinematics_ON", 13, [1])
-
-    # set initial coords in STM
-    initial_coords = [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')];
-    stm.send("set_initial_coords", 14, initial_coords)
 
     rospy.spin()

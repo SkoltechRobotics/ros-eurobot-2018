@@ -64,11 +64,11 @@ class stm_node():
             0x0f: "=fff",
         }
 
-        self.freq = 100
+        self.freq = 400
         self.rate = rospy.Rate(self.freq)  # 100Hz
 
-        self.coords = np.array(
-            [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
+        self.coords = np.array([rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
+        self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
         self.vel = np.array([0.0, 0.0, 0.0])
 
         self.last_integration_time = rospy.get_time()
@@ -165,12 +165,16 @@ class stm_node():
             self.rate.sleep()
 
     def pub_timer_callback(self, event):
+        # localization noise
+        coords = self.coords.copy()
+        coords[:2] += np.random.normal(size=2, scale=0.0005)
+
         odom = Odometry()
         odom.header.frame_id = 'odom'
         odom.child_frame_id = self.robot_name
-        odom.pose.pose.position.x = self.coords[0]
-        odom.pose.pose.position.y = self.coords[1]
-        quat = tf.transformations.quaternion_from_euler(0, 0, self.coords[2])
+        odom.pose.pose.position.x = coords[0]
+        odom.pose.pose.position.y = coords[1]
+        quat = tf.transformations.quaternion_from_euler(0, 0, coords[2])
         odom.pose.pose.orientation.z = quat[2]
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = self.vel[0]
@@ -178,16 +182,16 @@ class stm_node():
         odom.twist.twist.angular.z = self.vel[2]
         self.pub_odom.publish(odom)
 
-        self.br.sendTransform((self.coords[0], self.coords[1], 0),
-                              tf.transformations.quaternion_from_euler(0, 0, self.coords[2]),
+        self.br.sendTransform((coords[0], coords[1], 0),
+                              tf.transformations.quaternion_from_euler(0, 0, coords[2]),
                               rospy.Time.now(),
                               self.robot_name,
-                              "odom")
+                              "%s_odom" % self.robot_name)
 
-        self.br.sendTransform((0, 0.06, 0.41),
+        self.br.sendTransform(self.laser_coords,
                               tf.transformations.quaternion_from_euler(0, 0, 1.570796),
                               rospy.Time.now(),
-                              'laser',
+                              '%s_laser' % self.robot_name,
                               self.robot_name)
 
 

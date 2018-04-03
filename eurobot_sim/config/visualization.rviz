@@ -6,8 +6,7 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Robot1
-      Splitter Ratio: 0.655097604
+      Splitter Ratio: 0.597484291
     Tree Height: 343
   - Class: rviz/Selection
     Name: Selection
@@ -27,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -64,10 +63,10 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 11918
+      Max Intensity: 7214
       Min Color: 0; 0; 0
-      Min Intensity: 130
-      Name: LaserScan
+      Min Intensity: 111
+      Name: MainLaserScan
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -84,32 +83,35 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        laser:
-          Value: true
         main_robot:
           Value: true
-        main_robot_pf:
+        main_robot_laser:
           Value: true
+        main_robot_odom:
+          Value: false
         map:
           Value: true
-        odom:
+        secondary_robot:
           Value: true
-        world:
+        secondary_robot_laser:
           Value: true
+        secondary_robot_odom:
+          Value: false
       Marker Scale: 0.400000006
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          main_robot_pf:
-            {}
-          map:
-            odom:
-              main_robot:
-                laser:
-                  {}
+        map:
+          main_robot_odom:
+            main_robot:
+              main_robot_laser:
+                {}
+          secondary_robot_odom:
+            secondary_robot:
+              secondary_robot_laser:
+                {}
       Update Interval: 0
       Value: true
     - Attached Body Color: 150; 50; 150
@@ -155,7 +157,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Name: Robot
+      Name: MainRobot
       Robot Alpha: 0.699999988
       Robot Description: main_robot/description
       Robot State Topic: display_robot_state
@@ -172,7 +174,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.0700000003
       Head Radius: 0.0299999993
-      Name: PoseArray
+      Name: MainParticles
       Shaft Length: 0.230000004
       Shaft Radius: 0.00999999978
       Shape: Arrow (Flat)
@@ -205,7 +207,7 @@ Visualization Manager:
       Max Intensity: 1760.92664
       Min Color: 0; 0; 0
       Min Intensity: -335.750061
-      Name: PointCloud
+      Name: MainLandmarks(thresholded)
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
@@ -222,22 +224,22 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: false
-      Name: Map Initial
-      Topic: /map
+      Name: Map Initial Main
+      Topic: /main_robot/map
       Unreliable: false
       Use Timestamp: false
       Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
-      Color: 0; 0; 255
+      Color: 0; 255; 0
       Enabled: true
       Head Diameter: 0.300000012
       Head Length: 0.200000003
       Length: 0.300000012
       Line Style: Lines
       Line Width: 0.0299999993
-      Name: Global Path (global planner)
+      Name: MainGlobalPlan
       Offset:
         X: 0
         Y: 0
@@ -247,62 +249,24 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /move_base/GlobalPlanner/plan
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.100000001
-      Class: rviz/Pose
-      Color: 255; 25; 0
-      Enabled: true
-      Head Length: 0.0700000003
-      Head Radius: 0.0700000003
-      Name: Goal Pose
-      Shaft Length: 0.0500000007
-      Shaft Radius: 0.0299999993
-      Shape: Arrow
-      Topic: /move_base/current_goal
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 255; 255; 0
-      Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
-      Line Style: Billboards
-      Line Width: 0.0299999993
-      Name: Global Path (local planner)
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
-      Topic: /move_base/DWAPlannerROS/global_plan
+      Topic: /main_robot/global_planner/planner/plan
       Unreliable: false
       Value: true
     - Alpha: 1
       Class: rviz/Polygon
       Color: 25; 255; 0
-      Enabled: false
-      Name: Polygon Robot
-      Topic: /move_base/local_costmap/footprint
+      Enabled: true
+      Name: MainFootprint
+      Topic: /main_robot/global_planner/costmap/footprint
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: Map Global
-      Topic: /move_base/global_costmap/costmap
+      Name: Main Global Map
+      Topic: /main_robot/global_planner/costmap/costmap
       Unreliable: false
       Use Timestamp: false
       Value: true
@@ -310,57 +274,26 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
-      Name: Map Local
-      Topic: /move_base/local_costmap/costmap
+      Enabled: true
+      Name: Secondary Global Map
+      Topic: /secondary_robot/global_planner/costmap/costmap
       Unreliable: false
       Use Timestamp: false
-      Value: false
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 255; 0; 4
-      Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
-      Line Style: Billboards
-      Line Width: 0.0299999993
-      Name: Local Path (Local Planner)
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
-      Topic: /move_base/DWAPlannerROS/local_plan
-      Unreliable: false
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /move_base/TebLocalPlannerROS/teb_markers
-      Name: TEB_Marker
-      Namespaces:
-        {}
-      Queue Size: 100
       Value: true
     - Alpha: 1
       Arrow Length: 0.0500000007
       Axes Length: 0.300000012
       Axes Radius: 0.00999999978
       Class: rviz/PoseArray
-      Color: 17; 0; 255
+      Color: 0; 255; 0
       Enabled: true
       Head Length: 0.0700000003
       Head Radius: 0.0299999993
-      Name: TEB_PoseArray
+      Name: MainPathPoses
       Shaft Length: 0.230000004
       Shaft Radius: 0.00999999978
       Shape: Arrow (Flat)
-      Topic: /path_posearray
+      Topic: /main_robot/path_posearray
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -423,11 +356,121 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 8475
+      Min Color: 0; 0; 0
+      Min Intensity: 103
+      Name: SecondaryLaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.00999999978
+      Style: Flat Squares
+      Topic: /secondary_robot/scan
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Attached Body Color: 150; 50; 150
+      Class: moveit_rviz_plugin/RobotState
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        secondary_robot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: SecondaryRobot
+      Robot Alpha: 0.699999988
+      Robot Description: secondary_robot/description
+      Robot State Topic: display_robot_state
+      Show All Links: true
+      Show Highlights: true
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Arrow Length: 0.0500000007
+      Axes Length: 0.300000012
+      Axes Radius: 0.00999999978
+      Class: rviz/PoseArray
+      Color: 17; 0; 255
+      Enabled: true
+      Head Length: 0.0700000003
+      Head Radius: 0.0299999993
+      Name: SecondaryPath
+      Shaft Length: 0.230000004
+      Shaft Radius: 0.00999999978
+      Shape: Arrow (Flat)
+      Topic: /secondary_robot/path_posearray
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 0; 255
+      Enabled: true
+      Head Diameter: 0.300000012
+      Head Length: 0.200000003
+      Length: 0.300000012
+      Line Style: Lines
+      Line Width: 0.0299999993
+      Name: SecondaryGlobalPlan
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.0299999993
+      Shaft Diameter: 0.100000001
+      Shaft Length: 0.100000001
+      Topic: /secondary_robot/global_planner/planner/plan
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/Polygon
+      Color: 0; 0; 255
+      Enabled: true
+      Name: SecondaryFootprint
+      Topic: /secondary_robot/global_planner/costmap/footprint
+      Unreliable: false
+      Value: true
+    - Alpha: 0.699999988
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: false
+      Name: Map Initial Secibdary
+      Topic: /secondary_robot/map
+      Unreliable: false
+      Use Timestamp: false
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -448,16 +491,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.42694283
+      Distance: 4.01951933
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.49049675
-        Y: 0.912325919
-        Z: 0.0332146883
+        X: 1.15532827
+        Y: 0.874705017
+        Z: -0.375162691
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -466,7 +509,7 @@ Visualization Manager:
       Pitch: 1.56979632
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.27446556
+      Yaw: 0.0012845993
     Saved: ~
 Window Geometry:
   Displays:
@@ -474,7 +517,7 @@ Window Geometry:
   Height: 2069
   Hide Left Dock: true
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001df000003befc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006f00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730000000028000003be000000f800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c000002610000000100000152000003befc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000028000003be000000db00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000052fc0100000002fb0000000800540069006d006500000000000000073f000004e800fffffffb0000000800540069006d0065010000000000000450000000000000000000000747000007b100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000337000007b1fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006f00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000003a000007b1000000f800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c000002610000000100000152000003befc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000028000003be000000db00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000052fc0100000002fb0000000800540069006d006500000000000000073f000004e800fffffffb0000000800540069006d0065010000000000000450000000000000000000000747000007b100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

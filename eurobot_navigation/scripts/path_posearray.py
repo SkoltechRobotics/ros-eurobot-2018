@@ -12,6 +12,6 @@ def callback(path):
 
 if __name__ == "__main__":
     rospy.init_node("path_posearray_publisher")
-    rospy.Subscriber("/move_base/GlobalPlanner/plan", Path, callback)
+    rospy.Subscriber("global_planner/planner/plan", Path, callback)
     pub = rospy.Publisher("path_posearray", PoseArray, queue_size=1)
     rospy.spin()
