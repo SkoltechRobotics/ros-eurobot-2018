@@ -427,7 +427,7 @@ class BehaviorTreeBuilder:
         # small robot
         main_seq_name = self.construct_string("shoot_sort", self.get_next_id())
         self.add_sequence_node(parent_name,main_seq_name)
-        self.add_command_action(main_seq_name, self.bottom_sorter, 0 if to=="left" else 1)
+        self.add_command_action(main_seq_name, self.bottom_sorter, 1 if to=="left" else 0)
         self.add_sleep_time(main_seq_name, delay)
         self.add_command_action(main_seq_name, self.bottom_sorter, 2)
 
@@ -493,12 +493,12 @@ class BehaviorTreeBuilder:
 
         #self.add_shooting_motor_action(main_seq_name,to,"on")
         if with_4_balls:
-           for _ in range(4):
-                self.add_shoot_sort_action(main_seq_name,to)
+            for _ in range(4):
+                self.add_shoot_sort_action(main_seq_name,to,2)
         if not only_4_balls:
             for _ in range(8):
-                self.add_first_sort_action(main_seq_name,"clean")
-                self.add_shoot_sort_action(main_seq_name,to)
+                self.add_first_sort_action(main_seq_name,"clean",2)
+                self.add_shoot_sort_action(main_seq_name,to,2)
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
