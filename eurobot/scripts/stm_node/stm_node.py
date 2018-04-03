@@ -91,7 +91,7 @@ class stm_node(STMprotocol):
         if action_type in MANIPULATOR_JOBS:
             n = args[0]
             self.take_cube[n] = action_name
-            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n, GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type >= 0xc0 else GET_MANIPULATOR_STATUS))
+            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n, GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type in range(0xc1,0xc4) else GET_MANIPULATOR_STATUS))
 
         return successfully, args_response
 
@@ -139,7 +139,10 @@ class stm_node(STMprotocol):
 
     def manipulator_timer(self, n, GET_COMMAND_NAME = GET_MANIPULATOR_STATUS):
         def m_timer(event):
-            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_COMMAND_NAME, [n])
+            if GET_COMMAND_NAME == GET_MANIPULATOR_STATUS:
+                successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_MANIPULATOR_STATUS, [n])
+            else:
+                successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_SEC_ROBOT_MANIPULATOR_STATUS)
             if successfully:
                 # status code: 0 - done; 1 - in progress; >1 - error
                 status = args_response[0]
