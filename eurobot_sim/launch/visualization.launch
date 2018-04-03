@@ -5,8 +5,6 @@
   <rosparam file="$(find eurobot)/config/main_robot_params.yaml" command="load" ns="main_robot" />
   <rosparam file="$(find eurobot)/config/secondary_robot_params.yaml" command="load" ns="secondary_robot" />
 
-  <node pkg="tf" type="static_transform_publisher" name="world_map_broadcaster_vis" args="0 0 0 0 0 0 world map 100"/>
-
   <group ns="visualization">
     
     <node pkg="rviz" name="rviz" type="rviz" args="-d $(find eurobot_sim)/config/visualization.rviz" output="screen"/>

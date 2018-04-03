@@ -1,3 +1,0 @@
-base_local_planner: "eband_local_planner/EBandPlannerROS"
-
-#EBandPlannerROS:

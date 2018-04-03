@@ -4,14 +4,29 @@ import rospy
 from nav_msgs.msg import OccupancyGrid
 from nav_msgs.srv import GetMap
 from std_msgs.msg import String
+import tf
+from people_msgs.msg import People, Person
+
 
 class MapServer():
     def __init__(self):
         rospy.init_node('map_server', anonymous=True)
-        self.pub_map = rospy.Publisher("/map", OccupancyGrid, queue_size=1)
-        self.pub_response = rospy.Publisher("/main_robot/response", String, queue_size=10)
-        rospy.Subscriber("map_server/cmd", String, self.cmd_callback, queue_size=1)
+        self.pub_main_map = rospy.Publisher("/main_robot/map", OccupancyGrid, queue_size=1)
+        self.pub_secondary_map = rospy.Publisher("/secondary_robot/map", OccupancyGrid, queue_size=1)
+        self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
+        self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
+        rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
         s = rospy.Service('/static_map', GetMap, self.handle_get_map)
+        self.listener = tf.TransformListener()
+
+        # grid cell size in meters
+        self.resolution = 0.01
+
+        # get sizes of our robots
+        self.size_main = np.array([rospy.get_param('/main_robot/dim_x'), rospy.get_param('/main_robot/dim_y')]) / self.resolution / 1000
+        self.radius_main = rospy.get_param('/main_robot/dim_r')
+        self.size_secondary = np.array([rospy.get_param('/secondary_robot/dim_x'), rospy.get_param('/secondary_robot/dim_y')]) / self.resolution / 1000
+        self.radius_secondary = rospy.get_param('/secondary_robot/dim_r')
 
         self.size = (204, 304)
         self.border = 2
@@ -74,9 +89,7 @@ class MapServer():
         # initial pub
         self.pub()
 
-
-        # this solves some bug with move_base:
-        rospy.Timer(rospy.Duration(2), self.timer_callback)
+        rospy.Timer(rospy.Duration(1. / 100), self.timer_callback)
 
 
     def add_heap(self, n):
@@ -92,7 +105,7 @@ class MapServer():
 
 
     def pub(self):
-        self.pub_map.publish(self.grid)
+        #self.pub_map.publish(self.grid)
         rospy.loginfo("Published the field map.")
 
 
@@ -113,8 +126,7 @@ class MapServer():
                 self.grid.data = self.field.flatten()
                 self.pub()
         print cmd_id + " finished"
-        rospy.sleep(0.1) # TODO: delete
-        self.pub_response.publish(cmd_id + " finished")
+        rospy.sleep(0.1) # TODO
 
 
     def handle_get_map(self, req):
@@ -122,9 +134,99 @@ class MapServer():
         return self.grid
 
 
-    def timer_callback(self, event):
-        map_server.pub()
+    def robot(self, size, coords):
+        # 'occupy' all cells
+        robot = np.full(self.size, True, dtype='bool')
 
+        x, y = np.meshgrid(np.arange(0, self.size[1]), np.arange(0,self.size[0]))
+        
+        # upper point
+        x1 = coords[0] / self.resolution - size[1] / 2 * np.sin(coords[2])
+        y1 = coords[1] / self.resolution + size[1] / 2 * np.cos(coords[2])
+
+        # lower point
+        x2 = coords[0] / self.resolution + size[1] / 2 * np.sin(coords[2])
+        y2 = coords[1] / self.resolution - size[1] / 2 * np.cos(coords[2])
+
+        # left point
+        x3 = coords[0] / self.resolution - size[0] / 2 * np.cos(coords[2])
+        y3 = coords[1] / self.resolution - size[0] / 2 * np.sin(coords[2])
+
+        # right point
+        x4 = coords[0] / self.resolution + size[0] / 2 * np.cos(coords[2])
+        y4 = coords[1] / self.resolution + size[0] / 2 * np.sin(coords[2])
+
+        # 'free' cells outside of each side of the robot
+        a = coords[2] % (2 * np.pi)
+        if a < np.pi / 2 or a > 3 * np.pi / 2:
+            robot[y - y1 > (x - x1) * np.tan(coords[2])] = False
+            robot[y - y2 < (x - x2) * np.tan(coords[2])] = False
+            robot[y - y3 > (x - x3) * np.tan(np.pi/2 + coords[2])] = False
+            robot[y - y4 < (x - x4) * np.tan(np.pi/2 + coords[2])] = False
+        else:
+            robot[y - y1 < (x - x1) * np.tan(coords[2])] = False
+            robot[y - y2 > (x - x2) * np.tan(coords[2])] = False
+            robot[y - y3 > (x - x3) * np.tan(np.pi/2 + coords[2])] = False
+            robot[y - y4 < (x - x4) * np.tan(np.pi/2 + coords[2])] = False
+
+        return robot
+
+
+    def timer_callback(self, event):
+        try:
+            # get secondary robot coords
+            (trans,rot) = self.listener.lookupTransform('/map', '/secondary_robot', rospy.Time(0))
+            yaw = tf.transformations.euler_from_quaternion(rot)[2]
+            coords_secondary = np.array([trans[0], trans[1], yaw])
+            
+            # get main robot coords
+            (trans,rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+            yaw = tf.transformations.euler_from_quaternion(rot)[2]
+            coords_main = np.array([trans[0], trans[1], yaw])
+
+            # this copies will be processed and sent
+            field_main = self.field.copy()
+            field_secondary = self.field.copy()
+            
+            # put the other robot on the map of each robot
+            #field_main[self.robot(self.size_secondary, coords_secondary)] = self.OCCUPIED
+            #field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
+
+            # publish both maps
+            self.grid.data = field_secondary.flatten()
+            self.pub_secondary_map.publish(self.grid)
+            self.grid.data = field_main.flatten()
+            self.pub_main_map.publish(self.grid)
+
+            # publish robots for the social costmap layer
+            people = People()
+            people.header.frame_id = '/map'
+            people.header.stamp = rospy.Time.now()
+     
+            main_rob = Person()
+            main_rob.name = 'main_robot'
+            main_rob.position.x = coords_main[0]
+            main_rob.position.y = coords_main[1]
+            main_rob.reliability = 1
+
+            sec_rob = Person()
+            sec_rob.name = 'secondary_robot'
+            sec_rob.position.x = coords_secondary[0]
+            sec_rob.position.y = coords_secondary[1]
+            sec_rob.reliability = 1
+
+            people.people = [sec_rob]
+            #self.pub_social_main.publish(people)
+            
+            people.people = [main_rob]
+            #self.pub_social_secondary.publish(people)
+
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            # pub maps without robots in case of tf listener failure
+            self.grid.data = self.field.flatten()
+            self.pub_main_map.publish(self.grid)
+            self.pub_secondary_map.publish(self.grid)
+            pass
 
 if __name__ == '__main__':
     map_server = MapServer()

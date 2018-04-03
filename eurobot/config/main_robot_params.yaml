@@ -2,13 +2,14 @@ robot_name: "main_robot"
 
 # initial coordinates (robot center, not LIDAR coords)
 start_x: 210.0
-start_y: 190.0
+start_y: 210.0
 start_a: 3.93
 
 # robot size
 dim_x: 420.0
 dim_y: 190.0
 dim_z: 350.0
+dim_r: 222.0
 
 # LIDAR scanner coordinates in robot frame
 lidar_x: 0.0
