@@ -139,10 +139,7 @@ class stm_node(STMprotocol):
 
     def manipulator_timer(self, n, GET_COMMAND_NAME = GET_MANIPULATOR_STATUS):
         def m_timer(event):
-            if GET_COMMAND_NAME == GET_MANIPULATOR_STATUS:
-                successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_MANIPULATOR_STATUS, [n])
-            else:
-                successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_SEC_ROBOT_MANIPULATOR_STATUS)
+            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_COMMAND_NAME, [n] if GET_COMMAND_NAME == GET_MANIPULATOR_STATUS else [])
             if successfully:
                 # status code: 0 - done; 1 - in progress; >1 - error
                 status = args_response[0]
