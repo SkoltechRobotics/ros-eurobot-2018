@@ -6,6 +6,7 @@ from nav_msgs.srv import GetMap
 from std_msgs.msg import String
 import tf
 from people_msgs.msg import People, Person
+from copy import deepcopy
 
 
 class MapServer():
@@ -16,7 +17,8 @@ class MapServer():
         self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
         self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
         rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
-        s = rospy.Service('/static_map', GetMap, self.handle_get_map)
+        self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)
+        self.service_secondary = rospy.Service('/secondary_robot/static_map', GetMap, self.handle_get_map_secondary)
         self.listener = tf.TransformListener()
 
         # grid cell size in meters
@@ -85,6 +87,9 @@ class MapServer():
 
         self.grid.data = self.field.flatten()
 
+        self.grid_main = deepcopy(self.grid)
+        self.grid_secondary = deepcopy(self.grid)
+
         #rospy.sleep(1)
         # initial pub
         self.pub()
@@ -105,8 +110,9 @@ class MapServer():
 
 
     def pub(self):
-        #self.pub_map.publish(self.grid)
-        rospy.loginfo("Published the field map.")
+        self.pub_main_map.publish(self.grid_main)
+        self.pub_secondary_map.publish(self.grid_secondary)
+        #rospy.loginfo("Published the field map.")
 
 
     def cmd_callback(self, data):
@@ -129,9 +135,14 @@ class MapServer():
         rospy.sleep(0.1) # TODO
 
 
-    def handle_get_map(self, req):
-        rospy.loginfo("Sending map")
-        return self.grid
+    def handle_get_map_main(self, req):
+        rospy.loginfo("Sending map (for main robot) via service")
+        return self.grid_main
+
+
+    def handle_get_map_secondary(self, req):
+        rospy.loginfo("Sending map (for secondary robot) via service")
+        return self.grid_secondary
 
 
     def robot(self, size, coords):
@@ -195,32 +206,31 @@ class MapServer():
             field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
 
             # publish both maps
-            self.grid.data = field_secondary.flatten()
-            self.pub_secondary_map.publish(self.grid)
-            self.grid.data = field_main.flatten()
-            self.pub_main_map.publish(self.grid)
+            self.grid_main.data = field_main.flatten()
+            self.grid_secondary.data = field_secondary.flatten()
+            self.pub()
 
             # publish robots for the social costmap layer
-            people = People()
-            people.header.frame_id = '/map'
-            people.header.stamp = rospy.Time.now()
+            #people = People()
+            #people.header.frame_id = '/map'
+            #people.header.stamp = rospy.Time.now()
      
-            main_rob = Person()
-            main_rob.name = 'main_robot'
-            main_rob.position.x = coords_main[0]
-            main_rob.position.y = coords_main[1]
-            main_rob.reliability = 1
+            #main_rob = Person()
+            #main_rob.name = 'main_robot'
+            #main_rob.position.x = coords_main[0]
+            #main_rob.position.y = coords_main[1]
+            #main_rob.reliability = 1
 
-            sec_rob = Person()
-            sec_rob.name = 'secondary_robot'
-            sec_rob.position.x = coords_secondary[0]
-            sec_rob.position.y = coords_secondary[1]
-            sec_rob.reliability = 1
+            #sec_rob = Person()
+            #sec_rob.name = 'secondary_robot'
+            #sec_rob.position.x = coords_secondary[0]
+            #sec_rob.position.y = coords_secondary[1]
+            #sec_rob.reliability = 1
 
-            people.people = [sec_rob]
+            #people.people = [sec_rob]
             #self.pub_social_main.publish(people)
             
-            people.people = [main_rob]
+            #people.people = [main_rob]
             #self.pub_social_secondary.publish(people)
 
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
