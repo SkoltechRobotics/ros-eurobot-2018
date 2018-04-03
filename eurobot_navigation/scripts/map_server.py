@@ -161,11 +161,13 @@ class MapServer():
         if a < np.pi / 2 or a > 3 * np.pi / 2:
             robot[y - y1 > (x - x1) * np.tan(coords[2])] = False
             robot[y - y2 < (x - x2) * np.tan(coords[2])] = False
-            robot[y - y3 > (x - x3) * np.tan(np.pi/2 + coords[2])] = False
-            robot[y - y4 < (x - x4) * np.tan(np.pi/2 + coords[2])] = False
         else:
             robot[y - y1 < (x - x1) * np.tan(coords[2])] = False
             robot[y - y2 > (x - x2) * np.tan(coords[2])] = False
+        if a < np.pi:
+            robot[y - y3 < (x - x3) * np.tan(np.pi/2 + coords[2])] = False
+            robot[y - y4 > (x - x4) * np.tan(np.pi/2 + coords[2])] = False
+        else:
             robot[y - y3 > (x - x3) * np.tan(np.pi/2 + coords[2])] = False
             robot[y - y4 < (x - x4) * np.tan(np.pi/2 + coords[2])] = False
 
@@ -189,8 +191,8 @@ class MapServer():
             field_secondary = self.field.copy()
             
             # put the other robot on the map of each robot
-            #field_main[self.robot(self.size_secondary, coords_secondary)] = self.OCCUPIED
-            #field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
+            field_main[self.robot(self.size_secondary, coords_secondary)] = self.OCCUPIED
+            field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
 
             # publish both maps
             self.grid.data = field_secondary.flatten()
