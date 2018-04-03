@@ -2,6 +2,7 @@ robot_radius: 0.140
 robot_base_frame: secondary_robot
 global_frame: /map
 update_frequency: 30
+publish_frequency: 30
 width: 3.0
 height: 2.0
 resolution: 0.01

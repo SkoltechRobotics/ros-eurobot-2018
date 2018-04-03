@@ -93,6 +93,7 @@ class LocalPlanner:
 
         # FOLLOW THE PLAN
         rospy.loginfo('STARTED NEW ITERATION')
+        rospy.loginfo("self coords: " + str(self.coords))
         # current linear and angular goal distance
         goal_distance = self.distance(self.plan_length - 1)
         goal_yaw_distance = abs(self.plan[-1][2] - self.coords[2])
@@ -100,9 +101,10 @@ class LocalPlanner:
         rospy.loginfo('goal_distance: ' + str(goal_distance) + ' ; ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
-        closest = int(fminbound(self.distance, 0., self.plan_length - 1.))
+        closest = int(fminbound(self.distance, 0., self.plan_length - 0.1))
         path_deviation = self.distance(closest)
         rospy.loginfo('closest: ' + str(closest))
+        rospy.loginfo("closest coords: " + str(self.plan[closest]))
         rospy.loginfo('path_deviation: ' + str(path_deviation))
 
         # stop and publish response if we have reached the goal with the given tolerance
@@ -128,6 +130,7 @@ class LocalPlanner:
         carrot_distance = self.plan[carrot] - self.coords
         carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
         rospy.loginfo('carrot_distance:\t' + str(carrot_distance))
+        rospy.loginfo("carrot coords:\t" + str(self.plan[carrot]))
 
         t0 = rospy.get_time()
         dt = t0 - self.t_prev
@@ -162,12 +165,12 @@ class LocalPlanner:
         if dt < 1. / self.RATE:
             rospy.sleep(1. / self.RATE - dt)
 
-        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rate: ' + str(1. / dt))
 
         # cut the part of the path passed
         self.plan = self.plan[closest:]
         self.plan_length = self.plan.shape[0]
-        rospy.loginfo("plan length " + str(self.plan_length))
+        rospy.loginfo("new plan length " + str(self.plan_length))
+        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rate: ' + str(1. / dt))
         self.mutex.release()
 
     def terminate_following(self, success):
