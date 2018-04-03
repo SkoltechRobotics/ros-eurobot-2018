@@ -89,9 +89,7 @@ class MapServer():
         # initial pub
         self.pub()
 
-
-        # this solves some bug with move_base:
-        rospy.Timer(rospy.Duration(.1), self.timer_callback)
+        rospy.Timer(rospy.Duration(1. / 100), self.timer_callback)
 
 
     def add_heap(self, n):
@@ -193,8 +191,8 @@ class MapServer():
             field_secondary = self.field.copy()
             
             # put the other robot on the map of each robot
-            #field_main[self.robot(self.size_secondary, coords_secondary)] = self.OCCUPIED
-            #field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
+            field_main[self.robot(self.size_secondary, coords_secondary)] = self.OCCUPIED
+            field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
 
             # publish both maps
             self.grid.data = field_secondary.flatten()
