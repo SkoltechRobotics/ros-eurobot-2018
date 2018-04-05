@@ -176,21 +176,31 @@ class SequenceNode(ControlMultiChildrenNode):
             self.status = current_child_status
             return current_child_status
 
-class TryUntilSuccess(ControlSingleChildNode):
-    def __init__(self, name, max_tr = None):
+class TryUntilSuccessNode(ControlSingleChildNode):
+    def __init__(self, name, max_reset_attempts = None):
         ControlSingleChildNode.__init__(self, name)
-        self.limit =
+        self.max_reset_attempts = max_try if max_try else 100
+        self.reset_attempts = 0
+
     def tick(self):
         ControlSingleChildNode.tick(self)
 
         child_status = self.child.tick()
-        if child_status in ["failed", "error"]:
+        if child_status in ["failed", "error"] and self.reset_attempts < self.max_reset_attempts:
             self.child.reset()
+            self.reset_attempts += 1
+
         elif child_status == "finished":
             self.status = "finished"
 
+class ActionFunctionNode(TreeNode):
+    def __init__(self, name, function=None):
+        TreeNode.__init__(self, name)
+        self.function = function
 
-
+    def tick(self):
+        if self.function:
+            self.function(self)
 
 
 class ParallelNode(ControlMultiChildrenNode):
