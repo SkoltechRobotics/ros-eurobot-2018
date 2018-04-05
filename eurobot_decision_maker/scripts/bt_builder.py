@@ -251,6 +251,20 @@ class BehaviorTreeBuilder:
         angle = np.fix(angle * 1000) / 1000
         self.add_command_action(parent_name, 162, radius * angle, 0, angle, linear_speed, 0, linear_speed / radius)
 
+    def add_new_heap_rotation(self, parent_name, da):
+        if da == 0:
+            return
+        move_seq_name = self.construct_string("heap_rotation", self.get_next_id())
+        self.add_sequence_node(parent_name, move_seq_name)
+        PARAMS_PI2P = [1.019 * np.pi / 2, 0.096, 0.014]
+        PARAMS_PI2M = [-1.02 * np.pi / 2, -0.096, 0.01]
+        if da > 0:
+            a, x, y = PARAMS_PI2P
+        else:
+            a, x, y = PARAMS_PI2M
+        for i in range(da):
+            self.add_command_action(move_seq_name, 162, x, y, a, x/angle*w, y/angle*w, w)
+
     def get_heap_status(self, angle, mans=[]):
         all_colors = {0, 1, 2, 3, 4}
         # !!
@@ -326,7 +340,7 @@ class BehaviorTreeBuilder:
         self.add_remove_heap_request(main_seq_name, heap_num)
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
             if da != 0 and i != 0:
-                self.add_heap_rotation(main_seq_name, da)
+                self.add_new_heap_rotation(main_seq_name, da)
                 a += da
             if dx ** 2 + dy ** 2 > 0:
                 ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a) % 4]
@@ -436,7 +450,15 @@ class BehaviorTreeBuilder:
         # self.add_command_action(parent_name, 0xb2, 1, 0)
         if odometry_shift:
             self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.1, 0)
-        self.add_move_action(main_seq_name, *coordinates_first)
+
+        parallel_name = self.construct_string("parallel", "move_and_magic")
+        self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", parallel_name, sep=' '))
+
+        self.add_move_action(parallel_name, *coordinates_first)
+        self.add_command_action(parallel_name, self.magic_cube_action_name, 0)
+        self.add_command_action(parallel_name, self.magic_cube_action_name, 1)
+
+
         self.add_command_action(main_seq_name, 0xb2, 0, 1)  # open left
         self.add_command_action(main_seq_name, 177, 0)
         self.add_command_action(main_seq_name, 0xb3, 0)
