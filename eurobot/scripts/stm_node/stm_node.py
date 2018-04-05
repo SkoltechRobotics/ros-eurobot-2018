@@ -136,9 +136,7 @@ class stm_node(STMprotocol):
         if successfully1 and successfully2:
             self.publish_odom(coords, vel)
         if successfully3:
-            msg = Int32MultiArray()
-            msg.data = rf_data
-            self.pub_rf.publish(msg)
+            self.pub_rf.publish(Int32MultiArray(data=rf_data))
 
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
