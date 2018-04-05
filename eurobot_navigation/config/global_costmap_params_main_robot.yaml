@@ -1,3 +1,4 @@
+visualize_potential: true
 footprint: [[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]
 #robot_radius: 0.222
 robot_base_frame: main_robot
