@@ -8,6 +8,15 @@ import tf
 
 
 class BarrierNavigator():
+    masks = {
+            0: np.array([1, 1, 1]),
+            1: np.array([1, 1, 0]),
+            2: np.array([1, 0, 1]),
+            3: np.array([0, 1, 1]),
+            7: np.array([1, 0, 0]),
+            8: np.array([0, 1, 0]),
+            9: np.array([0, 0, 1])
+            }
     def __init__(self, stm_command_publisher_name, response_pub_name):
         self.sensors = []
         self.phase = 0
@@ -38,20 +47,21 @@ class BarrierNavigator():
 
         return cb
 
-    def move_cycle(self, phase):
+    def move_cycle(self, phase, mask = np.array([1,1,1])):
         while not rospy.is_shutdown():
-            if np.all(np.array(self.sensors) - np.array(self.sensors_goals) == 0):
-                rospy.loginfo("FINISHED by sensor_goals")
-                break
-            if np.any(self.sensors[:3]) and phase == 0:
+            rospy.loginfo(self.sensors)
+            # if np.all(np.array(self.sensors) - np.array(self.sensors_goals) == 0):
+            #     rospy.loginfo("FINISHED by sensor_goals")
+            #     break
+            if np.any(self.sensors[:3]*mask) and phase == 0:
                 rospy.loginfo("FINISHED by y sensor PHASE 0")
                 break
-            if np.all(self.sensors[:3]) and phase == 1:
+            if np.all(self.sensors[:3]*mask == 0) and phase == 1:
                 rospy.loginfo("FINISHED by y sensor PHASE 1")
                 break
-            command, dx, dy = self.get_command(phase)
+            command, dx, dy = self.get_command(phase, mask)
             if dx == 0 and dy == 0:
-                rospy.loginfo("FINISED by dx dy")
+                rospy.loginfo("FINISHED by dx dy")
                 break
             rospy.loginfo(command)
             self.command_pub.publish(command)
@@ -71,6 +81,7 @@ class BarrierNavigator():
                     phase_y = -1
                 else:
                     i_y += 1
+                    rospy.loginfo("PHASE Y CHANGED")
                     phase_y = phases_y[i_y]
             phase_0_cond = np.any(self.sensors[3:] * allowed_mask) and phase_x == 0
             phase_1_cond = np.all(self.sensors[3:] * allowed_mask == 0) and phase_x == 1
@@ -79,7 +90,8 @@ class BarrierNavigator():
                     phase_x = -1
                 else:
                     i_x += 1
-                    phase_x = phases_x[i_x] if sum(np.array([1, 1, 0]) * allowed_mask) == 1 else 1 - phases_x[i_x]
+                    rospy.loginfo("PHASE X CHANGED")
+                    phase_x = phases_x[i_x] if sum(np.array([1, 1, 0]) * allowed_mask) >= 1 else 1 - phases_x[i_x]
 
             command, dx, dy = self.get_command_one(phase_x, phase_y, case)
             rospy.loginfo(str(phase_x) + ' ' + str(dx) + ' ' + str(phase_y) + ' ' + str(dy))
@@ -90,15 +102,9 @@ class BarrierNavigator():
             self.command_pub.publish(command)
             self.wait_for_movement("MOVEODOM" + str(self.i))
 
+
     def get_allowed_mask(self, case):
-        if case == 0:
-            return np.array([1, 1, 1])
-        if case == 7:
-            return np.array([1, 0, 0])
-        if case == 8:
-            return np.array([0, 1, 0])
-        if case == 9:
-            return np.array([0, 0, 1])
+        return self.masks[case]
 
     def start_command_callback(self):
         def cb(data):
@@ -132,28 +138,33 @@ class BarrierNavigator():
                 rospy.sleep(0.5)
                 rospy.loginfo("Start move to heap by barrier sensors")
 
+                if case in [4,5,6]:
+                    case += 3
+
                 mask = self.get_allowed_mask(case)
 
-                if case == 0:
-                    if not np.any(self.sensors[:3]):
+                if case in [0, 2, 3]:
+                    if not np.any(self.sensors[:3]):    #  ALL NOT TRIGGERED
                         self.set_sensors_goals(0)
-                        self.move_cycle(0)
+                        self.move_cycle(0, mask)
                         rospy.loginfo("PHASE 0 FINISHED")
 
                     # rospy.sleep(5)
-                    else:
+                    else:                               # SOME TRIGGERED
                         self.set_sensors_goals(1)
-                        self.move_cycle(1)
+                        self.move_cycle(1, mask)
                         rospy.loginfo("PHASE 1 FINISHED")
 
                         self.set_sensors_goals(0)
-                        self.move_cycle(0)
+                        self.move_cycle(0, mask)
                         rospy.loginfo("PHASE 0 FINISHED")
+                    self.move_cycle(2, mask)
 
-                if case in [7, 8, 9]:
-                    mask = self.get_allowed_mask(case)
-                    phases_y = [0] if sum(self.sensors[:3] * mask) == 0 else [1, 0]
-                    phases_x = [0] if sum(self.sensors[3:] * mask) == 0 else [1, 0]
+
+
+                if case in [1, 7, 8, 9]:
+                    phases_y = [1] if sum(self.sensors[:3] * mask) != 0 else [0, 1]
+                    phases_x = [1] if sum(self.sensors[3:] * mask) != 0 else [0, 1]
                     rospy.loginfo(phases_x)
                     rospy.loginfo(phases_y)
                     self.move_cycle_one(phases_x, phases_y, case)
@@ -188,9 +199,9 @@ class BarrierNavigator():
         if phase == 1:
             self.sensors_goals = np.zeros((6), dtype=np.int)
 
-    def get_command(self, phase):
-        rospy.loginfo(self.sensors)
-        ds = self.sensors - self.sensors_goals
+    def get_command(self, phase, mask = np.array([1,1,1])):
+        # rospy.loginfo(self.sensors)
+        ds = self.sensors*np.array(mask.tolist()*2) - self.sensors_goals
         dx = -ds[5] * self.dx_quant + (ds[3] or ds[4]) * self.dx_quant
         # rospy.loginfo(np.array(self.sensors[:3]))
         # rospy.loginfo(np.any(np.array(self.sensors[:3])))
@@ -198,7 +209,7 @@ class BarrierNavigator():
         dy = 0
         if phase == 0:
             dy = +self.dy_quant
-        if phase == 1 and np.any(self.sensors[:3]):
+        if phase == 1 and np.any(self.sensors[:3]*mask):
             dy = -self.dy_quant
         dz = 0
         self.i += 1
@@ -218,7 +229,7 @@ class BarrierNavigator():
     def get_command_one(self, phase_x, phase_y, case):
         rospy.loginfo(self.sensors)
 
-        if case in [7, 8, 9]:
+        if case in [1, 7, 8, 9]:
             if phase_x == 0:
                 dx = -self.dx_quant
             elif phase_x == 1:
@@ -250,9 +261,9 @@ import sys
 if __name__ == '__main__':
     try:
         rospy.init_node('barrier_move_node', anonymous=True)
-        bn = BarrierNavigator("stm_command", "response")
+        bn = BarrierNavigator("/main_robot/stm_command", "/main_robot/response")
         # pub_command = rospy.Publisher("/main_robot/stm_command", String, queue_size=10)
-        rospy.Subscriber("move_command", String, bn.start_command_callback())
+        rospy.Subscriber("/main_robot/move_command", String, bn.start_command_callback())
         rospy.Subscriber("/main_robot/barrier_rangefinders_data", Int32MultiArray, bn.barrier_sensors_callback())
         # pub_response = rospy.Publisher("/main_robot/response", String, queue_size=2)
         rospy.loginfo(sys.argv)
