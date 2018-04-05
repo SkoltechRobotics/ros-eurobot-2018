@@ -37,10 +37,9 @@ params = {"kl": 2,
           "c": -0.45}
 
 
-def img_callback(data):
+def img_callback(img):
     global bridge
     global pub
-    img = bridge.imgmsg_to_cv2(data, "bgr8")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.warpPerspective(img, M, (w_border, h_border))
 
@@ -64,7 +63,12 @@ if __name__ == '__main__':
     rospy.init_node('img_node', anonymous=True)
     pub = rospy.Publisher("/usb_cam/result_img", Image, queue_size=3)
     pub_add_img = rospy.Publisher("usb_cam/add_image", Image, queue_size=3)
-    rospy.Subscriber("/usb_cam/image_raw", Image, img_callback)
-
     bridge = cv_bridge.CvBridge()
-    rospy.spin()
+
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FPS, 10)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
+    while not rospy.is_shutdown():
+        ret, frame = cap.read()
+        img_callback(frame)
