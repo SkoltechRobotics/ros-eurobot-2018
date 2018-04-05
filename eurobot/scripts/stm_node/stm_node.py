@@ -32,10 +32,13 @@ class stm_node(STMprotocol):
         rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
-        self.pub_rf   = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10 )
+        self.robot_name = rospy.get_param("robot_name")
+        if self.robot_name == "main_robot":
+            self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10 )
+        else:
+            self.pub_rf = None
         self.ask_rf_every = 4
         self.rf_it = 0
-        self.robot_name = rospy.get_param("robot_name")
         self.br = tf.TransformBroadcaster()
 
         # high-level command IDs
@@ -132,13 +135,15 @@ class stm_node(STMprotocol):
     def pub_timer_callback(self, event):
         successfully1, coords = self.send('request_stm_coords', 15, [])
         successfully2, vel = self.send('request_stm_vel', 9, [])
-        successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
         if successfully1 and successfully2:
             self.publish_odom(coords, vel)
-        if successfully3:
-            msg = Int32MultiArray()
-            msg.data = rf_data
-            self.pub_rf.publish(msg)
+
+        if self.robot_name == "main_robot":
+            successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
+            if successfully3:
+                msg = Int32MultiArray()
+                msg.data = rf_data
+                self.pub_rf.publish(msg)
 
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
