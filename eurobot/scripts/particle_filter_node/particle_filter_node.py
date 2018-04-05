@@ -137,7 +137,7 @@ if __name__ == '__main__':
         in_x = rospy.get_param("start_x")
         in_y = rospy.get_param("start_y")
         in_angle = rospy.get_param("start_a")
-        lidar_coords = np.array([rospy.get_param("lidar_x"), rospy.get_param("lidar_y"), 0])
+        lidar_coords = np.array([rospy.get_param("lidar_x"), rospy.get_param("lidar_y"), rospy.get_param("lidar_a")])
         max_itens = rospy.get_param("particle_filter/max_itens")
         max_dist = rospy.get_param("particle_filter/max_dist")
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise,
