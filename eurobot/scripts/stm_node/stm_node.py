@@ -5,6 +5,7 @@ from STMprotocol import STMprotocol
 from threading import Lock
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Int32MultiArray
 import tf
 import numpy as np
 
@@ -17,7 +18,7 @@ GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
-
+REQUEST_RF_DATA   = 0xd0
 
 class stm_node(STMprotocol):
     def __init__(self, serial_port):
@@ -30,7 +31,9 @@ class stm_node(STMprotocol):
         rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
-
+        self.pub_rf   = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10 )
+        self.ask_rf_every = 4
+        self.rf_it = 0
         self.robot_name = rospy.get_param("robot_name")
         self.br = tf.TransformBroadcaster()
 
@@ -125,8 +128,13 @@ class stm_node(STMprotocol):
     def pub_timer_callback(self, event):
         successfully1, coords = self.send('request_stm_coords', 15, [])
         successfully2, vel = self.send('request_stm_vel', 9, [])
+        successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
         if successfully1 and successfully2:
             self.publish_odom(coords, vel)
+        if successfully3:
+            msg = Int32MultiArray()
+            msg.data = rf_data
+            self.pub_rf.publish(msg)
 
     
     def odometry_movement_timer(self, event):
