@@ -14,6 +14,26 @@ def rot_matrix(rot_angle):
 
 class BehaviorTreeBuilder:
     scale = {"m":1000.0,"dm":100.0,"cm":10.0,"mm":1.0 }
+    com = {
+        "pick" : {'name': str(176)},
+        "pick_last_cube" : {'name': str(0xb5)},
+        "magic_cube" : {'name' : str(0xb4),'left' : 0, 'right' : 1},
+        "funny_action" : {'name' : str(0xb6), 'open' : 1, 'close' : 0},
+        "bot_sort" : {'name' : str(0xc3), 'left' : 0, 'right' : 1, 'mid' : 2},
+        "up_sort" : {'name' : str(0xc2), 'clean' : 0, 'waste' : 1, 'mid' : 2},
+        "waste_door" : {'name' : str(0xc1), 'open' : 1, 'close' : 0},
+        'wire_start' : {'name' : str(0xa4)}
+    }
+    action_places = {
+                "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]], dtype=np.float64),
+                "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
+                "disposal": np.array([[10, 61, 0]],dtype=np.float64),
+                "base": np.array([[15, 15, 0]],dtype=np.float64),
+                "wastewater_tower" : np.array([[0,0,0]], dtype=np.float64),
+                "wastewater_reservoir" : np.array([[0,0,0]], dtype=np.float64),
+                "cleanwater_tower" : np.array([[82.6,16.6,4.71]], dtype=np.float64)
+    }
+    shifts = [(-1,0),(0,-1),(1,0),(0,1)]
     def __init__(self, bt_name, move_pub, cmd_pub, map_pub, move_response, cmd_response, **kvargs):
         self.id = 0
         self.bt = BehaviorTree(bt_name)
@@ -24,20 +44,26 @@ class BehaviorTreeBuilder:
         self.move_response = move_response
         self.cmd_response = cmd_response
         self.black_angle = 0 #angle for black cube to be picked by central manipulator
-        self.pick_action_name = str(176)
-        self.last_cube_pick_action_name = str(0xb5)
-        self.last_coordinates = []
-        self.last_angle = self.black_angle
-        self.heaps_sequences = []
-        self.strategy_sequence = []
-        self.cube_vector = np.array([[0],[5.8],[0.0]])
         self.opt_units = "cm" # from self.opt_units to self.track_units
         self.track_units = "m"
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
         self.side = "orange"
 
-        #small_robot
+        #main robot
+        self.pick_action_name = str(176)
+        self.last_cube_pick_action_name = str(0xb5)
+        self.magic_cube_action_name = str(0xb4)
+        self.funny_action_name = str(0xb6)
+
+        self.last_coordinates = []
+        self.last_angle = self.black_angle
+        self.heaps_sequences = []
+        self.strategy_sequence = []
+        self.cube_vector = np.array([[0],[5.8],[0.0]])
+
+
+        #secondary_robot
         self.bottom_sorter = str(0xc3)
         self.upper_sorter  = str(0xc2)
         self.wastewater_door = str(0xc1)
@@ -55,19 +81,10 @@ class BehaviorTreeBuilder:
                 self.move_action_name = str(0x0E)
                 self.move_publisher_name = "cmd_publisher"
         # self.action_places = copy.deepcopy(StrategyOptimizer.action_places)
-        self.action_places = {
-                "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]], dtype=np.float64),
-                "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
-                "disposal": np.array([[10, 61, 0]],dtype=np.float64),
-                "base": np.array([[15, 15, 0]],dtype=np.float64),
-                "wastewater_tower" : np.array([[0,0,0]], dtype=np.float64),
-                "wastewater_reservoir" : np.array([[0,0,0]], dtype=np.float64),
-                "cleanwater_tower" : np.array([[82.6,16.6,4.71]], dtype=np.float64)
-            }
-
         for _, action in self.action_places.items():
             for coords in action:
                 coords[:2] = coords[:2][::-1]
+
         self.colors_left = {0,1,2,3,4}
         self.man_load = [0,0,0]
 
@@ -85,11 +102,7 @@ class BehaviorTreeBuilder:
         return node_name + str(args[-1])
     
     def add_action_node(self, parent_name,prefix, str_pub,str_response, *args):
-        # node_name = prefix+str(self.get_next_id())
         node_name = self.construct_string(prefix, self.get_next_id())
-        # node_description = parent_name + ' ' + 'action' + ' ' + node_name + str_pub + ' ' + str_response 
-        # for arg in args:
-        #     node_description += ' ' + str(arg)
         node_description = self.construct_string(parent_name, 'action', node_name, str_pub, str_response, *args, sep=' ')
         rospy.loginfo(node_description)
         self.bt.add_node_by_string(node_description)
@@ -164,7 +177,6 @@ class BehaviorTreeBuilder:
         manipulator = 2 - manipulator
         angle = (color-manipulator+1) % 4 * np.pi/2 + self.black_angle
         rospy.loginfo(self.construct_string(cubes,manipulator,color,(color-manipulator+1) % 4 ,sep=' '))
-#        return 2*np.pi - angle
         return angle
 
     def get_mans_and_colors(self, cubes):
@@ -175,9 +187,9 @@ class BehaviorTreeBuilder:
 
     def add_pick_action(self, parent_name, m):
         if self.man_load[m] < 4:
-            self.add_command_action(parent_name,self.pick_action_name,m)
+            self.add_command_action(parent_name,self.com["pick"]["name"],m)
         else:
-            self.add_command_action(parent_name, self.last_cube_pick_action_name, m)
+            self.add_command_action(parent_name, self.com["pick_last_cube"]["name"], m)
         self.man_load[m] += 1
 
     def add_cubes_pick(self, parent_name, heap_num, manipulators, colors, **kvargs):
@@ -233,7 +245,7 @@ class BehaviorTreeBuilder:
         angle = np.fix(angle*1000)/1000
         self.add_command_action(parent_name, 162, radius*angle, 0, angle,  linear_speed, 0, linear_speed/radius)
 
-    def get_heap_status(self, angle, mans = []):
+    def get_heap_status(self, angle, mans=[]):
         all_colors = {0,1,2,3,4}
         # !!
         # angle from 0 to 2 pi
@@ -297,11 +309,36 @@ class BehaviorTreeBuilder:
             return 7
         return 0
 
+
+
+    def add_new_heap_pick(self, parent_name, heap_num, heap_strat):
+        main_seq_name = self.construct_string(parent_name, heap_num)
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        self.colors_left = {0, 1, 2, 3, 4}
+        heap = self.action_places["heaps"][heap_num]
+        a = 0
+        self.add_move_to_heap(main_seq_name,heap_num,heap_strat[0][2])
+        self.add_remove_heap_request(main_seq_name,heap_num)
+        for (dx, dy, da, (colors, mans)) in heap_strat:
+            if da != 0:
+                self.add_heap_rotation(main_seq_name, da)
+                a += da
+            if dx**2 + dy**2 > 0:
+                ndx,ndy = self.shifts[ (self.shifts.index((dx,dy)) - a)%4]
+                dX = np.array([[ndx], [ndy], [0]])*5.8
+                self.add_move_action(main_seq_name, *dX.tolist(), move_type="move_stm")
+
+            self.add_rf_move(main_seq_name, self.get_heap_status(a))
+
+
+
+
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
         main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name) 
 
-        self.colors_left = {0,1,2,3,4}
+        self.colors_left = {0, 1, 2, 3, 4}
         i4 = -1 # hold the step, when we pick central cube
         for i,cubes in enumerate(cubes2):
             for c in cubes:
@@ -313,16 +350,10 @@ class BehaviorTreeBuilder:
             self.bt.add_node_by_string(self.construct_string(main_seq_name, "sequence", line_seq_name,sep=' '))    
             
             if i == 0:
-                # first move from outside to the heap and pick
-                rospy.loginfo("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 self.add_move_to_heap(line_seq_name, heap_num, self.get_angle_to_cubes(cubes))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1)
             elif i4 == -1:
-                # simply rotate and pick
-                # rospy.loginfo(*(self.action_places["heaps"][heap_num][:2].tolist() + [1] ))
-                # self.add_move_action(line_seq_name, *(self.action_places["heaps"][heap_num][:2].tolist() + [ self.get_angle_to_cubes(cubes) ]))
                 self.add_heap_rotation(line_seq_name, self.get_angle_to_cubes(cubes) - self.last_coordinates[-1])
-                #self.add_sleep_time(line_seq_name, 5)
                 self.add_rf_move(line_seq_name, self.get_heap_status(self.last_coordinates[-1]))
                 self.add_cubes_pick(line_seq_name, heap_num, manipulators, colors, delay=1.5)
             

@@ -19,6 +19,9 @@ class TreeNode:
         self.time_finish = 0
         self.name = name
 
+    def reset(self):
+        self.status = "not started"
+
     def start(self):
         rospy.loginfo( self.name + ' started!' )
         self.time_start = rospy.get_time()
@@ -99,7 +102,7 @@ class ActionNode(TreeNode):
         
         return self.status
 		
-class ControlNode(TreeNode):
+class ControlMultiChildrenNode(TreeNode):
     def __init__(self, name):
         TreeNode.__init__(self, name)
         self.children_list = []
@@ -112,14 +115,31 @@ class ControlNode(TreeNode):
             self.start()
             self.status = "active"
 
-    
-class SequenceNode(ControlNode):
+class ControlSingleChildNode(TreeNode):
     def __init__(self, name):
-        ControlNode.__init__(self, name)
-        
+        TreeNode.__init__(self, name)
+        self.child = None
+
+    def set_child(self, child):
+        self.child = child
+
     def tick(self):
-        
-        ControlNode.tick(self) # set status="active"
+        if self.status == "not started":
+            self.start()
+            self.status = "active"
+
+    
+class SequenceNode(ControlMultiChildrenNode):
+    def __init__(self, name):
+        ControlMultiChildrenNode.__init__(self, name)
+
+    def reset(self):
+        self.status = "not started"
+        for child in self.children_list:
+            child.reset()
+
+    def tick(self):
+        ControlMultiChildrenNode.tick(self)
 
         child_iter = iter(self.children_list)
         child = None
@@ -152,13 +172,34 @@ class SequenceNode(ControlNode):
             child.tick()
             return self.status
 
-class ParallelNode(ControlNode):
+        if current_child_status in ["failed", "error"]:
+            self.status = current_child_status
+            return current_child_status
+
+class TryUntilSuccess(ControlSingleChildNode):
+    def __init__(self, name, max_tr = None):
+        ControlSingleChildNode.__init__(self, name)
+        self.limit =
+    def tick(self):
+        ControlSingleChildNode.tick(self)
+
+        child_status = self.child.tick()
+        if child_status in ["failed", "error"]:
+            self.child.reset()
+        elif child_status == "finished":
+            self.status = "finished"
+
+
+
+
+
+class ParallelNode(ControlMultiChildrenNode):
     def __init__(self, name, maximum_failed = 0):
-        ControlNode.__init__(self, name)
+        ControlMultiChildrenNode.__init__(self, name)
         self.maximum_failed = maximum_failed
 
     def tick(self):
-        ControlNode.tick(self) # set status="active"
+        ControlMultiChildrenNode.tick(self) # set status="active"
         
         children_status = [child.tick() for child in self.children_list]
 
@@ -187,13 +228,12 @@ class TimeoutNode(TreeNode):
 
         return self.status
 
-class SelectorNode(ControlNode):
+class SelectorNode(ControlMultiChildrenNode):
     def __init__(self, name):
-        ControlNode.__init__(self, name)
+        ControlMultiChildrenNode.__init__(self, name)
         
     def tick(self):
-        
-        ControlNode.tick(self)
+        ControlMultiChildrenNode.tick(self)
 
         child_iter = iter(self.children_list)
         child = None
