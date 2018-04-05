@@ -8,7 +8,8 @@ import numpy as np
 
 COLORS = np.array([[0, 124, 176], [208, 93, 40], [14, 14, 16], [97, 153, 59],
                    [247, 181, 0]], dtype=np.uint8)
-img_points = np.float32([(798, 549), (798, 488), (912, 487), (912, 553)])
+# img_points = np.float32([(798, 549), (798, 488), (912, 487), (912, 553)])
+img_points = np.float32([(950, 610), (950, 550), (1062, 550), (1062, 610)])
 h_border = STEP * 2 * 3
 w_border = STEP * 2 * 7
 h_rect = int(130 / 30 * STEP)
@@ -61,9 +62,9 @@ def img_callback(data):
 
 if __name__ == '__main__':
     rospy.init_node('img_node', anonymous=True)
-    pub = rospy.Publisher("/usb_cam/image_tr", Image, queue_size=3)
+    pub = rospy.Publisher("/usb_cam/result_img", Image, queue_size=3)
     pub_add_img = rospy.Publisher("usb_cam/add_image", Image, queue_size=3)
-    rospy.Subscriber("/usb_cam/image_1", Image, img_callback)
+    rospy.Subscriber("/usb_cam/image_raw", Image, img_callback)
 
     bridge = cv_bridge.CvBridge()
     rospy.spin()
