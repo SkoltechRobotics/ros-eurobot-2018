@@ -155,13 +155,12 @@ class LocalPlanner:
         self.t_prev = t0
 
         # set speed limit
-        speed_limit_coefficient_dec = max(self.V_MIN, goal_distance / self.D_DECELERATION)
+        speed_limit_dec = max(self.V_MIN, goal_distance / self.D_DECELERATION * self.V_MAX)
         # rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient_dec) + ' (deceleration)')
-        speed_limit_coefficient_acs = min(self.V_MAX,
-                                          np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt) / self.V_MAX
+        speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
         # rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient_acs) + ' (acceleration)')
 
-        speed_limit_coefficient = min(speed_limit_coefficient_dec, speed_limit_coefficient_acs)
+        speed_limit = min(speed_limit_dec, speed_limit_acs)
         # rospy.loginfo('speed_limit_coefficient = ' + str(speed_limit_coefficient))
         # maximum possible speed in carrot distance proportion
         vel = self.V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
@@ -170,12 +169,13 @@ class LocalPlanner:
         # rospy.loginfo('vel max\t\t:' + str(vel))
 
         # apply speed limit
-        vel = vel * speed_limit_coefficient
+        if np.any(vel[:2] > speed_limit):
+            vel *= speed_limit / np.max(vel[:2])
         # rospy.loginfo('vel after speed limit\t:' + str(vel))
 
         # vel in robot frame
         vel_robot_frame = self.rotation_transform(vel, -self.coords[2])
-        # rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
+        rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
 
         # send speed cmd to the robot
         self.set_speed(vel_robot_frame)
