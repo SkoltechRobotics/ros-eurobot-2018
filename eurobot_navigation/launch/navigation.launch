@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch>
+    <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
+
     <!-- Map server -->
     <node name="map_server" pkg="eurobot_navigation" type="map_server.py"  output="screen" />
 

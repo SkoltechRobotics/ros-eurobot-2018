@@ -80,7 +80,7 @@ class stm_node(STMprotocol):
         action_name, action_type, args = self.parse_data(data)
         self.send(action_name, action_type, args)
         if action_type in IMMEDIATE_FINISHED:
-            self.pub_response(data=action_name + " finished")
+            rospy.Timer(rospy.Duration(0.3), lambda e: self.pub_response.publish(action_name + " finished"), oneshot=True)
 
     def send(self, action_name, action_type, args):
 
