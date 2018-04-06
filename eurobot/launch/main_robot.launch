@@ -9,7 +9,7 @@
   <group ns="main_robot">
 
     <!-- NODES -->
-    <node pkg="eurobot" name="stm_node" type="stm_node.py" pawn="true" utput="screen"/>
+    <node pkg="eurobot" name="stm_node" type="stm_node.py" respawn="true" output="screen"/>
     <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" respawn="true" output="screen">
       <param name="frame_id" value="/main_robot_laser"/>
     </node>
