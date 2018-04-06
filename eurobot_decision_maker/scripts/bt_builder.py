@@ -340,8 +340,8 @@ class BehaviorTreeBuilder:
         self.colors_left = {0, 1, 2, 3, 4}
         heap = self.action_places["heaps"][heap_num]
         a = 0
-        # self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/4)
-        # self.add_remove_heap_request(main_seq_name, heap_num)
+        #self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/4)
+        #self.add_remove_heap_request(main_seq_name, heap_num)
         self.add_rf_move(main_seq_name, self.get_heap_status(a))
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
             if da != 0:# and i != 0:
