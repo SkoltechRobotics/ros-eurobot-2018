@@ -76,8 +76,10 @@ class LocalPlanner:
             self.heap_coords[n, 1] = rospy.get_param("/field/cube" + str(n + 1) + "c_y") / 1000
 
         # get initial water tower coordinates
-        self.towers = np.array(rospy.get_param("/field/towers")) / 1000
-        self.tower_approaching_vectors = np.array(rospy.get_param("/field/tower_approaching_vectors")) / 1000
+        self.towers = np.array(rospy.get_param("/field/towers"))
+        self.towers[:,:2] /= 1000.0
+        self.tower_approaching_vectors = np.array(rospy.get_param("/field/tower_approaching_vectors"))
+        self.tower_approaching_vectors[:,:2] /= 1000.0
 
         self.plan = np.array([])
         self.plan_length = self.plan.shape[0]
@@ -200,6 +202,7 @@ class LocalPlanner:
         self.goal_id = ''
 
     def set_plan(self, plan, goal_id):
+        print plan
         rospy.loginfo("Setting a new global plan.")
         self.plan = np.array(plan)
         self.plan_length = self.plan.shape[0]
@@ -316,6 +319,7 @@ class LocalPlanner:
             via_point = self.towers[n] - self.tower_approaching_vectors[n]
 
             success, plan = self.request_plan(self.pose, self.coords2pose(via_point))
+
             if success:
                 # add approaching path
                 length = np.linalg.norm(self.tower_approaching_vectors[n, :2])
@@ -367,6 +371,7 @@ class LocalPlanner:
             extra_path[:, 1] = np.linspace(via_point[1], goal_coords[1], num=n_extra_points)
             extra_path[:, 2] = np.ones(n_extra_points) * goal_coords[2]
             return True, np.concatenate((plan, extra_path), axis=0)
+
         else:
             rospy.loginfo("Follower failed to request an approaching plan.")
             return False, []
