@@ -2,7 +2,6 @@
 import numpy as np
 import time
 import logging
-import math
 from sklearn.cluster import DBSCAN
 from scipy.optimize import least_squares, basinhopping
 
@@ -26,7 +25,7 @@ BEACONS = np.array([[WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., WORLD_Y
 # parameters of lidar
 BEAC_DIST_THRES = 200
 LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
-LIDAR_START_ANGLE = np.pi + np.pi / 4 # relatively to the robot
+LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 class ParticleFilter:
     def __init__(self, particles=500, sense_noise=50, distance_noise=5, angle_noise=0.02, in_x=293, in_y=425,
                  in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0, reset_factor=10.0):
@@ -37,7 +36,6 @@ class ParticleFilter:
                                 [WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., BEAC_L / 2.]])
         global beacons
         beacons = BEACONS
-
         #stamp = time.time()
         self.particles_num = particles
         self.sense_noise = sense_noise
@@ -49,7 +47,7 @@ class ParticleFilter:
         x = np.random.normal(in_x, distance_noise, particles)
         y = np.random.normal(in_y, distance_noise, particles)
         orient = np.random.normal(in_angle, angle_noise, particles) % (2 * np.pi)
-        self.particles = np.array([x, y, orient]).T  # instead of np.vstack((x,y,orient)).T
+        self.particles = np.array([x, y, orient]).T
         #logging.info('initialize time: ' + str(time.time() - stamp))
         # Added Andrei for debug
         self.debug_info = []
@@ -68,45 +66,24 @@ class ParticleFilter:
         """calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma"""
         return np.exp(- ((x - mu) ** 2) / (sigma ** 2) / 2.0) / np.sqrt(2.0 * np.pi * (sigma ** 2))
 
-    def move_particles(self, delta):  # delta = [dx,dy,d_rot]  mode="npy"
+    def move_particles(self, delta):  # delta = [dx,dy,d_rot]
         # stamp = time.time()
         x_noise = np.random.normal(0, self.distance_noise, self.particles_num)
         y_noise = np.random.normal(0, self.distance_noise, self.particles_num)
         angle_noise = np.random.normal(0, self.angle_noise, self.particles_num)
         self.particles[:, 0] = self.particles[:, 0] + delta[0] + x_noise
         self.particles[:, 1] = self.particles[:, 1] + delta[1] + y_noise
-        self.particles[:, 2] = (self.particles[:, 2] + delta[2] + angle_noise) % (2 * math.pi)
-        # START instead of
-        # NOT FASTER! NOT RIGHT((
-        # # self.particles + noise + delta:
-        # # noise - Nx3 : N - num particles, (x_noise, y_noise, angle_noise)
-        # self.particles += (np.random.multivariate_normal(mean=np.array([0, 0, 0]),
-        #                                     cov=np.diag(np.array([self.distance_noise,
-        #                                                    self.distance_noise,
-        #                                                    self.angle_noise])),
-        #                                     size=(self.particles_num))
-        #                    + np.array([delta]))
-        # self.particles[:, 2] %= 2 * np.pi
-        # END instead of
-        # logging.info('Particle Move time: ' + str(time.time() - stamp))
+        self.particles[:, 2] = (self.particles[:, 2] + delta[2] + angle_noise) % (2 * np.pi)
 
     def resample(self, weights):
         """ according to weights """
-        # OLD START
-        # n = self.particles_num
-        # indices = []
-        # C = [0.] + [sum(weights[:i + 1]) for i in range(n)]
-        # u0, j = np.random.rand(), 0
-        # for u in [(u0 + i) / n for i in range(n)]:
-        # START instead of
         n = self.particles_num
         weigths = np.array(weights)
         indices = []
-        C = np.append([0.], np.cumsum(weigths))  # [0.] + [sum(weights[:i + 1]) for i in range(n)]
+        C = np.append([0.], np.cumsum(weigths))
         j = 0
         u0 = (np.random.rand() + np.arange(n)) / n
-        for u in u0:  # [(u0 + i) / n for i in range(n)
-            # END instead of
+        for u in u0:
             while j < len(C) and u > C[j]:
                 j += 1
             indices += [j - 1]
@@ -153,10 +130,10 @@ class ParticleFilter:
         # BEACONS: from global BEACONS to particles local: (X, Y) - Nx3x2 matrices, N - number of particles
         # determines 3 beacon positions (x,y) for every particle in it's local coords
         res = BEACONS[np.newaxis, :, :] - particles[:, np.newaxis, :2]
-        X = (-res[:, :, 0] * np.sin(particles[:, 2])[:, np.newaxis]
+        X = (res[:, :, 0] * np.cos(particles[:, 2])[:, np.newaxis]
+             + res[:, :, 1] * np.sin(particles[:, 2])[:, np.newaxis])
+        Y = (-res[:, :, 0] * np.sin(particles[:, 2])[:, np.newaxis]
              + res[:, :, 1] * np.cos(particles[:, 2])[:, np.newaxis])
-        Y = (-res[:, :, 0] * np.cos(particles[:, 2])[:, np.newaxis]
-             - res[:, :, 1] * np.sin(particles[:, 2])[:, np.newaxis])
         beacon = np.concatenate((X[:, :, np.newaxis], Y[:, :, np.newaxis]), axis=2)
 
         # beacon = beacons are in local coordinates of particles. 
@@ -233,42 +210,11 @@ class ParticleFilter:
                 self.reset_particles(coords)
             self.reset = False
         else:
-            # move particles according to estimated movemen
+            # move particles according to odometry
+            #print("delta", delta_coords)
             self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
         # add approximation
         self.particles = self.particle_sense(lidar_data, self.particles)
-
-        # if self.warning:
-        #    print "Finding place"
-        #    temp_num = self.particles_num
-        #    self.particles_num = 5000
-        #    x = np.random.uniform(self.last[0]-200,self.last[0]+ 200, self.particles_num)
-        #    y = np.random.uniform(self.last[1]-200,self.last[1]+ 200, self.particles_num)
-        #    orient = np.random.uniform(self.last[2]-np.pi/2,self.last[2]+ np.pi/2, self.particles_num) % (2 * np.pi)
-        #    self.particles = np.array([x, y, orient]).T  # instead of np.vstack((x,y,orient)).T
-        #    temp_sense = self.sense_noise
-        #    self.sense_noise = 25
-        #    lidar_data = get_raw()
-        #    self.particle_sense(lidar_data)
-        #    lidar_data = get_raw()
-        #    self.particle_sense(lidar_data)
-        #    self.move_particles([0, 0, 0])
-        #    lidar_data = get_raw()
-        #    self.particle_sense(lidar_data)
-        #    self.move_particles([0, 0, 0])
-        #    self.sense_noise = temp_sense
-        #    lidar_data = get_raw()
-        #    self.particle_sense(lidar_data)
-        #    self.warning = False
-
-        #    main_robot = self.calculate_main()
-        #    self.particles_num = temp_num
-        #    x = np.random.normal(main_robot[0], 100, self.particles_num)
-        #    y = np.random.normal(main_robot[1], 100, self.particles_num)
-        #    orient = np.random.normal(main_robot[2], np.pi/2, self.particles_num)
-        #    self.particles = np.array([x, y, orient]).T
-        #    lidar_data = get_raw()
-        #    self.particle_sense(lidar_data)
 
         main_robot = self.calculate_main()
         self.last = main_robot
@@ -280,16 +226,18 @@ class ParticleFilter:
         """Returns filtrated lidar data"""
         ind = np.where(np.logical_and(scan[:, 1] > self.max_itens, scan[:, 0] < self.max_dist))[0]
         # array of angles/distances, for which condition is met
-        angles = LIDAR_DELTA_ANGLE * ind
+        angles = (LIDAR_DELTA_ANGLE * ind + LIDAR_START_ANGLE) % (2 * np.pi)
         distances = scan[ind, 0]
         # logging.info('scan preproccesing time: ' + str(time.time() - stamp))
-        return (angles + LIDAR_START_ANGLE) % (2 * np.pi), distances
+        return angles, distances
 
     @staticmethod
     def p_trans(a, d):
         x_beac = d * np.cos(a)
         y_beac = d * np.sin(a)
         return x_beac, y_beac
+
+#### Below is the code for reset function and calibration
 
     def start_over(self):
         self.reset = True
@@ -306,7 +254,7 @@ class ParticleFilter:
     def evaluate_coords(self, scan):
         # landmarks
         angles, distances = self.get_landmarks(scan)
-        angles = (angles + np.pi / 2) % (2 * np.pi)
+        angles = (angles) % (2 * np.pi)
         x_landm, y_landm = self.p_trans(angles, distances)
         landmarks = np.array([x_landm, y_landm]).T
 
@@ -384,7 +332,7 @@ class ParticleFilter:
         
         # landmarks
         angles, distances = self.get_landmarks(scan)
-        angles = (angles + np.pi / 2) % (2 * np.pi)
+        angles = (angles) % (2 * np.pi)
         x_landm, y_landm = self.p_trans(angles, distances)
         landmarks = np.array([x_landm, y_landm]).T
 
