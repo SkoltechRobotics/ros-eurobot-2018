@@ -17,6 +17,7 @@ GET_STARTUP_STATUS = 0xa3
 GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
+IMMEDIATE_FINISHED = [0xc4]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA   = 0xd0
@@ -78,6 +79,8 @@ class stm_node(STMprotocol):
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
         self.send(action_name, action_type, args)
+        if action_type in IMMEDIATE_FINISHED:
+            self.pub_response(data=action_name + " finished")
 
     def send(self, action_name, action_type, args):
 
