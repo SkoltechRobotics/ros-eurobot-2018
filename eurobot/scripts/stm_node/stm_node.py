@@ -143,9 +143,13 @@ class stm_node(STMprotocol):
         if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
             successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
             if successfully3:
-                msg = Int32MultiArray()
-                msg.data = rf_data
-                self.pub_rf.publish(msg)
+                rospy.loginfo(rf_data)
+                # self.pub_rf.publish(Int32MultiArray(data=rf_data))
+            else:
+                rospy.loginfo(successfully3)
+
+        #rospy.loginfo(self.rf_it) 
+        #rospy.loginfo(self.ask_rf_every)
         self.rf_it += 1
 
     def odometry_movement_timer(self, event):
