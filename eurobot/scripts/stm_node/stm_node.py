@@ -151,8 +151,8 @@ class stm_node(STMprotocol):
         if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
             successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
             if successfully3:
-                rospy.loginfo(rf_data)
-                # self.pub_rf.publish(Int32MultiArray(data=rf_data))
+                # rospy.loginfo(rf_data)
+                self.pub_rf.publish(Int32MultiArray(data=rf_data))
             else:
                 rospy.loginfo(successfully3)
 
