@@ -30,7 +30,7 @@
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" repawn="true" output="screen"/>
+        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true" output="screen"/>
     </group>
 
 </launch>
