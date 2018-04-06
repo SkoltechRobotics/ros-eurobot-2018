@@ -12,7 +12,7 @@ from threading import Lock
 
 class LocalPlanner:
     # maximum linear and rotational speed
-    V_MAX = 0.3
+    V_MAX = 0.2
     W_MAX = 2.7
     # minimum speed (when approaching the goal and decelerating)
     V_MIN = 0.01
@@ -36,10 +36,11 @@ class LocalPlanner:
     # max rate of the planner
     RATE = 100
     # max rate of replanning
-    PLAN_RATE = 20
+    PLAN_RATE = 5
     # maximum length of plan when replanning should stop
     REPLANNING_STOP_PLAN_LENGTH = 10
     REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH = 50 # empirically determined
+    REPLANNING_STOP_PLAN_LENGTH_TOWERS = 40
     # distance between a via-point and a cube heap when approaching the heap
     HEAP_APPROACHING_DISTANCE = 0.17
     # speed for odometry movements
@@ -71,6 +72,10 @@ class LocalPlanner:
         for n in range(self.N_HEAPS):
             self.heap_coords[n, 0] = rospy.get_param("/field/cube" + str(n + 1) + "c_x") / 1000
             self.heap_coords[n, 1] = rospy.get_param("/field/cube" + str(n + 1) + "c_y") / 1000
+
+        # get initial water tower coordinates
+        self.towers = np.array(rospy.get_param("/field/towers")) / 1000
+        self.tower_approaching_vectors = np.array(rospy.get_param("/field/tower_approaching_vectors")) / 1000
 
         self.plan = np.array([])
         self.plan_length = self.plan.shape[0]
@@ -237,6 +242,11 @@ class LocalPlanner:
 
             self.set_move_timer(goal_coords, goal, cmd_id)
 
+        elif cmd_type == "move_tower": # approach water tower with navigation
+            tower_n = int(cmd_args[0])
+
+            self.set_move_timer_towers(tower_n, cmd_id)
+
         elif cmd_type == "move_odometry":  # simple liner movement by odometry (if rotation is requested, it will be ignored)
             goal = np.array(cmd_args).astype('float')
             d_map_frame = goal[:2] - self.coords[:2]
@@ -286,6 +296,35 @@ class LocalPlanner:
                 return
         return move_timer
 
+    def set_move_timer_towers(self, n, cmd_id):
+        if self.move_timer is not None:
+            self.move_timer.shutdown()
+            self.move_timer = None
+        self.move_timer = rospy.Timer(rospy.Duration(1. / self.PLAN_RATE), self.get_move_timer_towers_callback(n, cmd_id))
+
+    def get_move_timer_towers_callback(self, n, cmd_id):
+        rospy.loginfo("Creating a timer for replanning (approaching towers).")
+        def move_timer(event):
+            via_point = self.towers[n] - self.tower_approaching_vectors[n]
+
+            success, plan = self.request_plan(self.pose, self.coords2pose(via_point))
+            if success:
+                # add approaching path
+                length = np.linalg.norm(self.tower_approaching_vectors[n, :2])
+                n_extra_points = int(length / self.RESOLUTION)
+                extra_path = np.zeros((n_extra_points, 3))
+                extra_path[:, 0] = np.linspace(via_point[0], self.towers[n,0], num=n_extra_points)
+                extra_path[:, 1] = np.linspace(via_point[1], self.towers[n,1], num=n_extra_points)
+                extra_path[:, 2] = np.ones(n_extra_points) * self.towers[n,2]
+                self.set_plan(np.concatenate((plan, extra_path), axis=0), cmd_id)
+
+            if self.plan_length <= self.REPLANNING_STOP_PLAN_LENGTH_TOWERS:
+                self.move_timer.shutdown()
+                self.move_timer = None
+                rospy.loginfo("Replanning stopped at plan length = " + str(self.plan_length))
+                return
+        return move_timer
+
     def rotation_transform(self, vec, angle):
         M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
         ans = vec.copy()
@@ -293,7 +332,7 @@ class LocalPlanner:
         return ans
 
     def approaching_plan(self, heap, goal_coords):
-        # distance to the heap
+        # distance to the    heap
         dist = heap - goal_coords[:2]
 
         # find the direction e of the approaching movement
