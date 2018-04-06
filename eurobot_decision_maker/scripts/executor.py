@@ -72,6 +72,7 @@ class ActionNode(TreeNode):
 
     def callback_for_terminating(self):
         def cb(msg):
+            rospy.loginfo(msg.data)
             action_id, action_status = re.match("(\S*)\s(\S*)",msg.data).group(1,2) # finish it!
             if action_id == self.id:
                 self.status = action_status
