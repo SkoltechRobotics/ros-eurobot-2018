@@ -37,7 +37,7 @@ class stm_node(STMprotocol):
             self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10 )
         else:
             self.pub_rf = None
-        self.ask_rf_every = 4
+        self.ask_rf_every = 2
         self.rf_it = 0
         self.br = tf.TransformBroadcaster()
 
@@ -140,13 +140,13 @@ class stm_node(STMprotocol):
             self.publish_odom(coords, vel)
 
 
-        if self.robot_name == "main_robot":
+        if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
             successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
             if successfully3:
                 msg = Int32MultiArray()
                 msg.data = rf_data
                 self.pub_rf.publish(msg)
-
+        self.rf_it += 1
 
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])

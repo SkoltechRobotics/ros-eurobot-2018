@@ -611,7 +611,7 @@ if __name__ == "__main__":
     btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, "/main_robot/response", "/main_robot/response",
                               move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
-    btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
+    # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
     # btb.add_strategy([("heaps",0)])
     btb.add_strategy([("heaps", 0)])
