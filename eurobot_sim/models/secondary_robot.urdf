@@ -15,7 +15,7 @@
     </visual>
 
     <visual>
-      <origin xyz="0 -0.083 .125" rpy="0 0 0" />
+      <origin xyz="0 -0.083 .135" rpy="0 0 0" />
       <geometry>
         <box size="0.241 0.060 0.25" />
       </geometry>

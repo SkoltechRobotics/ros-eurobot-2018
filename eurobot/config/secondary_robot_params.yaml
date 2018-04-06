@@ -12,6 +12,6 @@ dim_z: 350.0
 dim_r: 141.0
 
 # LIDAR scanner coordinates in robot frame
-lidar_x: -29.0
-lidar_y: 32.0
-lidar_a: 4.71
+lidar_x: -24.0
+lidar_y: 36.0
+lidar_a: 1.57
