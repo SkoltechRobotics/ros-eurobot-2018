@@ -21,4 +21,4 @@ cube6c_y: 540.0
 
 # coordinates for approaching watertowers
 towers: [[166.0, 826.0, 4.71], [2390.0, 1815.0, 1.57]]
-tower_approaching_vectors: [[.0, 150.0, .0], [-150.0 , .0, .0]]
+tower_approaching_vectors: [[.0, 250.0, .0], [-250.0 , .0, .0]]
