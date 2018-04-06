@@ -12,7 +12,7 @@ from threading import Lock
 
 class LocalPlanner:
     # maximum linear and rotational speed
-    V_MAX = 0.2
+    V_MAX = 0.5
     W_MAX = 2.7
     # minimum speed (when approaching the goal and decelerating)
     V_MIN = 0.01
