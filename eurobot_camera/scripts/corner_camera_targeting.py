@@ -3,12 +3,14 @@ import cv2
 import rospy
 import cv_bridge
 from sensor_msgs.msg import Image
+from std_msgs.msg import String
 from PlanRecognition import find_colors_geom, img_transformation, STEP, rag
 import numpy as np
 
 COLORS = np.array([[0, 124, 176], [208, 93, 40], [14, 14, 16], [97, 153, 59],
                    [247, 181, 0]], dtype=np.uint8)
 # img_points = np.float32([(798, 549), (798, 488), (912, 487), (912, 553)])
+COLOR_NAMES = ["blue", "orange", "black", "green", "yellow"]
 img_points = np.float32([(950, 610), (950, 550), (1062, 550), (1062, 610)])
 h_border = STEP * 2 * 3
 w_border = STEP * 2 * 7
@@ -57,18 +59,41 @@ def img_callback(img):
 
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     pub.publish(bridge.cv2_to_imgmsg(img, "bgr8"))
+    return colors
+
+
+def cmd_callback(data):
+    global is_start
+    global is_finish
+    data_splitted = data.data.split()
+    if data_splitted[1] == "start":
+        is_start = True
+    if data_splitted[1] == "finish":
+        is_finish = True
 
 
 if __name__ == '__main__':
     rospy.init_node('img_node', anonymous=True)
     pub = rospy.Publisher("/usb_cam/result_img", Image, queue_size=3)
     pub_add_img = rospy.Publisher("usb_cam/add_image", Image, queue_size=3)
+    pub_plan = rospy.Publisher("/server/plan", String, queue_size=3)
+    rospy.Subscriber("/server/camera_command", String, cmd_callback)
     bridge = cv_bridge.CvBridge()
+    rate = rospy.Rate(100)
 
-    cap = cv2.VideoCapture(1)
+    rospy.loginfo("Start camera node")
+    is_start = False
+    while not is_start and not rospy.is_shutdown():
+        rate.sleep()
+    cap = cv2.VideoCapture(2)
     cap.set(cv2.CAP_PROP_FPS, 10)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
-    while not rospy.is_shutdown():
+    rospy.loginfo("Start capture video")
+    is_finish = False
+    while not rospy.is_shutdown() and not is_finish:
         ret, frame = cap.read()
-        img_callback(frame)
+        colors = img_callback(frame)
+        color_str = COLOR_NAMES[colors[0]] + " " + COLOR_NAMES[colors[1]] + " " + COLOR_NAMES[colors[2]]
+        pub_plan.publish(color_str)
+        rospy.loginfo("colors " + color_str)

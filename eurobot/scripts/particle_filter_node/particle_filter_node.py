@@ -8,7 +8,7 @@ from npParticle import ParticleFilter
 import datetime
 import tf
 from nav_msgs.msg import Odometry
-
+from tf.transformations import quaternion_from_euler
 
 def pf_cmd_callback(data):
     data_splitted = data.data.split()
@@ -63,14 +63,15 @@ def scan_callback(scan):
     #print 'PF iteration time in sec:', round(dt, 3), '\t(', round(1 / dt, 1), 'Hz )'
     last = now
 
-    global coords, stm_coords, prev_used_stm_coords
+    global coords, stm_coords, prev_used_stm_coords, pf_coords
     # copy stm_coords as they may change during calculations
     used_stm_coords = stm_coords.copy()
 
     # calculate coordinates
     # TBD: check if python lib for Hokuyo is faster than urg_node and this transformation
     lidar_data = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
-    delta = delta_coords(used_stm_coords, prev_used_stm_coords, coords)
+    delta = delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords)
+    
     coords = particle_filter.localisation(delta, lidar_data)
 
     #print 'PF work time in sec:', datetime.datetime.now() - last
@@ -82,49 +83,53 @@ def scan_callback(scan):
     # rate of updating stm_coords should be higher that scanning rate
 
     global lidar_coords, in_x, in_y, in_angle, br, robot_name
-    pf_coords = coords - rotation_transform(lidar_coords, coords[2])
-    
-    br.sendTransform((pf_coords[0] / 1000, pf_coords[1] / 1000, 0),
-                                    tf.transformations.quaternion_from_euler(0, 0, pf_coords[2]),
-                                    rospy.Time.now(),
-                                    "%s_pf" % robot_name,
-                                    "world")
+    pf_coords = lidar2robot_coords(coords)
+
+    #br.sendTransform((pf_coords[0] / 1000, pf_coords[1] / 1000, 0),
+    #                                tf.transformations.quaternion_from_euler(0, 0, pf_coords[2]),
+    #                                rospy.Time.now(),
+    #                                "%s_pf" % robot_name,
+    #                                "map")
 
     # publish tf map -> odom for navigation
     angle = pf_coords[2] - stm_coords[2]
     stm_coords_rotated = rotation_transform(stm_coords, angle)
     br.sendTransform(((pf_coords[0] - stm_coords_rotated[0]) / 1000, (pf_coords[1] - stm_coords_rotated[1]) / 1000, 0),
-                tf.transformations.quaternion_from_euler(0, 0, pf_coords[2] - stm_coords_rotated[2]),
+                tf.transformations.quaternion_from_euler(0, 0, angle),
                 rospy.Time.now(),
                 "%s_odom" % robot_name,
                 "map")
 
     # create and pub PointArray with particles    
-    #iposes = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
-    #Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i, 2] + np.pi / 2))) for i in range(len(particle_filter.particles))]
-    #particles = PoseArray(header=Header(frame_id="world"), poses=poses)
+    #poses = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
+    #Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i, 2]))) for i in range(len(particle_filter.particles))]
+    #particles = PoseArray(header=Header(frame_id="map"), poses=poses)
     #pub_particles.publish(particles)
 
     # create and pub PointArray with landmarks
     #points = [Point(x=particle_filter.landmarks[0, i] / 1000, y=particle_filter.landmarks[1, i] / 1000, z=.0) for i in range(len(particle_filter.landmarks[0]))]
-    #landmarks = PointCloud(header=Header(frame_id="laser"), points=points)
+    #landmarks = PointCloud(header=Header(frame_id="%s_laser" % robot_name), points=points)
     #pub_landmarks.publish(landmarks)
 
-    # DEBUG
-    # print "Landmarks:"
-    # landm = particle_filter.get_landmarks(lidar_data)
-    # print particle_filter.p_trans(landm[0],landm[1])
-    # print "---------"
-
     # DEBUG: pring coordinates of the beacons
-    # lidar_data = np.array([scan.ranges, scan.intensities]).T
+    #angle, distance = particle_filter.get_landmarks(lidar_data)
+    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
+    #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
+    #print np.array([x_coords, y_coords]).T * 1000
+    #print "------------------------------------------"
 
 
-# angle, distance = particle_filter.get_landmarks(lidar_data)
-# x_coords, y_coords = particle_filter.p_trans(angle,distance)
-# np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
-# print np.array([x_coords, y_coords]).T * 1000
-# print "------------------------------------------"
+def robot2lidar_coords(coords_of_robot):
+    global lidar_coords
+    ans = coords_of_robot + rotation_transform(lidar_coords, coords_of_robot[2])
+    ans[2] = ans[2] % (2 * np.pi)
+    return ans
+
+def lidar2robot_coords(coords_of_lidar):
+    global lidar_coords
+    ans = coords_of_lidar - rotation_transform(lidar_coords, coords_of_lidar[2] - lidar_coords[2])
+    ans[2] = ans[2] % (2 * np.pi)
+    return ans
 
 if __name__ == '__main__':
     try:
@@ -134,12 +139,14 @@ if __name__ == '__main__':
         sense_noise = rospy.get_param("particle_filter/sense_noise")
         distance_noise = rospy.get_param("particle_filter/distance_noise")
         angle_noise = rospy.get_param("particle_filter/angle_noise")
-        in_x = rospy.get_param("start_x")
-        in_y = rospy.get_param("start_y")
-        in_angle = rospy.get_param("start_a")
+        pf_coords = np.array([rospy.get_param("start_x"), rospy.get_param("start_y"), rospy.get_param("start_a")])
         lidar_coords = np.array([rospy.get_param("lidar_x"), rospy.get_param("lidar_y"), rospy.get_param("lidar_a")])
         max_itens = rospy.get_param("particle_filter/max_itens")
         max_dist = rospy.get_param("particle_filter/max_dist")
+
+        in_x, in_y, in_angle = robot2lidar_coords(pf_coords) 
+        print '---------------->', in_angle
+
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise,
                                          angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color=color,
                                          max_itens=max_itens, max_dist=max_dist)
@@ -147,8 +154,8 @@ if __name__ == '__main__':
         # ROS entities
         # Set initial coords and STM (and prev) coords
         coords = np.array([in_x, in_y, in_angle])
-        stm_coords = coords.copy()
-        prev_used_stm_coords = coords.copy()
+        stm_coords = pf_coords.copy()
+        prev_used_stm_coords = pf_coords.copy()
 
         rospy.init_node('particle_filter_node', anonymous=True)
         robot_name = rospy.get_param("robot_name") 

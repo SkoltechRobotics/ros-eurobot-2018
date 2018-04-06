@@ -114,7 +114,6 @@ class BarrierNavigator():
             if action_type == "MOVETOHEAP":
                 rospy.loginfo("Receive command " + data.data)
 
-                rospy.sleep(1)
                 if len(sys.argv) < 2:
                     (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
                     yaw = tf.transformations.euler_from_quaternion(rot)[2]
@@ -135,7 +134,6 @@ class BarrierNavigator():
                 yellow_fix = case // 20
                 case = case % 20
                 rospy.loginfo(str(yellow_fix) + ' ' + str(case))
-                rospy.sleep(0.5)
                 rospy.loginfo("Start move to heap by barrier sensors")
 
                 if case in [4,5,6]:

@@ -58,7 +58,7 @@ class stm_node(STMprotocol):
 
         # get LIDAR coords
         self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
-        self.laser_angle = rospy.get_param('lidar_a') + np.pi / 2
+        self.laser_angle = rospy.get_param('lidar_a')
 
         rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
 
@@ -109,7 +109,7 @@ class stm_node(STMprotocol):
 
     def publish_odom(self, coords, vel):
         odom = Odometry()
-        odom.header.frame_id = 'odom'
+        odom.header.frame_id = '%s_odom' % self.robot_name
         odom.child_frame_id = self.robot_name
         odom.pose.pose.position.x = coords[0]
         odom.pose.pose.position.y = coords[1]
@@ -128,7 +128,7 @@ class stm_node(STMprotocol):
                               "%s_odom" % self.robot_name)
 
         self.br.sendTransform(self.laser_coords,
-                              tf.transformations.quaternion_from_euler(0, 0, self.lase_angle),
+                              tf.transformations.quaternion_from_euler(0, 0, self.laser_angle),
                               rospy.Time.now(),
                               '%s_laser' % self.robot_name,
                               self.robot_name)
