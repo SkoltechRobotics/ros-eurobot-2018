@@ -83,7 +83,8 @@ class stm_node(STMprotocol):
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status = "finished"):
-        if rospy.get_time() - self.time_started[action_name] < self.min_time_for_response:
+
+        if action_name in self.time_started and rospy.get_time() - self.time_started[action_name] < self.min_time_for_response:
             rospy.Timer(rospy.Duration(self.min_time_for_response), lambda e: self.pub_response.publish(action_name + " " + action_status),
                         oneshot=True)
         else:
@@ -112,7 +113,10 @@ class stm_node(STMprotocol):
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
 
         if action_type in MANIPULATOR_JOBS:
-            n = action_type - 0xc1 # first dynamixel 
+            if self.robot_name == "main_robot":
+                n = args[0]
+            else:
+                n = action_type - 0xc1 # first dynamixel 
             self.take_cube[n] = action_name
             self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n,
                                                                                              GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type in range(
