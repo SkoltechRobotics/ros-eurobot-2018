@@ -83,7 +83,8 @@ class stm_node(STMprotocol):
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status = "finished"):
-        if rospy.get_time() - self.time_started[action_name] < self.min_time_for_response:
+
+        if action_name in self.time_started and rospy.get_time() - self.time_started[action_name] < self.min_time_for_response:
             rospy.Timer(rospy.Duration(self.min_time_for_response), lambda e: self.pub_response.publish(action_name + " " + action_status),
                         oneshot=True)
         else:
