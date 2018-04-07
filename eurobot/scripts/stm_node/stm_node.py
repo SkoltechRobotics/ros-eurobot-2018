@@ -22,7 +22,7 @@ UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA   = 0xd0
 BAUD_RATE = {"main_robot": 250000,
-             "secondary_robot": 64000}
+             "secondary_robot": 250000}
 
 class stm_node(STMprotocol):
     def __init__(self, serial_port):

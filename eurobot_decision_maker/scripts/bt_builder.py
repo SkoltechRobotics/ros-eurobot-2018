@@ -73,6 +73,7 @@ class BehaviorTreeBuilder:
         self.wt_y_shift = np.array([0, 15, 0], dtype=np.float64)
         self.wt_x_shift = np.array([15, 0, 0], dtype=np.float64)
         self.shooting_motor = str(0xc4)
+        self.shoot_poses = {"interm" : 2, "left" : 0, "right" : 1, "release right" : 4, "release left" : 3}
 
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
@@ -490,9 +491,10 @@ class BehaviorTreeBuilder:
         # small robot
         main_seq_name = self.construct_string("shoot_sort", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
-        self.add_command_action(main_seq_name, self.bottom_sorter, 0 if to == "left" else 1)
-        self.add_sleep_time(main_seq_name, delay)
-        self.add_command_action(main_seq_name, self.bottom_sorter, 2)
+        self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses[to])
+        if to in ["left", "right"]
+            self.add_sleep_time(main_seq_name, delay)
+            self.add_command_action(main_seq_name, self.bottom_sorter, 2)
 
     def add_first_sort_action(self, parent_name, to="clean", delay=0.5):
         main_seq_name = self.construct_string("first_sort", self.get_next_id())
