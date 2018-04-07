@@ -192,6 +192,9 @@ class LocalPlanner:
         self.mutex.release()
 
     def terminate_following(self, success):
+        if self.move_timer is not None:
+            self.move_timer.shutdown()
+            self.move_timer = None
         self.plan_length = 0
         self.plan = np.array([])
         self.set_speed(np.zeros(3))

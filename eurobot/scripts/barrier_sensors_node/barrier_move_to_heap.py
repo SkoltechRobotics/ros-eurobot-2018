@@ -42,8 +42,8 @@ class BarrierNavigator():
             self.sensors_queue[0] = sd
             # print(self.sensors_queue)
             self.sensors = np.sum(self.sensors_queue, axis=0) >= 3
-            # rospy.loginfo(self.sensors_queue)
-            # rospy.loginfo(self.sensors)
+            rospy.loginfo(self.sensors_queue)
+            rospy.loginfo(self.sensors)
 
         return cb
 
@@ -106,6 +106,21 @@ class BarrierNavigator():
     def get_allowed_mask(self, case):
         return self.masks[case]
 
+    def angle_calibration(self):
+        (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+        yaw = tf.transformations.euler_from_quaternion(rot)[2]
+        yaw = yaw % (np.pi / 2)
+        a = - (yaw if yaw < np.pi / 4 else yaw - np.pi / 2)
+
+        rospy.loginfo("rotation on angle " + str(a))
+
+        def tm(e):
+            self.command_pub.publish("move_heap_121 162 0 0 " + str(a) + ' 0 0 0.5')
+
+        rospy.Timer(rospy.Duration(0.1), tm, oneshot=True)
+        self.wait_for_movement("move_heap_121")
+        rospy.loginfo("rotation finished")
+
     def start_command_callback(self):
         def cb(data):
             data_splitted = data.data.split()
@@ -115,19 +130,7 @@ class BarrierNavigator():
                 rospy.loginfo("Receive command " + data.data)
 
                 if len(sys.argv) < 2:
-                    (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
-                    yaw = tf.transformations.euler_from_quaternion(rot)[2]
-                    yaw = yaw % (np.pi / 2)
-                    a = - (yaw if yaw < np.pi / 4 else yaw - np.pi / 2)
-
-                    rospy.loginfo("rotation on angle " + str(a))
-
-                    def tm(e):
-                        self.command_pub.publish("move_heap_121 162 0 0 " + str(a) + ' 0 0 0.5')
-
-                    rospy.Timer(rospy.Duration(0.1), tm, oneshot=True)
-                    self.wait_for_movement("move_heap_121")
-                    rospy.loginfo("rotation finished")
+                    self.angle_calibration()
 
                 case = int(data_splitted[2])
                 rospy.loginfo(case)
