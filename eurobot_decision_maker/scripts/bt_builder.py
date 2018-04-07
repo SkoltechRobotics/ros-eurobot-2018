@@ -492,7 +492,7 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("shoot_sort", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
         self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses[to])
-        if to in ["left", "right"]
+        if to in ["left", "right"]:
             self.add_sleep_time(main_seq_name, delay)
             self.add_command_action(main_seq_name, self.bottom_sorter, 2)
 
@@ -564,6 +564,7 @@ class BehaviorTreeBuilder:
             for _ in range(4):
                 self.add_shoot_sort_action(main_seq_name, to, .8)
         if not only_4_balls:
+            self.add_shoot_sort_action(main_seq_name, "release " + to)
             for _ in range(8):
                 self.add_first_sort_action(main_seq_name, "clean", .5)
                 # self.add_shoot_sort_action(main_seq_name, to, .8)
@@ -589,12 +590,12 @@ class BehaviorTreeBuilder:
             elif name == 'heaps':
                 self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[num])
             elif name == 'cleanwater_tower_after_waste':
-                self.add_cleanwater_tower(self.root_seq_name, "right" if self.side == "orange" else "left", True, False)
+                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", True, False)
             elif name == 'cleanwater_tower_before_waste':
-                self.add_cleanwater_tower(self.root_seq_name, "right" if self.side == "orange" else "left", False,
+                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", False,
                                           False)
             elif name == 'cleanwater_tower_only_shoot4':
-                self.add_cleanwater_tower(self.root_seq_name, "right" if self.side == "orange" else "left", False, True)
+                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", False, True)
             elif name == "wastewater_tower":
                 self.add_wastewater_tower(self.root_seq_name)
             elif name == "wastewater_reservoir":
