@@ -33,7 +33,7 @@ class BehaviorTreeBuilder:
         "disposal": np.array([[10, 61, 0]], dtype=np.float64),
         "base": np.array([[15, 15, 0]], dtype=np.float64),
         "wastewater_tower": np.array([[0, 0, 0]], dtype=np.float64),
-        "wastewater_reservoir": np.array([[0, 0, 0]], dtype=np.float64),
+        "wastewater_reservoir": np.array([[100, 157, 4.71]], dtype=np.float64),
         "cleanwater_tower": np.array([[82.6, 16.6, 4.71]], dtype=np.float64)
     }
     shifts = [(-1, 0), (0, -1), (1, 0), (0, 1)]
@@ -484,7 +484,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
 
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
-        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 0 if turn == "on" else 1)
+        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "right" else 1, 1 if turn == "on" else 0)
 
     def add_shoot_sort_action(self, parent_name, to="left", delay=0.5):
         # small robot
@@ -538,6 +538,7 @@ class BehaviorTreeBuilder:
 
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
         self.add_command_action(main_seq_name, self.bottom_sorter, 2)
+        self.add_command_action(main_seq_name, self.wastewater_door, 0)
 
         for _ in range(4):
             self.add_first_sort_action(parent_name, "clean")
@@ -548,7 +549,7 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        self.add_move_action(main_seq_name, self.action_places["wastewater_reservoir"][0].tolist())
+        self.add_move_action(main_seq_name, *self.action_places["wastewater_reservoir"][0].tolist())
         self.add_wastewater_action(main_seq_name, "release")
 
     def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):
@@ -560,11 +561,11 @@ class BehaviorTreeBuilder:
         self.add_shooting_motor_action(main_seq_name,to,"on")
         if with_4_balls:
             for _ in range(4):
-                self.add_shoot_sort_action(main_seq_name, to,2)
+                self.add_shoot_sort_action(main_seq_name, to, .8)
         if not only_4_balls:
             for _ in range(8):
-                self.add_first_sort_action(main_seq_name, "clean",2)
-                self.add_shoot_sort_action(main_seq_name, to,2)
+                self.add_first_sort_action(main_seq_name, "clean", .5)
+                # self.add_shoot_sort_action(main_seq_name, to, .8)
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
@@ -587,12 +588,12 @@ class BehaviorTreeBuilder:
             elif name == 'heaps':
                 self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[num])
             elif name == 'cleanwater_tower_after_waste':
-                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", True, False)
+                self.add_cleanwater_tower(self.root_seq_name, "right" if self.side == "orange" else "left", True, False)
             elif name == 'cleanwater_tower_before_waste':
-                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", False,
+                self.add_cleanwater_tower(self.root_seq_name, "right" if self.side == "orange" else "left", False,
                                           False)
             elif name == 'cleanwater_tower_only_shoot4':
-                self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", False, True)
+                self.add_cleanwater_tower(self.root_seq_name, "right" if self.side == "orange" else "left", False, True)
             elif name == "wastewater_tower":
                 self.add_wastewater_tower(self.root_seq_name)
             elif name == "wastewater_reservoir":
