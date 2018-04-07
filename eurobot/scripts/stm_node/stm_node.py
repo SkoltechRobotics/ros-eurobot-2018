@@ -112,7 +112,7 @@ class stm_node(STMprotocol):
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
 
         if action_type in MANIPULATOR_JOBS:
-            n = action_type - 0xc0 # first dynamixel 
+            n = action_type - 0xc1 # first dynamixel 
             self.take_cube[n] = action_name
             self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n,
                                                                                              GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type in range(
