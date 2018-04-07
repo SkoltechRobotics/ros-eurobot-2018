@@ -262,9 +262,9 @@ class BehaviorTreeBuilder:
         PARAMS_PI2P = [1.019 * np.pi / 2, 0.096, 0.014]
         PARAMS_PI2M = [-1.02 * np.pi / 2, -0.096, 0.01]
         if da > 0:
-            a, x, y = PARAMS_PI2P
-        else:
             a, x, y = PARAMS_PI2M
+        else:
+            a, x, y = PARAMS_PI2P
         w = 3
         for i in range(np.abs(da)):
             self.add_command_action(move_seq_name, 162, x, y, a, x/a*w, y/a*w, w)
@@ -292,6 +292,7 @@ class BehaviorTreeBuilder:
         if len(self.colors_left) == 3:
             pc = list(all_colors - self.colors_left)
             if abs(pc[0] - pc[1]) == 2:
+                print("AAAAAAAAAAAAA@##%$%$#$@#!@!#$#%$")
                 if side - pc[0] == 0 or side - pc[1] == 0:
                     return 5
                 else:
@@ -340,12 +341,13 @@ class BehaviorTreeBuilder:
         self.colors_left = {0, 1, 2, 3, 4}
         heap = self.action_places["heaps"][heap_num]
         a = 0
-        # self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/4)
-        # self.add_remove_heap_request(main_seq_name, heap_num)
-        self.add_rf_move(main_seq_name, self.get_heap_status(a))
+        #self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/4)
+        #self.add_remove_heap_request(main_seq_name, heap_num)
+        self.add_rf_move(main_seq_name, self.get_heap_status(a*np.pi/2))
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
             if da != 0:# and i != 0:
                 self.add_new_heap_rotation(main_seq_name, da)
+                self.add_sleep_time(main_seq_name, 0.5)
                 a += da
             if dx ** 2 + dy ** 2 > 0:
                 ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a) % 4]
@@ -353,7 +355,7 @@ class BehaviorTreeBuilder:
                 self.add_move_action(main_seq_name, *dX.tolist(), move_type="move_stm")
 
             self.add_rf_move(main_seq_name, self.get_heap_status(a))
-            self.add_cubes_pick(main_seq_name,heap_num, mans, colors, new=True)
+            self.add_cubes_pick(main_seq_name,heap_num, [2 - m for m in mans], colors, new=True)
 
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
         main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
@@ -635,6 +637,7 @@ if __name__ == "__main__":
     rospy.loginfo(heap_strats[1]['001'])
     btb.add_cubes_sequence_new(heap_strats[1]['001'])
     btb.create_tree_from_strategy(wire_start=False)
+    #print(heap_strats[1]['001'])
     rospy.sleep(1)
     btb.bt.root_node.start()
     r = rospy.Rate(10)
