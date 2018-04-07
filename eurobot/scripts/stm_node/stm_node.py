@@ -25,6 +25,7 @@ BAUD_RATE = {"main_robot": 250000,
              "secondary_robot": 250000}
 
 class stm_node(STMprotocol):
+    min_time_for_response  = 0.2
     def __init__(self, serial_port):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
@@ -37,8 +38,8 @@ class stm_node(STMprotocol):
         super(stm_node, self).__init__(serial_port, BAUD_RATE[self.robot_name])
         self.mutex = Lock()
 
+        self.time_started = {}
 
-        
         if self.robot_name == "main_robot":
             self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10 )
         else:
@@ -81,11 +82,20 @@ class stm_node(STMprotocol):
         args = [action_args_dict[t](s) for t, s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name, action_type, args
 
+    def finish_command(self, action_name, action_status = "finished"):
+        if rospy.get_time() - self.time_started[action_name] < self.min_time_for_response:
+            rospy.Timer(rospy.Duration(self.min_time_for_response), lambda e: self.pub_response.publish(action_name + " " + action_status),
+                        oneshot=True)
+        else:
+            self.pub_response.publish(action_name + " " + action_status)
+        self.time_started.pop(action_name)
+
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
         self.send(action_name, action_type, args)
+        self.time_started[action_name] = rospy.get_time()
         if action_type in IMMEDIATE_FINISHED:
-            rospy.Timer(rospy.Duration(0.3), lambda e: self.pub_response.publish(action_name + " finished"), oneshot=True)
+            self.finish_command(action_name, "finished")
 
     def send(self, action_name, action_type, args):
 
@@ -147,7 +157,6 @@ class stm_node(STMprotocol):
         if successfully1 and successfully2:
             self.publish_odom(coords, vel)
 
-
         if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
             successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
             if successfully3:
@@ -165,7 +174,7 @@ class stm_node(STMprotocol):
         if successfully:
             # finished
             if args_response[0] == 0:
-                self.pub_response.publish(self.odometry_movement_id + ' finished')
+                self.finish_command(self.odometry_movement_id)
                 self.timer_odom_move.shutdown()
 
     def manipulator_timer(self, n, GET_COMMAND_NAME=GET_MANIPULATOR_STATUS):
@@ -178,11 +187,11 @@ class stm_node(STMprotocol):
                 # if error 
                 if status > 1:
                     rospy.logerr("Manipulator " + str(n) + " error. Code: " + str(status))
-                    self.pub_response.publish(self.take_cube[n] + ' error ' + str(status))
+                    self.finish_command(self.take_cube[n], 'error ' + str(status))
                     self.timer_m[n].shutdown()
                 # if action is finished
                 elif status == 0:
-                    self.pub_response.publish(self.take_cube[n] + ' finished')
+                    self.finish_command(self.take_cube[n])
                     self.timer_m[n].shutdown()
 
         return m_timer
@@ -192,7 +201,7 @@ class stm_node(STMprotocol):
         if successfully:
             # finished
             if args_response[0] == 0:
-                self.pub_response.publish(self.startup_id + ' finished')
+                self.finish_command(self.startup_id)
                 self.timer_startup.shutdown()
 
 
