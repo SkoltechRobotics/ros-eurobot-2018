@@ -17,15 +17,15 @@ GET_STARTUP_STATUS = 0xa3
 GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
+IMMEDIATE_FINISHED = [0xc4]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA   = 0xd0
+BAUD_RATE = {"main_robot": 250000,
+             "secondary_robot": 64000}
 
 class stm_node(STMprotocol):
     def __init__(self, serial_port):
-        super(stm_node, self).__init__(serial_port)
-        self.mutex = Lock()
-
         # ROS
         rospy.init_node('stm_node', anonymous=True)
         rospy.Subscriber("stm_command", String, self.stm_command_callback)
@@ -33,6 +33,12 @@ class stm_node(STMprotocol):
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
         self.robot_name = rospy.get_param("robot_name")
+        
+        super(stm_node, self).__init__(serial_port, BAUD_RATE[self.robot_name])
+        self.mutex = Lock()
+
+
+        
         if self.robot_name == "main_robot":
             self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10 )
         else:
@@ -78,6 +84,8 @@ class stm_node(STMprotocol):
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
         self.send(action_name, action_type, args)
+        if action_type in IMMEDIATE_FINISHED:
+            rospy.Timer(rospy.Duration(0.3), lambda e: self.pub_response.publish(action_name + " finished"), oneshot=True)
 
     def send(self, action_name, action_type, args):
 
@@ -143,8 +151,8 @@ class stm_node(STMprotocol):
         if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
             successfully3, rf_data  = self.send('request_rf_data', REQUEST_RF_DATA, [])
             if successfully3:
-                rospy.loginfo(rf_data)
-                # self.pub_rf.publish(Int32MultiArray(data=rf_data))
+                # rospy.loginfo(rf_data)
+                self.pub_rf.publish(Int32MultiArray(data=rf_data))
             else:
                 rospy.loginfo(successfully3)
 

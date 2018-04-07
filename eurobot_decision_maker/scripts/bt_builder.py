@@ -484,7 +484,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
 
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
-        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 0 if turn == "on" else 1)
+        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 1 if turn == "on" else 0)
 
     def add_shoot_sort_action(self, parent_name, to="left", delay=0.5):
         # small robot
@@ -505,31 +505,31 @@ class BehaviorTreeBuilder:
         self.add_command_action("release_wastewater" if to == "release" else "check_wastewater_closed",
                                 self.wastewater_door, 1 if to == "release" else 0)
 
-    def add_move_to_tower_action(self, parent_name, tower_name, only_odom=True):
+    def add_move_to_tower_action(self, parent_name, tower_name, only_odom=False):
         main_seq_name = self.construct_string("move_to_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
         wt_coords = self.action_places[tower_name][0]
 
         if not only_odom:
-            if tower_name == "wastewater_tower":
-                shift = self.wt_y_shift
-                wt_coords_init = wt_coords + shift if wt_coords[1] > 150 else -shift
-            else:
-                shift = self.wt_x_shift
-                wt_coords_init = wt_coords - shift
-            self.add_move_action(main_seq_name, *wt_coords_init.tolist(), shift_multiplier=0)
+            # if tower_name == "wastewater_tower":
+            #     shift = self.wt_y_shift
+            #     wt_coords_init = wt_coords + shift if wt_coords[1] > 150 else -shift
+            # else:
+            #     shift = self.wt_x_shift
+            #     wt_coords_init = wt_coords - shift
+            # self.add_move_action(main_seq_name, *wt_coords_init.tolist(), shift_multiplier=0)
+            tower_index = 1 if tower_name == "wastewater_tower" else 0
+            self.add_action_node(main_seq_name, "move_tower", self.move_publisher_name, self.move_response, "move_tower",tower_index)
 
         if only_odom:
             wt_shift = wt_coords + (self.wt_y_shift if tower_name == "wastewater_tower" else (
                 self.wt_x_shift if self.side == "orange" else -self.wt_x_shift)) / 5
-            wt_shift += (
-                self.wt_x_shift if wt_coords[1] > 150 else -self.wt_x_shift) if tower_name == "wastewater_tower" else (
+            wt_shift += (self.wt_x_shift if wt_coords[1] > 150 else -self.wt_x_shift) if tower_name == "wastewater_tower" else (
                 -self.wt_y_shift)
 
             self.add_move_action(main_seq_name, *wt_shift.tolist(), move_type="move_odometry", shift_multiplier=0)
-
-        self.add_move_action(main_seq_name, *wt_coords.tolist(), move_type="move_odometry", shift_multiplier=0)
+            self.add_move_action(main_seq_name, *wt_coords.tolist(), move_type="move_odometry", shift_multiplier=0)
 
     def add_wastewater_tower(self, parent_name, delay=1):
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
@@ -554,16 +554,16 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        # self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", True) #not with_4balls
-
-        # self.add_shooting_motor_action(main_seq_name,to,"on")
+        self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
+        # self.add_first_sort_action(main_seq_name,"clean",2)
+        self.add_shooting_motor_action(main_seq_name,to,"on")
         if with_4_balls:
             for _ in range(4):
-                self.add_shoot_sort_action(main_seq_name, to)
+                self.add_shoot_sort_action(main_seq_name, to,2)
         if not only_4_balls:
             for _ in range(8):
-                self.add_first_sort_action(main_seq_name, "clean")
-                self.add_shoot_sort_action(main_seq_name, to)
+                self.add_first_sort_action(main_seq_name, "clean",2)
+                self.add_shoot_sort_action(main_seq_name, to,2)
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy

@@ -144,8 +144,7 @@ if __name__ == '__main__':
         max_itens = rospy.get_param("particle_filter/max_itens")
         max_dist = rospy.get_param("particle_filter/max_dist")
 
-        in_x, in_y, in_angle = robot2lidar_coords(pf_coords) 
-        print '---------------->', in_angle
+        in_x, in_y, in_angle = robot2lidar_coords(pf_coords)
 
         particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise,
                                          angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color=color,

@@ -42,8 +42,8 @@ class BarrierNavigator():
             self.sensors_queue[0] = sd
             # print(self.sensors_queue)
             self.sensors = np.sum(self.sensors_queue, axis=0) >= 3
-            # rospy.loginfo(self.sensors_queue)
-            # rospy.loginfo(self.sensors)
+            rospy.loginfo(self.sensors_queue)
+            rospy.loginfo(self.sensors)
 
         return cb
 
