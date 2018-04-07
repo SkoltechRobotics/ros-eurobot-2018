@@ -484,7 +484,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
 
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
-        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "right" else 1, 1 if turn == "on" else 0)
+        self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 1 if turn == "on" else 0)
 
     def add_shoot_sort_action(self, parent_name, to="left", delay=0.5):
         # small robot
@@ -525,8 +525,7 @@ class BehaviorTreeBuilder:
         if only_odom:
             wt_shift = wt_coords + (self.wt_y_shift if tower_name == "wastewater_tower" else (
                 self.wt_x_shift if self.side == "orange" else -self.wt_x_shift)) / 5
-            wt_shift += (
-                self.wt_x_shift if wt_coords[1] > 150 else -self.wt_x_shift) if tower_name == "wastewater_tower" else (
+            wt_shift += (self.wt_x_shift if wt_coords[1] > 150 else -self.wt_x_shift) if tower_name == "wastewater_tower" else (
                 -self.wt_y_shift)
 
             self.add_move_action(main_seq_name, *wt_shift.tolist(), move_type="move_odometry", shift_multiplier=0)
@@ -557,7 +556,7 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
-
+        # self.add_first_sort_action(main_seq_name,"clean",2)
         self.add_shooting_motor_action(main_seq_name,to,"on")
         if with_4_balls:
             for _ in range(4):
