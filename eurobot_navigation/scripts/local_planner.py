@@ -34,7 +34,7 @@ class LocalPlanner:
     # number of cube heaps
     N_HEAPS = 6
     # max rate of the planner
-    RATE = 30
+    RATE = 25
     # max rate of replanning
     PLAN_RATE = 5
     # maximum length of plan when replanning should stop
