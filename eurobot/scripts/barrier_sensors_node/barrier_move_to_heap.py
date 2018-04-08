@@ -65,7 +65,7 @@ class BarrierNavigator():
             self.sensors_queue = np.roll(self.sensors_queue, -1, axis=0)
             self.sensors_queue[0] = sd
             # print(self.sensors_queue)
-            self.sensors = np.sum(self.sensors_queue, axis=0) >= 1
+            self.sensors = np.sum(self.sensors_queue, axis=0) >= 3
             # print(self.sensors)
             # rospy.loginfo(self.sensors_queue)
             # rospy.loginfo(self.sensors)
@@ -77,6 +77,7 @@ class BarrierNavigator():
         Y_finished = False
         X_finished = False
         self.started_sensors = self.sensors
+        rospy.loginfo("started from " + str(self.sensors))
         while not rospy.is_shutdown() and (not X_finished or not Y_finished):
             rospy.loginfo(self.sensors)
             # YYYYYYYYYYYYYYYYYYYYYYYYYYY axis
@@ -88,7 +89,7 @@ class BarrierNavigator():
                 if (np.any(self.started_sensors[:3]*mask) and not np.any(self.sensors[:3]*mask)) or \
                         (not np.any(self.started_sensors[:3]*mask) and np.any(self.sensors[:3]*mask)):
                     # finished by Y!
-                    dY = -self.dy_finish
+                    dY = -self.dy_finish if np.any(self.sensors[:3]*mask) else self.dy_finish
                     Y_finished = True
 
             if not X_finished:
@@ -97,17 +98,21 @@ class BarrierNavigator():
                 st_sensors_x = self.started_sensors[3:]*mask
                 sensors_x = self.sensors[3:]*mask
                 if not np.any(st_sensors_x) or (not np.any(st_sensors_x[:2]) and st_sensors_x[2]):
+
                     dX = -self.dx_quant
                     if np.any(sensors_x[:2]):
-                        dX = self.dx_finish
+                        dX = 3*self.dx_finish
+                        rospy.loginfo("X 1")
                         X_finished = True
                 if np.any(st_sensors_x[:2]) and not st_sensors_x[2]:
                     dX = self.dx_quant
                     if not np.any(sensors_x[:2]):
                         dX = -self.dx_finish
+                        rospy.loginfo("X 2")
                         X_finished = True
                 if np.any(st_sensors_x[:2]) and st_sensors_x[2]:
                     dX = 0
+                    rospy.loginfo("X 3")
                     X_finished = True
 
 
@@ -136,6 +141,7 @@ class BarrierNavigator():
 
 
             cmd, _, _ = self.get_command_dx_dy(dX,dY)
+            rospy.loginfo((dX, dY))
             self.command_pub.publish(cmd)
             self.wait_for_movement(self.CMD_NAME + str(self.i))
 
@@ -219,8 +225,11 @@ class BarrierNavigator():
     def start_command_callback(self):
         def cb(data):
             data_splitted = data.data.split()
-            action_type = data_splitted[1]
 
+            if len(data_splitted) > 1:
+                action_type = data_splitted[1]
+            else:
+                return
             if action_type == "MOVETOHEAP":
                 rospy.loginfo("Receive command " + data.data)
 

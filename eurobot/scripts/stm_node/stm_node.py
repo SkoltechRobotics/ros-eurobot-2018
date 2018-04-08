@@ -23,6 +23,7 @@ ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA   = 0xd0
 BAUD_RATE = {"main_robot": 250000,
              "secondary_robot": 250000}
+DEBUG_COMMANDS = [0x0c]
 
 class stm_node(STMprotocol):
     min_time_for_response  = 0.2
@@ -94,10 +95,12 @@ class stm_node(STMprotocol):
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
         self.send(action_name, action_type, args)
-        self.time_started[action_name] = rospy.get_time()
+        successfully, responses = self.time_started[action_name] = rospy.get_time()
         if action_type in IMMEDIATE_FINISHED:
             self.finish_command(action_name, "finished")
-
+        if action_type in DEBUG_COMMANDS:
+            rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' +"successfully? :" + \
+                          str(successfully) + ' ' +  str(responses))
     def send(self, action_name, action_type, args):
 
         # Lock() is used to prevent mixing bytes of diff commands to STM
