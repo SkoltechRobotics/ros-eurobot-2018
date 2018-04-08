@@ -23,7 +23,7 @@ class LocalPlanner:
     # distance for placing a carrot
     D = 0.1
     # length of acceleration/deceleration tracks
-    D_DECELERATION = 0.5
+    D_DECELERATION = 0.7
     # on which distance to consider that robot lost it's path
     FOLLOW_TOLERANCE = 0.15
     # goal tolerance
@@ -34,7 +34,7 @@ class LocalPlanner:
     # number of cube heaps
     N_HEAPS = 6
     # max rate of the planner
-    RATE = 30
+    RATE = 25
     # max rate of replanning
     PLAN_RATE = 5
     # maximum length of plan when replanning should stop
@@ -327,14 +327,25 @@ class LocalPlanner:
             success, plan = self.request_plan(self.pose, self.coords2pose(via_point))
 
             if success:
-                # add approaching path
-                length = np.linalg.norm(self.tower_approaching_vectors[n, :2])
-                n_extra_points = int(length / self.RESOLUTION)
-                extra_path = np.zeros((n_extra_points, 3))
-                extra_path[:, 0] = np.linspace(via_point[0], self.towers[n, 0], num=n_extra_points)
-                extra_path[:, 1] = np.linspace(via_point[1], self.towers[n, 1], num=n_extra_points)
-                extra_path[:, 2] = np.ones(n_extra_points) * self.towers[n, 2]
-                self.set_plan(np.concatenate((plan, extra_path), axis=0), cmd_id)
+                # add bezier path
+                P2 = self.towers[n]
+                P1 = self.towers[n] - self.tower_approaching_vectors[n]
+                len1 = min(int(np.linalg.norm(self.tower_approaching_vectors[n]) / self.RESOLUTION * 2), plan.shape[0])
+                P0 = plan[-len1]
+                P0[2] = P1[2]
+                plan = plan[:-len1]
+
+                if plan.shape[0] != 0:
+                    plan[:,2] = self.angle_interpolation(plan[0,2], P1[2], plan.shape[0])
+                self.set_plan(np.concatenate((plan, self.bezier_path(P0, P1, P2)), axis=0), cmd_id)
+
+                # length = np.linalg.norm(self.tower_approaching_vectors[n, :2])
+                # n_extra_points = int(length / self.RESOLUTION)
+                # extra_path = np.zeros((n_extra_points, 3))
+                # extra_path[:, 0] = np.linspace(via_point[0], self.towers[n, 0], num=n_extra_points)
+                # extra_path[:, 1] = np.linspace(via_point[1], self.towers[n, 1], num=n_extra_points)
+                # extra_path[:, 2] = np.ones(n_extra_points) * self.towers[n, 2]
+                # self.set_plan(np.concatenate((plan, extra_path), axis=0), cmd_id)
 
             if self.plan_length <= self.REPLANNING_STOP_PLAN_LENGTH_TOWERS:
                 self.move_timer.shutdown()
@@ -446,6 +457,39 @@ class LocalPlanner:
             return True, self.heap_coords[np.argmin(dist)]
         return False, []
 
+    def bezier_curve(self, P0, P1, P2, t):
+        return (1 - t) ** 2 * P0[:2] + 2 * t * (1 - t) * P1[:2] + t ** 2 * P2[:2]
+
+    def bezier_path(self, P0, P1, P2):
+        max_len = int(((np.linalg.norm(P1 - P0) + np.linalg.norm(P2 - P1))) / self.RESOLUTION)
+        path = np.zeros((max_len, 3))
+        t = 0
+        dt = 1.0 / (5 * max_len)
+
+        path[0, :2] = P0[:2]
+        i = 1
+
+        while t < 1:
+            t += dt
+            potential_point = self.bezier_curve(P0, P1, P2, t)
+            if np.linalg.norm(path[i - 1, :2] - potential_point) >= self.RESOLUTION:
+                path[i, :2] = potential_point
+                i += 1
+                if np.linalg.norm(P2[:2] - potential_point) < self.RESOLUTION:
+                    break
+        path[i, :2] = P2[:2]
+        n = i + 1
+        path[:n, 2] = np.linspace(P0[2], P2[2], n)
+        return path[:n]
+
+    def angle_interpolation(sel, a, b, n):
+        a = a % (2 * np.pi)
+        b = b % (2 * np.pi)
+        if a - b > np.pi:
+            b += 2 * np.pi
+        elif b - a > np.pi:
+            a += 2 * np.pi
+        return np.linspace(a, b, n) % (2 * np.pi)
 
 if __name__ == "__main__":
     planner = LocalPlanner()

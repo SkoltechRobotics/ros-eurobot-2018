@@ -91,6 +91,7 @@ class BehaviorTreeBuilder:
         self.wt_x_shift = np.array([15, 0, 0], dtype=np.float64)
         self.shooting_motor = str(0xc4)
         self.shoot_poses = {"interm" : 2, "left" : 0, "right" : 1, "release right" : 4, "release left" : 3}
+        self.first_poses = {"clean" : 0, "waste" : 1, "interm" : 2, "interm clean" : 3, "interm waste" : 4}
 
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
@@ -330,6 +331,7 @@ class BehaviorTreeBuilder:
             rospy.loginfo("AAAAAAAAAAAAA@##%$%$#$@#!@!#$#%$")
             rospy.loginfo(pc)
             if abs(pc[0] - pc[1]) == 2:
+                print("AAAAAAAAAAAAA@##%$%$#$@#!@!#$#%$")
                 if side - pc[0] == 0 or side - pc[1] == 0:
                     return 5
                 else:
@@ -550,8 +552,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, self.upper_sorter, 2)
 
     def add_wastewater_action(self, parent_name, to="release"):
-        self.add_command_action("release_wastewater" if to == "release" else "check_wastewater_closed",
-                                self.wastewater_door, 1 if to == "release" else 0)
+        self.add_command_action(parent_name, self.wastewater_door, 1 if to == "release" else 0)
 
     def add_move_to_tower_action(self, parent_name, tower_name, only_odom=False):
         main_seq_name = self.construct_string("move_to_tower", self.get_next_id())
@@ -583,37 +584,66 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
         self.add_command_action(main_seq_name, self.bottom_sorter, 2)
         self.add_command_action(main_seq_name, self.wastewater_door, 0)
-
-        for _ in range(4):
-            self.add_first_sort_action(parent_name, "clean")
-            self.add_sleep_time(parent_name, delay)
-            self.add_first_sort_action(parent_name, "waste")
+        delay = 0.5
+        for i in range(4):
+            # self.add_first_sort_action(main_seq_name, "clean")
+            self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+            self.add_sleep_time(main_seq_name, delay)
+            self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
+            self.add_sleep_time(main_seq_name, delay)
+            self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
+            self.add_sleep_time(main_seq_name, delay)
+            if i != 3:
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["waste"])
+                self.add_sleep_time(main_seq_name, delay)
 
     def add_wastewater_reservoir(self, parent_name):
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
+        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.5, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
+        self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.5, 0, 0)
+        self.add_command_action(main_seq_name, 162, -0.1, 0.1, 0, 0.07, 0.07, 0)
 
-        self.add_move_action(main_seq_name, *self.action_places["wastewater_reservoir"][0].tolist())
         self.add_wastewater_action(main_seq_name, "release")
+        self.add_sleep_time(main_seq_name,1)
+        self.add_first_sort_action(main_seq_name, "waste")
+        self.add_sleep_time(main_seq_name, 2)
+        self.add_wastewater_action(main_seq_name, "close")
+
+        self.add_command_action(main_seq_name, 162, 0.1, -0.1, 0, 0.5, 0.5, 0)
+
 
     def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        if not with_4_balls:
+            self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
-        # self.add_first_sort_action(main_seq_name,"clean",2)
         self.add_shooting_motor_action(main_seq_name,to,"on")
         if with_4_balls:
             for _ in range(4):
                 self.add_shoot_sort_action(main_seq_name, to, .8)
+                self.add_sleep_time(main_seq_name, .8)
         if not only_4_balls:
             self.add_shoot_sort_action(main_seq_name, "release " + to)
             for _ in range(8):
-                self.add_first_sort_action(main_seq_name, "clean", .5)
+                #self.add_first_sort_action(main_seq_name, "clean", .5)
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+                self.add_sleep_time(main_seq_name, .5)
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
+                self.add_sleep_time(main_seq_name, .5)
+
                 # self.add_shoot_sort_action(main_seq_name, to, .8)
+
+        self.add_shooting_motor_action(main_seq_name, to, "off")
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
