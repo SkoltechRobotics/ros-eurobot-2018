@@ -560,16 +560,18 @@ class BehaviorTreeBuilder:
     def add_wastewater_reservoir(self, parent_name):
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
-        self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.5, 0)
-        self.add_command_action(main_seq_name, 162, 0, 0, 3.14, 0, 0, 6)
-        for p in self.action_places["wastewater_reservoir"][1:]:
-            self.add_move_action(main_seq_name, *p.tolist())
+        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.5, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
+        self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.5, 0, 0)
+        self.add_command_action(main_seq_name, 162, -0.1, 0.1, 0, 0.07, 0.07, 0)
 
         self.add_wastewater_action(main_seq_name, "release")
         self.add_sleep_time(main_seq_name,1)
         self.add_first_sort_action(main_seq_name, "waste")
         self.add_sleep_time(main_seq_name, 2)
         self.add_wastewater_action(main_seq_name, "close")
+
+        self.add_command_action(main_seq_name, 162, 0.1, -0.1, 0, 0.5, 0.5, 0)
 
 
     def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):

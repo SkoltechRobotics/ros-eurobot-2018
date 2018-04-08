@@ -22,11 +22,12 @@ if __name__ == "__main__":
     btb = BehaviorTreeBuilder("secondary_robot", move_pub, cmd_pub, map_pub, "/secondary_robot/response", "/secondary_robot/response", move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("cleanwater_tower_before_waste",0)])
-    btb.add_strategy([("cleanwater_tower_before_waste", 0), ("wastewater_tower", 0), ("wastewater_reservoir", 0), ("cleanwater_tower_after_waste", 0)])
+    btb.add_strategy([("wastewater_tower", 0), ("wastewater_reservoir", 0), ("cleanwater_tower_after_waste", 0)])
     # btb.add_strategy([("disposal",0)])
     # btb.add_strategy([("wastewater_reservoir",0)])
-    #btb.add_strategy([("cleanwater_tower_after_waste",0)])
-    
+    #btb.add_strategy([("cleanwater_tower_before_waste",0)])
+    #btb.add_strategy([("cleanwater_tower_only_shoot4", 0)])
+
     #so = StrategyOperator(file='first_bank.txt')
     
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
