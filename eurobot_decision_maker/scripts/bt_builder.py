@@ -487,6 +487,17 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 0xb2, 0, 0)  # close
         self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
 
+    def test_main_robot_movements(self, parent_name):
+        main_seq_name = self.construct_string("main_test", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        heap_index = 0
+        heap_side = 0
+        self.add_action_node(main_seq_name, "move_heap", self.move_publisher_name, self.move_response, "move_heap",
+                             heap_index, heap_side)
+        #some_coords = [0,0,0]
+        #self.add_move_action(main_seq_name, *some_coords, move_type="move_odometry", shift_multiplier=0)
+
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
         self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 1 if turn == "on" else 0)
 
@@ -631,6 +642,8 @@ class BehaviorTreeBuilder:
                 self.add_wastewater_tower(self.root_seq_name)
             elif name == "wastewater_reservoir":
                 self.add_wastewater_reservoir(self.root_seq_name)
+            elif name == "test_main":
+                self.test_main_robot_movements(self.root_seq_name)
         return self.bt
 
 
@@ -649,7 +662,8 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
     # btb.add_strategy([("heaps",0)])
-    btb.add_strategy([("heaps", 0)])
+    # btb.add_strategy([("heaps", 0)])
+    btb.add_strategy([("test_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
