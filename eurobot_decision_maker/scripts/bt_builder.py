@@ -26,17 +26,33 @@ class BehaviorTreeBuilder:
         "waste_door": {'name': str(0xc1), 'open': 1, 'close': 0},
         'wire_start': {'name': str(0xa4)}
     }
-    action_places = {
-        "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]],
-                          dtype=np.float64),
-        "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
-        "disposal": np.array([[10, 61, 0]], dtype=np.float64),
-        "base": np.array([[15, 15, 0]], dtype=np.float64),
-        "wastewater_tower": np.array([[0, 0, 0]], dtype=np.float64),
-        "wastewater_reservoir": np.array([[100, 157, 4.71]], dtype=np.float64),
-        "cleanwater_tower": np.array([[82.6, 16.6, 4.71]], dtype=np.float64)
+    action_places_both_sides = { 'orange': {
+            "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]],
+                              dtype=np.float64),
+            "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
+            "disposal": np.array([[10, 61, 0]], dtype=np.float64),
+            "base": np.array([[15, 15, 0]], dtype=np.float64),
+            "wastewater_tower": np.array([[0, 0, 0]], dtype=np.float64),
+            "wastewater_reservoir": np.array([[100, 157, 4.71]], dtype=np.float64),
+            "cleanwater_tower": np.array([[82.6, 16.6, 4.71]], dtype=np.float64)
+        },
+        'green' : {
+            "heaps": np.array([[54, 85, 0], [119, 30, 0], [150, 110, 0], [150, 190, 0], [119, 270, 0], [54, 215, 0]],
+                              dtype=np.float64),
+            "funny": np.array([[10, 113, 0], [190, 10, 0]], dtype=np.float64),
+            "disposal": np.array([[10, 61, 0]], dtype=np.float64),
+            "base": np.array([[15, 15, 0]], dtype=np.float64),
+            "wastewater_tower": np.array([[0, 0, 0]], dtype=np.float64),
+            "wastewater_reservoir": np.array([[100, 157, 4.71]], dtype=np.float64),
+            "cleanwater_tower": np.array([[82.6, 16.6, 4.71]], dtype=np.float64)
+        }
     }
     shifts = [(-1, 0), (0, -1), (1, 0), (0, 1)]
+    def rotate(self, shift, a):
+        alpha = np.pi/2*(a-1)
+        m = np.array([[np.cos(alpha), np.sin(alpha)], [-np.sin(alpha), np.cos(alpha)]])
+        return m.dot(np.array(shift))
+
 
     def __init__(self, bt_name, move_pub, cmd_pub, map_pub, move_response, cmd_response, **kvargs):
         self.id = 0
@@ -53,6 +69,7 @@ class BehaviorTreeBuilder:
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
         self.side = "orange"
+        self.action_places = self.action_places_both_sides[self.side]
 
         # main robot
         self.pick_action_name = str(176)
@@ -74,6 +91,7 @@ class BehaviorTreeBuilder:
         self.wt_x_shift = np.array([15, 0, 0], dtype=np.float64)
         self.shooting_motor = str(0xc4)
         self.shoot_poses = {"interm" : 2, "left" : 0, "right" : 1, "release right" : 4, "release left" : 3}
+        self.first_poses = {"clean" : 0, "waste" : 1, "interm" : 2, "interm clean" : 3, "interm waste" : 4}
 
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
@@ -193,7 +211,7 @@ class BehaviorTreeBuilder:
         return manipulators, colors
 
     def add_pick_action(self, parent_name, m):
-        if self.man_load[m] < 4:
+        if (m == 1 and self.man_load[m] < 4) or (m in [0,2] and self.man_load[m] < 3):
             self.add_command_action(parent_name, self.com["pick"]["name"], m)
         else:
             self.add_command_action(parent_name, self.com["pick_last_cube"]["name"], m)
@@ -206,11 +224,23 @@ class BehaviorTreeBuilder:
         new = False
         if "new" in kvargs:
             new = kvargs["new"]
+        doors = True
+        if "doors" in kvargs:
+            doors = kvargs['doors']
+
+        pick_seq_name = self.construct_string("pick_with_doors", heap_num, self.get_next_id())
+        self.add_sequence_node(parent_name, pick_seq_name)
+        if doors:
+            parallel_door_open_name = self.construct_string("parallel_door_open", heap_num, *manipulators)
+            self.bt.add_node_by_string(self.construct_string(pick_seq_name, "parallel", parallel_door_open_name, sep=' '))
+            self.add_command_action(parallel_door_open_name, 178, 0, 2)
+            self.add_command_action(parallel_door_open_name, 178, 2, 2)
+
         if len(manipulators) == 1:
-            self.add_pick_action(parent_name, manipulators[0])
+            self.add_pick_action(pick_seq_name, manipulators[0])
         else:
             parallel_name = self.construct_string("parallel", heap_num, *manipulators)
-            self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", parallel_name, sep=' '))
+            self.bt.add_node_by_string(self.construct_string(pick_seq_name, "parallel", parallel_name, sep=' '))
             if delay > 0 and 0 in manipulators and 2 in manipulators:
                 for m in manipulators:
                     if m == 2:
@@ -223,6 +253,12 @@ class BehaviorTreeBuilder:
             else:
                 for m in manipulators:
                     self.add_pick_action(parallel_name, m)
+        if doors:
+            parallel_door_close_name = self.construct_string("parallel_door_close", heap_num, *manipulators)
+            self.bt.add_node_by_string(self.construct_string(pick_seq_name, "parallel", parallel_door_close_name, sep=' '))
+            self.add_command_action(parallel_door_close_name, 178, 0, 0)
+            self.add_command_action(parallel_door_close_name, 178, 2, 0)
+
         for c in colors:
             self.colors_left.remove(c[0] if not new else c)
         return
@@ -239,8 +275,9 @@ class BehaviorTreeBuilder:
     def add_move_to_heap(self, parent_name, heap_num, angle):
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
         self.add_sequence_node(parent_name, move_seq_name)
-        heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
-        self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1)  # 3
+        # heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
+        # self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1)  # 3
+        self.add_action_node(move_seq_name,"move_heap_by_nav","move_publisher","move_response","move_heap",heap_num,angle)
         # self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
         self.add_rf_move(move_seq_name, 0)
         # self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
@@ -263,9 +300,9 @@ class BehaviorTreeBuilder:
         PARAMS_PI2P = [1.019 * np.pi / 2, 0.096, 0.014]
         PARAMS_PI2M = [-1.02 * np.pi / 2, -0.096, 0.01]
         if da > 0:
-            a, x, y = PARAMS_PI2P
-        else:
             a, x, y = PARAMS_PI2M
+        else:
+            a, x, y = PARAMS_PI2P
         w = 3
         for i in range(np.abs(da)):
             self.add_command_action(move_seq_name, 162, x, y, a, x/a*w, y/a*w, w)
@@ -292,13 +329,18 @@ class BehaviorTreeBuilder:
                 return 1
         if len(self.colors_left) == 3:
             pc = list(all_colors - self.colors_left)
+            rospy.loginfo("AAAAAAAAAAAAA@##%$%$#$@#!@!#$#%$")
+            rospy.loginfo(pc)
             if abs(pc[0] - pc[1]) == 2:
+                print("AAAAAAAAAAAAA@##%$%$#$@#!@!#$#%$")
                 if side - pc[0] == 0 or side - pc[1] == 0:
                     return 5
                 else:
                     return 2
             else:
                 first = min(pc)
+                rospy.loginfo("first %d"%(first))
+                rospy.loginfo("side %d"%(side))
                 if 3 in pc and first == 0:
                     first = 3
                 if first == side:
@@ -314,11 +356,11 @@ class BehaviorTreeBuilder:
             if last == side:
                 return 5
             if side == (last + 1) % 4:
-                return 6
+                return 4
             if side == (last + 2) % 4:
                 return 10
             if side == (last + 3) % 4:
-                return 4
+                return 6
         if len(self.colors_left) == 1:
             color_left = list(self.colors_left)[0]
             if color_left == 4:
@@ -341,20 +383,27 @@ class BehaviorTreeBuilder:
         self.colors_left = {0, 1, 2, 3, 4}
         heap = self.action_places["heaps"][heap_num]
         a = 0
-        # self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/4)
-        # self.add_remove_heap_request(main_seq_name, heap_num)
-        self.add_rf_move(main_seq_name, self.get_heap_status(a))
+        self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/2)
+        self.add_remove_heap_request(main_seq_name, heap_num)
+        self.add_rf_move(main_seq_name, self.get_heap_status(a*np.pi/2))
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
-            if da != 0:# and i != 0:
+            if da != 0 and i != 0:
                 self.add_new_heap_rotation(main_seq_name, da)
-                a += da
+                self.add_sleep_time(main_seq_name, 0.5)
+                a -= da
             if dx ** 2 + dy ** 2 > 0:
-                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a) % 4]
+                rospy.loginfo("SHIFTS " + str(self.shifts.index((dx,dy))))
+                rospy.loginfo(a)
+                ndx, ndy = self.rotate((dx, dy), a).tolist()
+                #ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a) % 4]
+                rospy.loginfo((ndx, ndy))
                 dX = np.array([ndx, ndy, 0]) * 5.8
+
                 self.add_move_action(main_seq_name, *dX.tolist(), move_type="move_stm")
 
-            self.add_rf_move(main_seq_name, self.get_heap_status(a))
-            self.add_cubes_pick(main_seq_name,heap_num, mans, colors, new=True)
+            self.add_rf_move(main_seq_name, self.get_heap_status((a*np.pi/2)%(2*np.pi) , mans))
+            #self.add_sleep_time(main_seq_name, 5)
+            self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
 
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
         main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
@@ -484,6 +533,26 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 0xb2, 0, 0)  # close
         self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
 
+
+    def add_open_or_close_all_action(self, parent_name, do=0):
+        # 0 - open, 1 - close
+        main_seq_name = self.construct_string("open_all_action", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+        man_action = 177 if do == 0 else 176
+        door_ac_type = 1 if do == 0 else 0
+
+        parallel_name1 = self.construct_string("parallel", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_name1, sep=' '))
+
+        for i in range(3):
+            self.add_command_action(parallel_name1, man_action, i)
+
+        parallel_name2 = self.construct_string("parallel", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_name2, sep=' '))
+
+        for i in [0,2]:
+            self.add_command_action(parallel_name2, 178, i, door_ac_type)
+
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
         self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 1 if turn == "on" else 0)
 
@@ -504,8 +573,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, self.upper_sorter, 2)
 
     def add_wastewater_action(self, parent_name, to="release"):
-        self.add_command_action("release_wastewater" if to == "release" else "check_wastewater_closed",
-                                self.wastewater_door, 1 if to == "release" else 0)
+        self.add_command_action(parent_name, self.wastewater_door, 1 if to == "release" else 0)
 
     def add_move_to_tower_action(self, parent_name, tower_name, only_odom=False):
         main_seq_name = self.construct_string("move_to_tower", self.get_next_id())
@@ -537,37 +605,66 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
         self.add_command_action(main_seq_name, self.bottom_sorter, 2)
         self.add_command_action(main_seq_name, self.wastewater_door, 0)
-
-        for _ in range(4):
-            self.add_first_sort_action(parent_name, "clean")
-            self.add_sleep_time(parent_name, delay)
-            self.add_first_sort_action(parent_name, "waste")
+        delay = 0.5
+        for i in range(4):
+            # self.add_first_sort_action(main_seq_name, "clean")
+            self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+            self.add_sleep_time(main_seq_name, delay)
+            self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
+            self.add_sleep_time(main_seq_name, delay)
+            self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
+            self.add_sleep_time(main_seq_name, delay)
+            if i != 3:
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["waste"])
+                self.add_sleep_time(main_seq_name, delay)
 
     def add_wastewater_reservoir(self, parent_name):
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
+        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.5, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
+        self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.5, 0, 0)
+        self.add_command_action(main_seq_name, 162, -0.1, 0.1, 0, 0.07, 0.07, 0)
 
-        self.add_move_action(main_seq_name, *self.action_places["wastewater_reservoir"][0].tolist())
         self.add_wastewater_action(main_seq_name, "release")
+        self.add_sleep_time(main_seq_name,1)
+        self.add_first_sort_action(main_seq_name, "waste")
+        self.add_sleep_time(main_seq_name, 2)
+        self.add_wastewater_action(main_seq_name, "close")
+
+        self.add_command_action(main_seq_name, 162, 0.1, -0.1, 0, 0.5, 0.5, 0)
+
 
     def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        if not with_4_balls:
+            self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
-        # self.add_first_sort_action(main_seq_name,"clean",2)
         self.add_shooting_motor_action(main_seq_name,to,"on")
         if with_4_balls:
             for _ in range(4):
                 self.add_shoot_sort_action(main_seq_name, to, .8)
+                self.add_sleep_time(main_seq_name, .8)
         if not only_4_balls:
             self.add_shoot_sort_action(main_seq_name, "release " + to)
             for _ in range(8):
-                self.add_first_sort_action(main_seq_name, "clean", .5)
+                #self.add_first_sort_action(main_seq_name, "clean", .5)
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+                self.add_sleep_time(main_seq_name, .5)
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
+                self.add_sleep_time(main_seq_name, .5)
+
                 # self.add_shoot_sort_action(main_seq_name, to, .8)
+
+        self.add_shooting_motor_action(main_seq_name, to, "off")
 
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
@@ -583,6 +680,10 @@ class BehaviorTreeBuilder:
         for name, num in self.strategy_sequence:
             if name == 'base':
                 continue
+            elif name == "start_move":
+                self.add_command_action(self.root_seq_name, 162, +0.2, 0, 0, 0.2, 0, 0)
+            elif name == "help":
+                self.add_open_or_close_all_action(self.root_seq_name, num)
             elif name == 'disposal':
                 self.add_disposal_action(self.root_seq_name, True or (len(self.strategy_sequence) > 2))
             elif name in ['funny']:
@@ -618,7 +719,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
     # btb.add_strategy([("heaps",0)])
-    btb.add_strategy([("heaps", 0)])
+    btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -636,11 +737,15 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[1]['001'])
-    btb.add_cubes_sequence_new(heap_strats[1]['001'])
+    rospy.loginfo(heap_strats[2]['001'])
+    btb.add_cubes_sequence_new(heap_strats[2]['001'])
     btb.create_tree_from_strategy(wire_start=False)
+    #print(heap_strats[1]['001'])
     rospy.sleep(1)
     btb.bt.root_node.start()
+    btb.man_load[0] = 3
+    btb.man_load[1] = 4
+    btb.man_load[2] = 3
     r = rospy.Rate(10)
     while not rospy.is_shutdown() and btb.bt.root_node.check_status() != "finished":
         r.sleep()
