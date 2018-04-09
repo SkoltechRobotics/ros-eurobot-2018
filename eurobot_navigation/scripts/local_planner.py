@@ -5,7 +5,7 @@ from tf import TransformListener, LookupException, ConnectivityException, Extrap
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from scipy.optimize import fminbound
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 from nav_msgs.srv import GetPlan, GetMap
 from threading import Lock
 
@@ -45,6 +45,10 @@ class LocalPlanner:
     HEAP_APPROACHING_DISTANCE = 0.17
     # speed for odometry movements
     V_MAX_ODOMETRY_MOVEMENT = 0.57
+    # loginfo flag
+    LOGINFO = True
+    # whether to request a global plan only ones
+    ONESHOT = TRUE
 
     def __init__(self):
         # a Lock is used to prevent mixing bytes of diff commands to STM
@@ -52,6 +56,9 @@ class LocalPlanner:
 
         # ROS entities
         rospy.init_node("path_follower", anonymous=True)
+
+        # debug
+        self.debug_pub = rospy.Publisher("debug", Float32, queue_size=1)
 
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
         self.pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size=1)
@@ -110,45 +117,50 @@ class LocalPlanner:
             return
 
         # FOLLOW THE PLAN
-        rospy.loginfo('STARTED NEW ITERATION')
-        rospy.loginfo("self coords: " + str(self.coords))
+        if self.LOGINFO:
+            rospy.loginfo('STARTED NEW ITERATION')
+            rospy.loginfo("self coords: " + str(self.coords))
         # current linear and angular goal distance
         goal_distance = self.distance(self.plan_length - 1)
         goal_yaw_distance = abs(self.plan[-1][2] - self.coords[2])
         goal_yaw_distance = goal_yaw_distance if goal_yaw_distance < np.pi else np.abs(2 * np.pi - goal_yaw_distance)
-        rospy.loginfo('goal_distance: ' + str(goal_distance) + ' ; ' + str(goal_yaw_distance))
+        if self.LOGINFO:
+            rospy.loginfo('goal_distance: ' + str(goal_distance) + ' ; ' + str(goal_yaw_distance))
 
         # find index of the closest path point by solving an optimization problem
         closest = int(fminbound(self.distance, 0., self.plan_length - 0.1))
         path_deviation = self.distance(closest)
-        rospy.loginfo('closest: ' + str(closest))
-        rospy.loginfo("closest coords: " + str(self.plan[closest]))
-        rospy.loginfo('path_deviation: ' + str(path_deviation))
+        if self.LOGINFO:
+            rospy.loginfo('closest: ' + str(closest))
+            rospy.loginfo("closest coords: " + str(self.plan[closest]))
+            rospy.loginfo('path_deviation: ' + str(path_deviation))
 
         # stop and publish response if we have reached the goal with the given tolerance
         if goal_distance < self.XY_GOAL_TOLERANCE and goal_yaw_distance < self.YAW_GOAL_TOLERANCE:
             # stop the robot
-            # rospy.loginfo(self.goal_id + " finished, reached the goal")
+            rospy.loginfo(self.goal_id + " finished, reached the goal")
             self.terminate_following(True)
             self.mutex.release()
             return
         if path_deviation > self.FOLLOW_TOLERANCE:
             # stop the robot
-            # rospy.loginfo(self.goal_id + " terminated, path deviation")
+            rospy.loginfo(self.goal_id + " terminated, path deviation")
             self.terminate_following(False)
             self.mutex.release()
             return
 
         # place a carrot on the path for the robot to follow (it is D steps ahead of the robot)
         carrot = min(closest + self.D_steps, self.plan_length - 1)
-        rospy.loginfo('carrot = ' + str(carrot))
+        if self.LOGINFO:
+            rospy.loginfo('carrot = ' + str(carrot))
 
         # VELOCITY REGULATION.
         # distance to the carrot
         carrot_distance = self.plan[carrot] - self.coords
         carrot_distance[2] = (carrot_distance[2] + np.pi) % (2 * np.pi) - np.pi
-        rospy.loginfo('carrot_distance:\t' + str(carrot_distance))
-        rospy.loginfo("carrot coords:\t" + str(self.plan[carrot]))
+        if self.LOGINFO:
+            rospy.loginfo('carrot_distance:\t' + str(carrot_distance))
+            rospy.loginfo("carrot coords:\t" + str(self.plan[carrot]))
 
         t0 = rospy.get_time()
         dt = t0 - self.t_prev
@@ -156,26 +168,33 @@ class LocalPlanner:
 
         # set speed limit
         speed_limit_dec = max(self.V_MIN, goal_distance / self.D_DECELERATION * self.V_MAX)
-        rospy.loginfo('speed_limit = ' + str(speed_limit_dec) + ' (deceleration)')
+        if self.LOGINFO:
+            rospy.loginfo('speed_limit = ' + str(speed_limit_dec) + ' (deceleration)')
         speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
-        rospy.loginfo('speed_limit = ' + str(speed_limit_acs) + ' (acceleration)')
+        if self.LOGINFO:
+            rospy.loginfo('speed_limit = ' + str(speed_limit_acs) + ' (acceleration)')
 
         speed_limit = min(speed_limit_dec, speed_limit_acs)
-        rospy.loginfo('speed_limit = ' + str(speed_limit))
+        if self.LOGINFO:
+            rospy.loginfo('speed_limit = ' + str(speed_limit))
         # maximum possible speed in carrot distance proportion
         vel = self.V_MAX * carrot_distance / np.max(np.abs(carrot_distance[:2]))
         if abs(vel[2]) > self.W_MAX:
             vel *= self.W_MAX / abs(vel[2])
-        rospy.loginfo('vel max\t\t:' + str(vel))
+        if self.LOGINFO:
+            rospy.loginfo('vel max\t\t:' + str(vel))
 
         # apply speed limit
-        if np.any(vel[:2] > speed_limit):
-            vel *= speed_limit / np.max(vel[:2])
-        rospy.loginfo('vel after speed limit\t:' + str(vel))
+        if np.any(abs(vel[:2]) > speed_limit):
+            vel *= speed_limit / np.max(abs(vel[:2]) )
+        if self.LOGINFO:
+            rospy.loginfo('vel after speed limit\t:' + str(vel))
+        self.debug_pub.publish(np.linalg.norm(vel[:2]))
 
         # vel in robot frame
         vel_robot_frame = self.rotation_transform(vel, -self.coords[2])
-        rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
+        if self.LOGINFO:
+            rospy.loginfo('vel cmd\t:' + str(vel_robot_frame))
 
         # send speed cmd to the robot
         self.set_speed(vel_robot_frame)
@@ -187,8 +206,9 @@ class LocalPlanner:
         # cut the part of the path passed
         self.plan = self.plan[closest:]
         self.plan_length = self.plan.shape[0]
-        rospy.loginfo("new plan length " + str(self.plan_length))
-        rospy.loginfo('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Rate: ' + str(1. / dt))
+        if self.LOGINFO:
+            rospy.loginfo("new plan length " + str(self.plan_length))
+            rospy.loginfo('Rate: ' + str(1. / dt))
         self.mutex.release()
 
     def terminate_following(self, success):
@@ -207,7 +227,8 @@ class LocalPlanner:
     def set_plan(self, plan, goal_id):
         self.mutex.acquire()
 
-        rospy.loginfo("Setting a new global plan.")
+        if self.LOGINFO:
+            rospy.loginfo("Setting a new global plan.")
         self.plan = np.array(plan)
         self.plan_length = self.plan.shape[0]
         self.goal_id = goal_id
@@ -280,7 +301,7 @@ class LocalPlanner:
             self.move_timer.shutdown()
             self.move_timer = None
         self.move_timer = rospy.Timer(rospy.Duration(1. / self.PLAN_RATE),
-                                      self.get_move_timer_callback(goal_coords, goal, cmd_id))
+                                      self.get_move_timer_callback(goal_coords, goal, cmd_id), oneshot=self.ONESHOT)
 
     def get_move_timer_callback(self, goal_coords, goal, cmd_id):
         rospy.loginfo("Creating a timer for replanning.")
@@ -294,6 +315,8 @@ class LocalPlanner:
                     stop_length = self.REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH
                     success, plan = self.approaching_plan(heap, goal_coords)
                     if success:
+                        np.set_printoptions(threshold=np.nan)
+                        print plan
                         self.set_plan(plan, cmd_id)
                 else:
                     success, plan = self.request_plan(self.pose, goal)

@@ -91,7 +91,7 @@ class BehaviorTreeBuilder:
         self.wt_x_shift = np.array([15, 0, 0], dtype=np.float64)
         self.shooting_motor = str(0xc4)
         self.shoot_poses = {"interm" : 2, "left" : 0, "right" : 1, "release right" : 4, "release left" : 3}
-        self.first_poses = {"clean" : 0, "waste" : 1, "interm" : 2, "interm clean" : 3, "interm waste" : 4}
+        self.first_poses = {"clean" : 0, "waste" : 1, "interm" : 2, "interm clean" : 2, "interm waste" : 2}
 
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
