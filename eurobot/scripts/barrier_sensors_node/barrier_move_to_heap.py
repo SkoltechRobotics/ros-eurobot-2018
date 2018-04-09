@@ -107,7 +107,7 @@ class BarrierNavigator():
                 if np.any(st_sensors_x[:2]) and not st_sensors_x[2]:
                     dX = self.dx_quant
                     if not np.any(sensors_x[:2]):
-                        dX = -self.dx_finish
+                        dX = -2.5*self.dx_finish
                         rospy.loginfo("X 2")
                         X_finished = True
                 if np.any(st_sensors_x[:2]) and st_sensors_x[2]:

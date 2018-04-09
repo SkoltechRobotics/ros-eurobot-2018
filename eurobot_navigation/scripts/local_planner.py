@@ -11,19 +11,14 @@ from threading import Lock
 
 
 class LocalPlanner:
-    # maximum linear and rotational speed
-    V_MAX = 0.5
-    W_MAX = 2.7
+
+    # parameters not specific to the robot
     # minimum speed (when approaching the goal and decelerating)
     V_MIN = 0.01
-    # acceleration of the robot until V_MAX
-    ACCELERATION = 1
     # plan resolution
     RESOLUTION = 0.005
     # distance for placing a carrot
     D = 0.1
-    # length of acceleration/deceleration tracks
-    D_DECELERATION = 0.7
     # on which distance to consider that robot lost it's path
     FOLLOW_TOLERANCE = 0.15
     # goal tolerance
@@ -44,21 +39,38 @@ class LocalPlanner:
     # distance between a via-point and a cube heap when approaching the heap
     HEAP_APPROACHING_DISTANCE = 0.17
     # speed for odometry movements
-    V_MAX_ODOMETRY_MOVEMENT = 0.57
+    V_MAX_ODOMETRY_MOVEMENT = 0.4
     # loginfo flag
     LOGINFO = True
     # whether to request a global plan only ones
     ONESHOT = TRUE
 
     def __init__(self):
+        rospy.init_node("path_follower", anonymous=True)
+        self.robot_name = rospy.get_param("robot_name")
+        # robot-specific params
+        if self.robot_name == "main_robot":
+            # maximum linear and rotational speed
+            self.V_MAX = 0.35
+            self.W_MAX = 1.5
+            # acceleration of the robot until V_MAX
+            self.ACCELERATION = 1
+            # length of acceleration/deceleration tracks
+            self.D_DECELERATION = 0.35
+        else: # if robot_name == "secondary_robot"
+            # maximum linear and rotational speed
+            self.V_MAX = 0.5
+            self.W_MAX = 2.7
+            # acceleration of the robot until V_MAX
+            self.ACCELERATION = 1
+            # length of acceleration/deceleration tracks
+            self.D_DECELERATION = 0.7
+
         # a Lock is used to prevent mixing bytes of diff commands to STM
         self.mutex = Lock()
 
         # ROS entities
         rospy.init_node("path_follower", anonymous=True)
-
-        # debug
-        self.debug_pub = rospy.Publisher("debug", Float32, queue_size=1)
 
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
         self.pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size=1)
@@ -67,7 +79,6 @@ class LocalPlanner:
         self.listener = TransformListener()
 
         # get ROS params
-        self.robot_name = rospy.get_param("robot_name")
         self.map_service_name = '/' + self.robot_name + '/static_map'
         self.coords = np.array(
             [rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"),
@@ -189,7 +200,6 @@ class LocalPlanner:
             vel *= speed_limit / np.max(abs(vel[:2]) )
         if self.LOGINFO:
             rospy.loginfo('vel after speed limit\t:' + str(vel))
-        self.debug_pub.publish(np.linalg.norm(vel[:2]))
 
         # vel in robot frame
         vel_robot_frame = self.rotation_transform(vel, -self.coords[2])

@@ -275,8 +275,9 @@ class BehaviorTreeBuilder:
     def add_move_to_heap(self, parent_name, heap_num, angle):
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
         self.add_sequence_node(parent_name, move_seq_name)
-        heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
-        self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1)  # 3
+        # heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
+        # self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1)  # 3
+        self.add_action_node(move_seq_name,"move_heap_by_nav","move_publisher","move_response","move_heap",heap_num,angle)
         # self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
         self.add_rf_move(move_seq_name, 0)
         # self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
@@ -355,11 +356,11 @@ class BehaviorTreeBuilder:
             if last == side:
                 return 5
             if side == (last + 1) % 4:
-                return 6
+                return 4
             if side == (last + 2) % 4:
                 return 10
             if side == (last + 3) % 4:
-                return 4
+                return 6
         if len(self.colors_left) == 1:
             color_left = list(self.colors_left)[0]
             if color_left == 4:
@@ -382,11 +383,11 @@ class BehaviorTreeBuilder:
         self.colors_left = {0, 1, 2, 3, 4}
         heap = self.action_places["heaps"][heap_num]
         a = 0
-        #self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/4)
-        #self.add_remove_heap_request(main_seq_name, heap_num)
+        self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/2)
+        self.add_remove_heap_request(main_seq_name, heap_num)
         self.add_rf_move(main_seq_name, self.get_heap_status(a*np.pi/2))
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
-            if da != 0:# and i != 0:
+            if da != 0 and i != 0:
                 self.add_new_heap_rotation(main_seq_name, da)
                 self.add_sleep_time(main_seq_name, 0.5)
                 a -= da
@@ -402,7 +403,7 @@ class BehaviorTreeBuilder:
 
             self.add_rf_move(main_seq_name, self.get_heap_status((a*np.pi/2)%(2*np.pi) , mans))
             #self.add_sleep_time(main_seq_name, 5)
-            self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True)
+            self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
 
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
         main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
@@ -543,6 +544,25 @@ class BehaviorTreeBuilder:
         #some_coords = [0,0,0]
         #self.add_move_action(main_seq_name, *some_coords, move_type="move_odometry", shift_multiplier=0)
 
+    def add_open_or_close_all_action(self, parent_name, do=0):
+        # 0 - open, 1 - close
+        main_seq_name = self.construct_string("open_all_action", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+        man_action = 177 if do == 0 else 176
+        door_ac_type = 1 if do == 0 else 0
+
+        parallel_name1 = self.construct_string("parallel", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_name1, sep=' '))
+
+        for i in range(3):
+            self.add_command_action(parallel_name1, man_action, i)
+
+        parallel_name2 = self.construct_string("parallel", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_name2, sep=' '))
+
+        for i in [0,2]:
+            self.add_command_action(parallel_name2, 178, i, door_ac_type)
+
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
         self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 1 if turn == "on" else 0)
 
@@ -670,6 +690,10 @@ class BehaviorTreeBuilder:
         for name, num in self.strategy_sequence:
             if name == 'base':
                 continue
+            elif name == "start_move":
+                self.add_command_action(self.root_seq_name, 162, +0.2, 0, 0, 0.2, 0, 0)
+            elif name == "help":
+                self.add_open_or_close_all_action(self.root_seq_name, num)
             elif name == 'disposal':
                 self.add_disposal_action(self.root_seq_name, True or (len(self.strategy_sequence) > 2))
             elif name in ['funny']:
@@ -708,7 +732,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("disposal",0)])
     # btb.add_strategy([("heaps",0)])
     # btb.add_strategy([("heaps", 0)])
-    btb.add_strategy([("test_main", 0)])
+    btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -726,8 +750,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[1]['001'])
-    btb.add_cubes_sequence_new(heap_strats[1]['001'])
+    rospy.loginfo(heap_strats[2]['001'])
+    btb.add_cubes_sequence_new(heap_strats[2]['001'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
