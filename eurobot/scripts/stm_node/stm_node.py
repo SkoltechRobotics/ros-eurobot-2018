@@ -99,8 +99,9 @@ class stm_node(STMprotocol):
 
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
-        self.send(action_name, action_type, args)
-        successfully, responses = self.time_started[action_name] = rospy.get_time()
+        successfully, responses = self.send(action_name, action_type, args)
+
+        self.time_started[action_name] = rospy.get_time()
         if action_type in IMMEDIATE_FINISHED:
             self.finish_command(action_name, "finished")
         if action_type in DEBUG_COMMANDS:
