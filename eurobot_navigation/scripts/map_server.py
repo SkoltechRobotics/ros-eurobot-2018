@@ -6,6 +6,7 @@ from nav_msgs.srv import GetMap
 from std_msgs.msg import String
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import PointCloud
+from geometry_msgs.msg import Point
 import tf
 from people_msgs.msg import People, Person
 from copy import deepcopy
@@ -99,6 +100,7 @@ class MapServer():
         self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
         self.pub_response_main_robot = rospy.Publisher("/main_robot/response", String, queue_size=1)
         self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
+        self.pub_opponent_robots = rospy.Publisher("opponent_robots", PointCloud, queue_size=10)
         rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
         rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
         self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)
@@ -189,6 +191,7 @@ class MapServer():
         y4 = coords[1] / self.resolution + size[0] / 2 * np.sin(coords[2])
 
         # 'free' cells outside of each side of the robot
+        a = coords[2] % (2 * np.pi)
         if a < np.pi / 2 or a > 3 * np.pi / 2:
             robot[y - y1 > (x - x1) * np.tan(coords[2])] = False
             robot[y - y2 < (x - x2) * np.tan(coords[2])] = False
@@ -271,6 +274,13 @@ class MapServer():
             robots = robots[ind]
         self.robots = robots
         self.robots_upd_time = data.header.stamp 
+
+        # pub opponent robots
+        array = PointCloud()
+        array.header.frame_id = "map"
+        array.header.stamp = rospy.Time.now()
+        array.points = [Point(x=robot[0], y=robot[1]) for robot in robots]
+        self.pub_opponent_robots.publish(array)
 
 if __name__ == '__main__':
     map_server = MapServer()
