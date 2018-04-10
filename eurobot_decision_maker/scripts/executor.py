@@ -103,6 +103,7 @@ class ActionNode(TreeNode):
                 self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
             else:
                 self.status = 'finished'
+                TreeNode.finish(self)
 
     def finish(self):
         TreeNode.finish(self)
@@ -192,16 +193,16 @@ class SequenceNode(ControlMultiChildrenNode):
 
 
 class TryUntilSuccessNode(ControlSingleChildNode):
-    def __init__(self, name, max_try=0, max_reset_attempts=None):
+    def __init__(self, name, max_reset_attempts=None):
         ControlSingleChildNode.__init__(self, name)
-        self.max_reset_attempts = max_try if max_try else 100
+        self.max_reset_attempts = max_reset_attempts
         self.reset_attempts = 0
 
     def tick(self):
         ControlSingleChildNode.tick(self)
 
         child_status = self.child.tick()
-        if child_status in ["failed", "error"] and self.reset_attempts < self.max_reset_attempts:
+        if child_status in ["failed", "error"] and (self.max_reset_attempts is None or self.reset_attempts < self.max_reset_attempts):
             self.child.reset()
             self.reset_attempts += 1
 
@@ -219,9 +220,13 @@ class ActionFunctionNode(TreeNode):
         self.function = function
 
     def tick(self):
+        if self.status == "not started":
+            self.start()
         if self.function:
             status = self.function()
             self.status = ["finished", "active", "error"][status]
+            if self.status in ["finished", "error"]:
+                self.finish()
 
 
 class ParallelNode(ControlMultiChildrenNode):
