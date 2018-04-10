@@ -30,7 +30,8 @@ class TreeNode:
 
     def finish(self):
         self.time_finish = rospy.get_time()
-        rospy.loginfo(self.name + ' finished! time ' + str(self.time_finish - self.time_start))
+        rospy.loginfo(self.name + ' finished! time ' + str(self.time_finish - self.time_start) + ' with status ' +
+                      self.status)
 
     def check_status(self):
         return self.status
