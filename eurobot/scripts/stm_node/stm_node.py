@@ -47,6 +47,13 @@ class stm_node(STMprotocol):
             self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10)
         else:
             self.pub_rf = None
+
+        if self.robot_name == "main_robot":
+            rospy.Subscriber("/server/stm_node_command", String, self.stm_node_command_callback)
+            self.pub_wire = rospy.Publisher("/server/wire_status", String, queue_size=100)
+        else:
+            self.pub_wire = None
+
         self.ask_rf_every = 2
         self.rf_it = 0
         self.br = tf.TransformBroadcaster()
@@ -71,7 +78,6 @@ class stm_node(STMprotocol):
         self.laser_angle = rospy.get_param('lidar_a')
 
         rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
-        self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -210,13 +216,17 @@ class stm_node(STMprotocol):
 
         return m_timer
 
+    def stm_node_cammand_callback(self, data):
+        splitted_data = data.data.split()
+        if splitted_data[1] == "start_wire":
+            self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
+        elif splitted_data[1] == "stop_wire":
+            self.wire_timer.shutdown()
+
     def wire_timer_callback(self, event):
         successfully, args_response = self.send('GET_STARTUP_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
         if successfully:
-            # finished
-            if args_response[0] == 0:
-                self.finish_command(self.startup_id)
-                self.timer_startup.shutdown()
+            self.pub_wire.publish(str(args_response))
 
 
 if __name__ == '__main__':

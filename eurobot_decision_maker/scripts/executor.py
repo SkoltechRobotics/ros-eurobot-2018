@@ -55,7 +55,7 @@ class ActionNode(TreeNode):
         TODO: rewrite this docs in approtiate way
     """
 
-    def __init__(self, command_id, command_publisher, message, request_topic_name):
+    def __init__(self, command_id, command_publisher, message, request_topic_name, without_response=False):
 
         # super(ActionNode, self).__init__()
         # doesn't work ??!! -> replaced with
@@ -73,6 +73,7 @@ class ActionNode(TreeNode):
 
         self.message = message
         # this is python string
+        self.without_response = without_response
 
     def callback_for_terminating(self):
         def cb(msg):
@@ -95,8 +96,13 @@ class ActionNode(TreeNode):
                 self.message.goal_id.id = self.id
                 # CHECKME ??? 
             rospy.loginfo(self.message)
+
             self.command_pub.publish(self.message)
-            self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
+
+            if not self.without_response:
+                self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
+            else:
+                self.status = 'finished'
 
     def finish(self):
         TreeNode.finish(self)

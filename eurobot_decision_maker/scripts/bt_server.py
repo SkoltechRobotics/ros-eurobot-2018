@@ -1,17 +1,23 @@
 #! /usr/bin/env python
 
 from executor import *
-# from optimizer import *
-import copy
-import numpy as np
 from bt_builder import BehaviorTreeBuilder
-# from cube_picking_optimizer import *
-import sys
-from strategy_operator import StrategyOperator
 import pickle
 
-
 SMALL_ROBOT_STRATEGY = [("wastewater_tower", 0), ("wastewater_reservoir", 0), ("cleanwater_tower_after_waste", 0)]
+
+POSSIBLE_PLANS = [
+    ['orange', 'black', 'green'],
+    ['blue', 'black', 'yellow'],
+    ['blue', 'green', 'orange'],
+    ['yellow', 'green', 'black'],
+    ['black', 'yellow', 'orange'],
+    ['green', 'yellow', 'blue'],
+    ['blue', 'orange', 'black'],
+    ['green', 'orange', 'yellow'],
+    ['black', 'blue', 'green'],
+    ['orange', 'blue', 'yellow']
+]
 
 
 class BtMain(object):
@@ -19,8 +25,8 @@ class BtMain(object):
         self.move_pub = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
         self.cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
-        self.btb = BehaviorTreeBuilder("secondary_robot", self.move_pub, self.cmd_pub, self.map_pub,
-                                       "/secondary_robot/response", "/secondary_robot/response", move_type='standard')
+        self.btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
+                                       "/main_robot/response", "/main_robot/response", move_type='standard')
         self.btb.create_tree_from_strategy(wire_start=False)
         with open("very_important_bt_paths2.bin", "rb") as f:
             heap_strats = pickle.load(f)
@@ -28,6 +34,13 @@ class BtMain(object):
         self.bt = self.btb.bt
 
     def init_strategy(self, plan):
+        btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
+                                  "/main_robot/response", "/main_robot/response", move_type='standard')
+        btb.create_tree_from_strategy(wire_start=False)
+        with open("very_important_bt_paths2.bin", "rb") as f:
+            heap_strats = pickle.load(f)
+        btb.add_cubes_sequence_new(heap_strats[POSSIBLE_PLANS.index(plan)]['001'])
+        self.bt = btb.bt
         return 0
 
     def start_strategy(self):
@@ -68,13 +81,9 @@ def wire_callback(data):
     wire_value = int(data.data)
 
 
-def stop_wait_wire():
-    pass
-
-
 def plan_callback(data):
-    global plan
-    plan = data.data.split()
+    global current_plan
+    current_plan = data.data.split()
 
 
 def wait_wire(value):
@@ -86,17 +95,18 @@ def wait_wire(value):
 
 
 def init_main_robot_from_plan():
-    global plan
+    global current_plan
     global bt_main
-    bt_main.init_strategy(plan)
+    bt_main.init_strategy(current_plan)
 
 
 if __name__ == "__main__":
     wire_value = 0
-    plan = ["black", "blue", "orange"]
+    current_plan = ["black", "blue", "orange"]
     rospy.init_node("btb_server_node", anonymous=True)
     rospy.sleep(1.0)
-    cmd_pub = rospy.Publisher("/server/command", String, queue_size=100)
+    camera_cmd_pub = rospy.Publisher("/server/camera_command", String, queue_size=100)
+    stm_node_cmd_pub = rospy.Publisher("/server/stm_node_command", String, queue_size=10)
     res_sub = "/server/response"
     rospy.Subscriber("/server/plan", String, plan_callback)
     rospy.Subscriber("/server/wire_status", String, wire_callback)
@@ -108,8 +118,9 @@ if __name__ == "__main__":
     bt.add_node(general, "server")
 
     # The main sequence before start
+    bt.add_node(ActionNode("start_wait_wire", stm_node_cmd_pub, "stm_command_1 start_wire", res_sub, True), "general")
     bt.add_node(ActionFunctionNode("wait_wire_0", lambda: wait_wire(0)), "general")
-    bt.add_node(ActionNode("start plan recognition", cmd_pub, "camera_command start", res_sub), "general")
+    bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "camera_command start", res_sub, True), "general")
     bt.add_node(ActionFunctionNode("init_secondary", bt_secondary.init_strategy), "general")
     main_cycle_if = TryUntilSuccessNode("main_cycle_if")
     bt.add_node(main_cycle_if, "general")
@@ -121,10 +132,10 @@ if __name__ == "__main__":
     bt.add_node(ActionFunctionNode("wait_wire_1", lambda: 0 if not wait_wire(1) else 2), "main_cycle")
 
     # The main sequence after start
-    bt.add_node(ActionNode("stop_plan_recognition", cmd_pub, "camera_command stop", res_sub), "general")
+    bt.add_node(ActionNode("stop_plan_recognition", camera_cmd_pub, "camera_command stop", res_sub, True), "general")
     bt.add_node(ActionFunctionNode("start_main", bt_main.start_strategy), "general")
     bt.add_node(ActionFunctionNode("start_secondary", bt_secondary.start_strategy), "general")
-    bt.add_node(ActionFunctionNode("stop_wait_wire", stop_wait_wire), "general")
+    bt.add_node(ActionNode("start_wait_wire", stm_node_cmd_pub, "stm_command_1 stop_wire", res_sub, True), "general")
 
     # # The stop
     bt.add_node(TimeoutNode("100_sec_wait", 100), "general")
