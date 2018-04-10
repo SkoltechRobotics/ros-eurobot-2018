@@ -8,7 +8,8 @@ from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion
 from std_msgs.msg import String, Float32
 from nav_msgs.srv import GetPlan, GetMap
 from threading import Lock
-
+#from nav_msgs.msg import Odometry
+from sensor_msgs.msg import PointCloud
 
 class LocalPlanner:
 
@@ -35,7 +36,7 @@ class LocalPlanner:
     # maximum length of plan when replanning should stop
     REPLANNING_STOP_PLAN_LENGTH = 10
     REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH = 50  # empirically determined
-    REPLANNING_STOP_PLAN_LENGTH_TOWERS = 40
+    REPLANNING_STOP_PLAN_LENGTH_TOWERS = 100
     # distance between a via-point and a cube heap when approaching the heap
     HEAP_APPROACHING_DISTANCE = 0.17
     # speed for odometry movements
@@ -48,6 +49,7 @@ class LocalPlanner:
     def __init__(self):
         rospy.init_node("path_follower", anonymous=True)
         self.robot_name = rospy.get_param("robot_name")
+        self.another_robot_name = "main_robot" if self.robot_name == "secondary_robot" else "secondary_robot"
         # robot-specific params
         if self.robot_name == "main_robot":
             # maximum linear and rotational speed
@@ -73,6 +75,8 @@ class LocalPlanner:
         rospy.init_node("path_follower", anonymous=True)
 
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
+        #rospy.Subscriber("odom", Odometry, self.odom_callback, queue_size=1)
+        rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
         self.pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size=1)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_cmd = rospy.Publisher("stm_command", String, queue_size=1)
@@ -523,6 +527,13 @@ class LocalPlanner:
         elif b - a > np.pi:
             a += 2 * np.pi
         return np.linspace(a, b, n) % (2 * np.pi)
+
+    #def odom_callback(self, odom):
+        #self.vel = np.array([odom.twist.twist.linear.x, odom.twist.twist.linear.y, odom.twist.twist.angular.z])
+
+    def detected_robots_callback(self, data):
+        robots = np.array([[robot.x, robot.y] for robot in data.points])
+             
 
 if __name__ == "__main__":
     planner = LocalPlanner()
