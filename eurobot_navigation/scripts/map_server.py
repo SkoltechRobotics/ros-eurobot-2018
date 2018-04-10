@@ -14,16 +14,6 @@ from copy import deepcopy
 class MapServer():
     def __init__(self):
         rospy.init_node('map_server', anonymous=True)
-        self.pub_main_map = rospy.Publisher("/main_robot/map", OccupancyGrid, queue_size=1)
-        self.pub_secondary_map = rospy.Publisher("/secondary_robot/map", OccupancyGrid, queue_size=1)
-        self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
-        self.pub_response_main_robot = rospy.Publisher("/main_robot/response", String, queue_size=1)
-        self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
-        rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
-        rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
-        self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)
-        self.service_secondary = rospy.Service('/secondary_robot/static_map', GetMap, self.handle_get_map_secondary)
-        self.listener = tf.TransformListener()
 
         # grid cell size in meters
         self.resolution = 0.01
@@ -34,17 +24,20 @@ class MapServer():
         self.size_secondary = np.array([rospy.get_param('/secondary_robot/dim_x'), rospy.get_param('/secondary_robot/dim_y')]) / self.resolution / 1000
         self.radius_secondary = rospy.get_param('/secondary_robot/dim_r')
 
-        self.coords_main = np.array([0, 0, 0])
-        self.coords_secondary = np.array([0, 0, 0])
+        self.coords_main = np.array([rospy.get_param('/main_robot/start_x') / 1000.0, rospy.get_param('/main_robot/start_y') / 1000.0, rospy.get_param('/main_robot/start_a')])
+        self.coords_secondary = np.array([rospy.get_param('/secondary_robot/start_x') / 1000.0, rospy.get_param('/secondary_robot/start_y') / 1000.0, rospy.get_param('/secondary_robot/start_a')])
         self.ROBOT_R = 0.2
+        # detected robots close to field walls alogn axis X will not count (those are probably our beacons
+        self.WALL_DIST_X = 0.05
         self.SEPARATE_ROBOT_DISTANCE = 0.2
         self.robots = []
         self.robots_upd_time = rospy.Time.now()
 
         self.size = (204, 304)
+        self.size_in_meters = (3, 2)
         self.border = 2
         self.FREE = 0
-        self.OCCUPIED = 10
+        self.OCCUPIED = 100
 
         self.field = np.zeros(self.size, dtype=np.int8)
         # borders
@@ -101,12 +94,18 @@ class MapServer():
         self.grid_main = deepcopy(self.grid)
         self.grid_secondary = deepcopy(self.grid)
 
-        #rospy.sleep(1)
-        # initial pub
-        self.pub()
-
+        self.pub_main_map = rospy.Publisher("/main_robot/map", OccupancyGrid, queue_size=1)
+        self.pub_secondary_map = rospy.Publisher("/secondary_robot/map", OccupancyGrid, queue_size=1)
+        self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
+        self.pub_response_main_robot = rospy.Publisher("/main_robot/response", String, queue_size=1)
+        self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
+        rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
+        rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
+        self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)
+        self.service_secondary = rospy.Service('/secondary_robot/static_map', GetMap, self.handle_get_map_secondary)
+        self.listener = tf.TransformListener()
         rospy.Timer(rospy.Duration(1. / 100), self.timer_callback)
-
+        
 
     def add_heap(self, n):
         x,y = self.heaps[n]
@@ -156,11 +155,14 @@ class MapServer():
 
 
     def opponent_robots(self):
-        mask = np.full(self.size, True, dtype='bool')
+        mask = np.full(self.size, False, dtype='bool')
         if (rospy.Time.now() - self.robots_upd_time).secs < 1:
-            xy = np.array(np.meshgrid(np.arange(0, self.size[1]), np.arange(0,self.size[0]))).T
+            x,y = np.meshgrid(np.arange(0, self.size[1]), np.arange(0, self.size[0]))
+            x = (x - self.border) * self.resolution
+            y = (y - self.border) * self.resolution
+            xy = np.concatenate((x[:,:,np.newaxis], y[:,:,np.newaxis]), axis=2)
             for robot in self.robots:
-                mask[np.linalg.norm(xy - robot) <= self.ROBOT_R] = False
+                mask[np.linalg.norm((xy - robot), axis=2) <= self.ROBOT_R] = True
         return mask
 
 
@@ -168,7 +170,7 @@ class MapServer():
         # 'occupy' all cells
         robot = np.full(self.size, True, dtype='bool')
 
-        x, y = np.meshgrid(np.arange(0, self.size[1]), np.arange(0,self.size[0]))
+        x, y = np.meshgrid(np.arange(0, self.size[1]), np.arange(0, self.size[0]))
         
         # upper point
         x1 = coords[0] / self.resolution - size[1] / 2 * np.sin(coords[2])
@@ -187,7 +189,6 @@ class MapServer():
         y4 = coords[1] / self.resolution + size[0] / 2 * np.sin(coords[2])
 
         # 'free' cells outside of each side of the robot
-        a = coords[2] % (2 * np.pi)
         if a < np.pi / 2 or a > 3 * np.pi / 2:
             robot[y - y1 > (x - x1) * np.tan(coords[2])] = False
             robot[y - y2 < (x - x2) * np.tan(coords[2])] = False
@@ -261,13 +262,14 @@ class MapServer():
 
     def detected_robots_callback(self, data):
         robots = np.array([[robot.x, robot.y] for robot in data.points])
-        if robots.shape[0] == 0:
-            self.robots = robots
-            self.robots_upd_time = data.header.stamp
-            return
-        # exclude our robots
-        ind = np.where(np.logical_and(np.linalg.norm(robots - self.coords_main[:2], axis=1) > self.SEPARATE_ROBOT_DISTANCE, np.linalg.norm(robots - self.coords_secondary[:2], axis=1) > self.SEPARATE_ROBOT_DISTANCE))
-        self.robots = robots[ind]
+        if robots.shape[0] != 0:
+            # exclude our robots
+            ind = np.where(np.logical_and(np.linalg.norm(robots - self.coords_main[:2], axis=1) > self.SEPARATE_ROBOT_DISTANCE, np.linalg.norm(robots - self.coords_secondary[:2], axis=1) > self.SEPARATE_ROBOT_DISTANCE))
+            robots = robots[ind]
+            # exclude objects outside the field (beacons, ets.)
+            ind = np.where(np.logical_and(np.logical_and(robots[:,0] > self.WALL_DIST_X, robots[:,0] < self.size_in_meters[0] - self.WALL_DIST_X), np.logical_and(robots[:,1] > 0, robots[:,1] < self.size_in_meters[1])))
+            robots = robots[ind]
+        self.robots = robots
         self.robots_upd_time = data.header.stamp 
 
 if __name__ == '__main__':
