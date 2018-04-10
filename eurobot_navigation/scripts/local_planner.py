@@ -31,7 +31,7 @@ class LocalPlanner:
     # max rate of the planner
     RATE = 25
     # max rate of replanning
-    PLAN_RATE = 5
+    PLAN_RATE = 15
     # maximum length of plan when replanning should stop
     REPLANNING_STOP_PLAN_LENGTH = 10
     REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH = 50  # empirically determined
@@ -43,7 +43,7 @@ class LocalPlanner:
     # loginfo flag
     LOGINFO = True
     # whether to request a global plan only ones
-    ONESHOT = TRUE
+    ONESHOT = False
 
     def __init__(self):
         rospy.init_node("path_follower", anonymous=True)

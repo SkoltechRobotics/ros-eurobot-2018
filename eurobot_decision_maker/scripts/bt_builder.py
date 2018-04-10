@@ -277,7 +277,7 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, move_seq_name)
         # heap_coords = self.action_places["heaps"][heap_num][:2].tolist() + [angle]
         # self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1)  # 3
-        self.add_action_node(move_seq_name,"move_heap_by_nav","move_publisher","move_response","move_heap",heap_num,angle)
+        self.add_action_node(move_seq_name,"move_heap_by_nav","move_publisher",self.move_response,"move_heap",heap_num,angle)
         # self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
         self.add_rf_move(move_seq_name, 0)
         # self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
@@ -756,9 +756,9 @@ if __name__ == "__main__":
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
     btb.bt.root_node.start()
-    btb.man_load[0] = 3
-    btb.man_load[1] = 4
-    btb.man_load[2] = 3
+    # btb.man_load[0] = 3
+    # btb.man_load[1] = 4
+    # btb.man_load[2] = 3
     r = rospy.Rate(10)
     while not rospy.is_shutdown() and btb.bt.root_node.check_status() != "finished":
         r.sleep()

@@ -15,6 +15,7 @@ class MapServer():
         self.pub_main_map = rospy.Publisher("/main_robot/map", OccupancyGrid, queue_size=1)
         self.pub_secondary_map = rospy.Publisher("/secondary_robot/map", OccupancyGrid, queue_size=1)
         self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
+        self.pub_response_main_robot = rospy.Publisher("/main_robot/response", String, queue_size=1)
         self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
         rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
         self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)
@@ -125,10 +126,14 @@ class MapServer():
             n = int(data_splitted[2])
             if cmd == "rm":
                 self.remove_heap(n)
+                rospy.Timer(rospy.Duration(0.05), lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"),
+                        oneshot=True)
                 self.grid.data = self.field.flatten()
                 self.pub()
             elif cmd == "add":
                 self.add_heap(n)
+                rospy.Timer(rospy.Duration(0.05), lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"),
+                            oneshot=True)
                 self.grid.data = self.field.flatten()
                 self.pub()
         print cmd_id + " finished"
