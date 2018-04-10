@@ -30,32 +30,27 @@ def scan_callback(scan):
         array.header.frame_id = "map"
         pub_landmarks.publish(array)
 
-    # if landmarks.shape[0] == 0:
-    #     return
-
-    # clustering
-    db = DBSCAN(eps=eps, min_samples=min_samples).fit(landmarks)
-    labels = db.labels_
-    unique_labels = set(labels)
-
     centers = []
-    for l in unique_labels:
-        if l == -1:
-            # noise
-            continue
+    if landmarks.shape[0] > 0:
+        # clustering
+        db = DBSCAN(eps=eps, min_samples=min_samples).fit(landmarks)
+        labels = db.labels_
+        unique_labels = set(labels)
 
-        class_member_mask = (labels == l)
+        for l in unique_labels:
+            if l == -1:
+                # noise
+                continue
 
-        center = get_center(landmarks[class_member_mask])
-        centers.append(Point(x=center.x[0], y=center.x[1], z=0))
-    
-        #print 'median:', np.median(landmarks, axis=0)
-        #print 'center:', center.x
-        #print '-----------------------------------------'
+            class_member_mask = (labels == l)
 
+            center = get_center(landmarks[class_member_mask])
+            centers.append(Point(x=center.x[0], y=center.x[1], z=0))
+        
     # create and pub PointArray of detected centers
     array = PointCloud(points=centers)
     array.header.frame_id = "map"
+    array.header.stamp = rospy.Time.now()
     pub_center.publish(array)
 
 
@@ -88,13 +83,14 @@ def get_center(landmarks):
 def fun(point, landmarks):
     return np.sum((landmarks - point) ** 2, axis=1) ** .5 - R
 
+
 if __name__ == "__main__":
     rospy.init_node("spy", anonymous=True)
     R = rospy.get_param("R")
     eps = rospy.get_param("clustering/eps")
     min_samples = rospy.get_param("clustering/min_samples")
     rospy.Subscriber("scan", LaserScan, scan_callback, queue_size = 1)
-    pub_center = rospy.Publisher("center", PointCloud, queue_size=1)
+    pub_center = rospy.Publisher("detected_robots", PointCloud, queue_size=1)
     if visualization == True:
         pub_landmarks = rospy.Publisher("landmarks", PointCloud, queue_size=1)
 
