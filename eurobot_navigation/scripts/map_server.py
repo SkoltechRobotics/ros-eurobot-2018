@@ -39,6 +39,7 @@ class MapServer():
         self.ROBOT_R = 0.2
         self.SEPARATE_ROBOT_DISTANCE = 0.2
         self.robots = []
+        self.robots_upd_time = rospy.Time.now()
 
         self.size = (204, 304)
         self.border = 2
@@ -156,10 +157,10 @@ class MapServer():
 
     def opponent_robots(self):
         mask = np.full(self.size, True, dtype='bool')
-        if True: # (rospy.Time.now() - self.robots_upd_time).secs < 1:
+        if (rospy.Time.now() - self.robots_upd_time).secs < 1:
             xy = np.array(np.meshgrid(np.arange(0, self.size[1]), np.arange(0,self.size[0]))).T
             for robot in self.robots:
-                mask[np.linalg.norm(xy - robot) < self.ROBOT_R] = False
+                mask[np.linalg.norm(xy - robot) <= self.ROBOT_R] = False
         return mask
 
 
@@ -251,7 +252,7 @@ class MapServer():
 
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             #rospy.loginfo("map_server failed to get TF of one or two robot")
-            psdd
+            pass
         
         # publish both maps
         self.grid_main.data = field_main.flatten()

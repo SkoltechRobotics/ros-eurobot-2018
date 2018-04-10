@@ -85,11 +85,12 @@ if __name__ == '__main__':
     is_start = False
     while not is_start and not rospy.is_shutdown():
         rate.sleep()
-    cap = cv2.VideoCapture(2)
+    rospy.loginfo("Start capture video")
+    cap = cv2.VideoCapture(1)
     cap.set(cv2.CAP_PROP_FPS, 10)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
-    rospy.loginfo("Start capture video")
+    rospy.loginfo("Capturing started")
     is_finish = False
     while not rospy.is_shutdown() and not is_finish:
         ret, frame = cap.read()
