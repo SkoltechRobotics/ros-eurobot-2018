@@ -131,7 +131,7 @@ def calculate_points():
 
     heap_points = 0
     for bt1 in bts:
-        for child in bt1.root_node.childrend_list[0].children_list:
+        for child in bt1.root_node.child.children_list:
             if child.status == "finished":
                 if child.name.find("disposal") != -1:
                     is_disposal = True

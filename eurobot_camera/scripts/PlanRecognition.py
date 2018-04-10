@@ -164,5 +164,5 @@ def find_colors_geom(img, k1=1, k2=1, kr=0.95, k3=1.25, **kwargs):
         m = np.count_nonzero(labels == i)
         colors[j] = np.sum(np.sum(img.astype(np.float32) * (labels == i)[:, :, np.newaxis], axis=0), axis=0) / m
         best_plan[j] = determ_color(colors[j], **kwargs)
-    print(xr[list(ind)].round(2), yr[list(ind)].round(2), xc[list(ind)].round(2), yc[list(ind)].round(2), cost_function[ind])
+    # print(xr[list(ind)].round(2), yr[list(ind)].round(2), xc[list(ind)].round(2), yc[list(ind)].round(2), cost_function[ind])
     return best_plan, colors, [xc[list(ind)], yc[list(ind)]]
