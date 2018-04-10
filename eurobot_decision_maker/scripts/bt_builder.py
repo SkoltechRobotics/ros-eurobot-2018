@@ -91,7 +91,7 @@ class BehaviorTreeBuilder:
         self.wt_x_shift = np.array([15, 0, 0], dtype=np.float64)
         self.shooting_motor = str(0xc4)
         self.shoot_poses = {"interm" : 2, "left" : 0, "right" : 1, "release right" : 4, "release left" : 3}
-        self.first_poses = {"clean" : 0, "waste" : 1, "interm" : 2, "interm clean" : 2, "interm waste" : 2}
+        self.first_poses = {"clean" : 0, "waste" : 1, "interm" : 2, "interm clean" : 3, "interm waste" : 4}
 
         if 'move_type' in kvargs:
             if kvargs['move_type'] == 'standard':
@@ -390,12 +390,12 @@ class BehaviorTreeBuilder:
             if da != 0 and i != 0:
                 self.add_new_heap_rotation(main_seq_name, da)
                 self.add_sleep_time(main_seq_name, 0.5)
-                a -= da
+                a += da
             if dx ** 2 + dy ** 2 > 0:
-                rospy.loginfo("SHIFTS " + str(self.shifts.index((dx,dy))))
+                rospy.loginfo("SHIFTS " + str(self.shifts.index((dx, dy))))
                 rospy.loginfo(a)
-                ndx, ndy = self.rotate((dx, dy), a).tolist()
-                #ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a) % 4]
+                # ndx, ndy = self.rotate((dx, dy), a).tolist()
+                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) + a -1) % 4]
                 rospy.loginfo((ndx, ndy))
                 dX = np.array([ndx, ndy, 0]) * 5.8
 
