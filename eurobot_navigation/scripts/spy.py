@@ -11,10 +11,12 @@ MIN_INTENSITY = 3500
 LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
 LIDAR_X = -0.094
 LIDAR_Y = 0.050
+LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 FIELD_X = 3
 FIELD_Y = 2
+BEYOND_FIELD = 0.1
 R = 0.08
-visualization = True
+visualization = False
 
 
 def scan_callback(scan):
@@ -28,31 +30,28 @@ def scan_callback(scan):
         array.header.frame_id = "map"
         pub_landmarks.publish(array)
 
-    # clustering
-    db = DBSCAN(eps=eps, min_samples=min_samples).fit(landmarks)
-    labels = db.labels_
-    unique_labels = set(labels)
-
     centers = []
-    for l in unique_labels:
-        if l == -1:
-            # noise
-            continue
+    if landmarks.shape[0] > 0:
+        # clustering
+        db = DBSCAN(eps=eps, min_samples=min_samples).fit(landmarks)
+        labels = db.labels_
+        unique_labels = set(labels)
 
-        class_member_mask = (labels == l)
+        for l in unique_labels:
+            if l == -1:
+                # noise
+                continue
 
-        center = get_center(landmarks[class_member_mask])
-        centers.append(Point(x=center.x[0], y=center.x[1], z=0))
-    
-        #print 'median:', np.median(landmarks, axis=0)
-        #print 'center:', center.x
-        #print '-----------------------------------------'
+            class_member_mask = (labels == l)
 
-    if visualization == True:
-        # create and pub PointArray of detected centers
-        array = PointCloud(points=centers)
-        array.header.frame_id = "map"
-        pub_center.publish(array)
+            center = get_center(landmarks[class_member_mask])
+            centers.append(Point(x=center.x[0], y=center.x[1], z=0))
+        
+    # create and pub PointArray of detected centers
+    array = PointCloud(points=centers)
+    array.header.frame_id = "map"
+    array.header.stamp = rospy.Time.now()
+    pub_center.publish(array)
 
 
 def filter(scan):
@@ -61,11 +60,12 @@ def filter(scan):
     a = LIDAR_DELTA_ANGLE * ind
     d = scan[ind, 0]
    
-    x = d * np.cos(a - np.pi / 4 - np.pi / 2) - LIDAR_X
-    y = d * np.sin(a - np.pi / 4 - np.pi / 2) - LIDAR_Y
+    x = d * np.cos(a + LIDAR_START_ANGLE) + LIDAR_X
+    y = d * np.sin(a + LIDAR_START_ANGLE) + LIDAR_Y
 
     # inside field only
-    ind = np.where(np.logical_and(np.logical_and(x < FIELD_X, x > 0), np.logical_and(y < FIELD_Y, y > 0)))
+    ind = np.where(np.logical_and(np.logical_and(x < FIELD_X + BEYOND_FIELD, x > -BEYOND_FIELD), np.logical_and(y < FIELD_Y + BEYOND_FIELD, y > - BEYOND_FIELD)))
+
     x = x[ind]
     y = y[ind]
     return np.array([x, y]).T
@@ -83,14 +83,15 @@ def get_center(landmarks):
 def fun(point, landmarks):
     return np.sum((landmarks - point) ** 2, axis=1) ** .5 - R
 
+
 if __name__ == "__main__":
     rospy.init_node("spy", anonymous=True)
     R = rospy.get_param("R")
     eps = rospy.get_param("clustering/eps")
     min_samples = rospy.get_param("clustering/min_samples")
     rospy.Subscriber("scan", LaserScan, scan_callback, queue_size = 1)
+    pub_center = rospy.Publisher("detected_robots", PointCloud, queue_size=1)
     if visualization == True:
         pub_landmarks = rospy.Publisher("landmarks", PointCloud, queue_size=1)
-        pub_center = rospy.Publisher("center", PointCloud, queue_size=1)
 
     rospy.spin()

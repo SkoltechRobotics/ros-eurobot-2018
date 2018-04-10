@@ -1,5 +1,5 @@
-R: 0.045
+R: 0.047
 
 clustering:
-    eps: 0.06
-    min_samples: 5
+    eps: 0.04
+    min_samples: 4
