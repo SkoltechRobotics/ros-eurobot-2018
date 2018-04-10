@@ -250,7 +250,8 @@ class MapServer():
             #self.pub_social_secondary.publish(people)
 
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            rospy.loginfo("map_server failed to get TF of one or two robot")
+            #rospy.loginfo("map_server failed to get TF of one or two robot")
+            psdd
         
         # publish both maps
         self.grid_main.data = field_main.flatten()
