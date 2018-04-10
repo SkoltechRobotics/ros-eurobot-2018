@@ -45,6 +45,8 @@ class LocalPlanner:
     LOGINFO = True
     # whether to request a global plan only ones
     ONESHOT = False
+    # coefficient for speed limit to avoid collisions
+    COLLISION_AVOIDANCE_COEFFICIENT = .33
 
     def __init__(self):
         rospy.init_node("path_follower", anonymous=True)
@@ -70,13 +72,15 @@ class LocalPlanner:
 
         # a Lock is used to prevent mixing bytes of diff commands to STM
         self.mutex = Lock()
+        
+        self.opponent_robots = np.array([])
 
         # ROS entities
         rospy.init_node("path_follower", anonymous=True)
 
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
         #rospy.Subscriber("odom", Odometry, self.odom_callback, queue_size=1)
-        rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
+        rospy.Subscriber("/map_server/opponent_robots", PointCloud, self.detected_robots_callback, queue_size=1)
         self.pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size=1)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_cmd = rospy.Publisher("stm_command", String, queue_size=1)
@@ -84,9 +88,8 @@ class LocalPlanner:
 
         # get ROS params
         self.map_service_name = '/' + self.robot_name + '/static_map'
-        self.coords = np.array(
-            [rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"),
-             rospy.get_param("/" + self.robot_name + "/start_a")])
+        self.coords = np.array([rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"), rospy.get_param("/" + self.robot_name + "/start_a")])
+        self.another_robot_coords = np.array([rospy.get_param("/" + self.another_robot_name + "/start_x"), rospy.get_param("/" + self.another_robot_name + "/start_y"), rospy.get_param("/" + self.another_robot_name + "/start_a")])
         self.pose = self.coords2pose(self.coords)
         self.vel = np.zeros(3)
         # TODO: extrapolate pose (because its update rate is low)
@@ -117,11 +120,13 @@ class LocalPlanner:
 
     def next(self, event):
         self.mutex.acquire()
-
+        
         try:
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
             self.pose = Pose(Point(*trans), Quaternion(*rot))
             self.coords = self.pose2coords(self.pose)
+            (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
+            self.another_robot_coords = self.pose2coords(Pose((Point(*trans), Quaternion(*rot))))
         except (LookupException, ConnectivityException, ExtrapolationException):
             # rospy.loginfo("LocalPlanner failed to lookup tf.")
             self.mutex.release()
@@ -188,8 +193,9 @@ class LocalPlanner:
         speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
         if self.LOGINFO:
             rospy.loginfo('speed_limit = ' + str(speed_limit_acs) + ' (acceleration)')
+        speed_limit_collision_avoidance = self.distance_to_closest_robot * self.collision_avoidance_coefficient
 
-        speed_limit = min(speed_limit_dec, speed_limit_acs)
+        speed_limit = min(speed_limit_dec, speed_limit_acs, speed_limit_collision_avoidance)
         if self.LOGINFO:
             rospy.loginfo('speed_limit = ' + str(speed_limit))
         # maximum possible speed in carrot distance proportion
@@ -532,8 +538,17 @@ class LocalPlanner:
         #self.vel = np.array([odom.twist.twist.linear.x, odom.twist.twist.linear.y, odom.twist.twist.angular.z])
 
     def detected_robots_callback(self, data):
-        robots = np.array([[robot.x, robot.y] for robot in data.points])
-             
+        if len(data.points) == 0:
+            self.opponent_robots = np.array([])
+        else:
+            self.opponent_robots = np.array([[robot.x, robot.y] for robot in data.points])
+        self.robots_upd_time = data.header.stamp
+
+    def distance_to_closest_robot(self):
+        ans = np.linalg.norm(self.another_robot_coords) / 1000.0
+        if self.opponent_robots.shape[0] > 0:
+            ans = min(ans, np.min(np.linalg.norm(self.opponent_robots)))
+        return ans
 
 if __name__ == "__main__":
     planner = LocalPlanner()
