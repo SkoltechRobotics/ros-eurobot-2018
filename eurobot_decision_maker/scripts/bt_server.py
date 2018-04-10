@@ -192,7 +192,7 @@ def init_main_robot_from_plan():
 
 
 if __name__ == "__main__":
-    wire_value = 1
+    wire_value = 0
     points = 0
     current_plan = ['orange', 'black', 'green']
     rospy.init_node("btb_server_node", anonymous=True)
@@ -211,7 +211,6 @@ if __name__ == "__main__":
 
     # The main sequence before start
     bt.add_node(ActionNode("start_wait_wire", stm_node_cmd_pub, "start_wire", res_sub, True), "general")
-    bt.add_node(ActionFunctionNode("wait_wire_0", lambda: wait_wire(0)), "general")
     bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", res_sub, True), "general")
     bt.add_node(ActionFunctionNode("init_secondary", brain_secondary.init_strategy), "general")
     main_cycle_if = TryUntilSuccessNode("main_cycle_if")
