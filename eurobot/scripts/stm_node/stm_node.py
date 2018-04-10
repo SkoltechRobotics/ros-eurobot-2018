@@ -213,6 +213,7 @@ class stm_node(STMprotocol):
         return m_timer
 
     def stm_node_command_callback(self, data):
+        rospy.loginfo("stm node command " + data.data)
         splitted_data = data.data.split()
         if splitted_data[0] == "start_wire":
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
