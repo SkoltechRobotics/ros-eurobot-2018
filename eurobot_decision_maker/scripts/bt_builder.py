@@ -676,6 +676,16 @@ class BehaviorTreeBuilder:
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
 
+    def time_checker(self, parent_name, time):
+        time_node_name = self.construct_string("time_checker", self.get_next_id())
+
+        def time_checker_fun():
+            if self.bt.nodes[parent_name].time_worked() > time:
+                return 2
+            else:
+                return 0
+        self.bt.add_node(ActionFunctionNode(time_node_name, time_checker_fun), parent_name)
+
     def add_strategy(self, strategy):
         self.strategy_sequence = strategy
 
@@ -713,6 +723,8 @@ class BehaviorTreeBuilder:
                 self.add_wastewater_reservoir(self.root_seq_name)
             elif name == "test_main":
                 self.test_main_robot_movements(self.root_seq_name)
+            elif name == "time":
+                self.time_checker(self.root_seq_name, num)
         return self.bt
 
 

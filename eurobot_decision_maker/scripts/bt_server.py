@@ -4,10 +4,12 @@ from executor import *
 from bt_builder import BehaviorTreeBuilder
 import pickle
 import os
+
 print(os.getcwd())
 
 SMALL_ROBOT_STRATEGY = [("wastewater_tower", 0), ("wastewater_reservoir", 0), ("cleanwater_tower_after_waste", 0)]
-MAIN_ROBOT_STRATEGY = [("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)]
+MAIN_ROBOT_STRATEGY = [("heaps", 0), ("time", 30), ("heaps", 1), ("time", 50), ("heaps", 2), ("disposal", 0)]
+EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
 
 POSSIBLE_PLANS = [
     ['orange', 'black', 'green'],
@@ -24,7 +26,7 @@ POSSIBLE_PLANS = [
 N_STR = 10
 
 
-class BtMain(object):
+class MainRobotBrain(object):
     def __init__(self):
         rospy.loginfo("INIT MAIN ROBOT STRATEGY ---------------------------")
         self.move_pub = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
@@ -41,22 +43,51 @@ class BtMain(object):
             btb.add_cubes_sequence_new(heap_strats[i]['001'])
             btb.create_tree_from_strategy(wire_start=False)
             self.bts[i] = btb.bt
-        self.bt = self.bts[0]
+        self.current_bt = self.bts[0]
+        self.is_active = False
+
+        btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
+                                  "/main_robot/response", "/main_robot/response", move_type='standard')
+        btb.add_strategy(EMERGENCY_MAIN_ROBOT_STRATEGY)
+        btb.create_tree_from_strategy(wire_start=False)
+        self.emerge_bt = btb.bt
+
+        self.is_emerge = False
+
+        self.done_bts = []
 
     def init_strategy(self, plan):
-        self.bt = self.bts[POSSIBLE_PLANS.index(plan)]
+        self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
+        # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
+        #                           "/main_robot/response", "/main_robot/response", move_type='standard')
+        # btb.add_strategy(MAIN_ROBOT_STRATEGY)
+        # btb.create_tree_from_strategy(wire_start=False)
         return 0
 
     def start_strategy(self):
-        self.bt.root_node.start()
+        self.is_active = True
+        self.current_bt.root_node.start()
         return 0
+
+    def emergency_strategy(self):
+        if not self.is_active:
+            return 0
+        else:
+            if self.current_bt.root_node.status == "failed" and not self.is_emerge:
+                self.done_bts.append(self.current_bt)
+                self.current_bt = self.emerge_bt
+                self.current_bt.root_node.start()
+                self.is_emerge = True
+        return 1
 
     def stop_strategy(self):
-        self.bt.root_node.finish()
+        self.is_active = False
+        self.current_bt.root_node.finish()
+        self.done_bts.append(self.current_bt)
         return 0
 
 
-class BtSecondary(object):
+class SecondaryRobotBrain(object):
     def __init__(self):
         rospy.loginfo("INIT SECONDARY ROBOT STRATEGY ---------------------------")
         self.move_pub = rospy.Publisher("/secondary_robot/move_command", String, queue_size=100)
@@ -67,18 +98,73 @@ class BtSecondary(object):
                                        "/secondary_robot/response", "/secondary_robot/response", move_type='standard')
         self.btb.add_strategy(SMALL_ROBOT_STRATEGY)
         self.btb.create_tree_from_strategy(wire_start=False)
-        self.bt = self.btb.bt
+        self.current_bt = self.btb.bt
+        self.is_active = False
+        self.done_bts = []
 
     def init_strategy(self):
         return 0
 
     def start_strategy(self):
-        self.bt.root_node.start()
+        self.is_active = True
+        self.current_bt.root_node.start()
         return 0
 
     def stop_strategy(self):
-        self.bt.root_node.finish()
+        self.is_active = False
+        self.current_bt.root_node.finish()
+        self.done_bts.append(self.current_bt)
         return 0
+
+
+def calculate_points():
+    global points
+    bts = brain_main.done_bts + brain_secondary.done_bts
+
+    is_disposal = False
+    is_bee = False
+    is_button = False
+    is_wastewater_tower = False
+    is_cleanwater_tower = False
+    is_wastewater_reservoir = False
+    is_wastewater_clean_disposal = False
+
+    heap_points = 0
+    for bt1 in bts:
+        for child in bt1.root_node.childrend_list[0].children_list:
+            if child.status == "finished":
+                if child.name.find("disposal") != -1:
+                    is_disposal = True
+                elif child.name.find("bee") != -1:
+                    is_bee = True
+                elif child.name.find("button") != -1:
+                    is_button = True
+                elif child.name.find("heaps") != -1:
+                    ind = child.name.find("heaps")
+                    p = int(child.name[ind:].split("_")[1])
+                    heap_points = max(heap_points, p)
+                elif child.name.find("cleanwater_tower_before_waste") != -1:
+                    is_cleanwater_tower = True
+                elif child.name.find("cleanwater_tower_after_waste") != -1:
+                    is_cleanwater_tower = True
+                    is_wastewater_clean_disposal = True
+                elif child.name.find("cleanwater_tower_only_shoot") != -1:
+                    is_wastewater_clean_disposal = True
+                elif child.name.find("wastewater_tower") != -1:
+                    is_wastewater_tower = True
+                elif child.name.find("wastewater_reservoir") != -1:
+                    is_wastewater_reservoir = True
+    points = 20 + \
+        is_disposal * heap_points + \
+        is_cleanwater_tower * 40 + \
+        is_wastewater_tower * is_wastewater_reservoir * 40 + \
+        is_wastewater_tower * is_wastewater_clean_disposal * 20 + \
+        is_bee * 50 + \
+        is_button * 25 +\
+        is_wastewater_tower * 10 +\
+        is_cleanwater_tower * 10
+    print("points = ", points)
+    return 0
 
 
 def wire_callback(data):
@@ -101,12 +187,13 @@ def wait_wire(value):
 
 def init_main_robot_from_plan():
     global current_plan
-    global bt_main
-    return bt_main.init_strategy(current_plan)
+    global brain_main
+    return brain_main.init_strategy(current_plan)
 
 
 if __name__ == "__main__":
     wire_value = 1
+    points = 0
     current_plan = ['orange', 'black', 'green']
     rospy.init_node("btb_server_node", anonymous=True)
     rospy.sleep(1.0)
@@ -115,8 +202,8 @@ if __name__ == "__main__":
     res_sub = "/server/response"
     rospy.Subscriber("/server/plan", String, plan_callback)
     rospy.Subscriber("/server/wire_status", String, wire_callback)
-    bt_secondary = BtSecondary()
-    bt_main = BtMain()
+    brain_secondary = SecondaryRobotBrain()
+    brain_main = MainRobotBrain()
     # BT root
     bt = BehaviorTree("server")
     general = SequenceNode("general")
@@ -126,7 +213,7 @@ if __name__ == "__main__":
     bt.add_node(ActionNode("start_wait_wire", stm_node_cmd_pub, "start_wire", res_sub, True), "general")
     bt.add_node(ActionFunctionNode("wait_wire_0", lambda: wait_wire(0)), "general")
     bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", res_sub, True), "general")
-    bt.add_node(ActionFunctionNode("init_secondary", bt_secondary.init_strategy), "general")
+    bt.add_node(ActionFunctionNode("init_secondary", brain_secondary.init_strategy), "general")
     main_cycle_if = TryUntilSuccessNode("main_cycle_if")
     bt.add_node(main_cycle_if, "general")
 
@@ -140,14 +227,21 @@ if __name__ == "__main__":
 
     # The main sequence after start
     bt.add_node(ActionNode("stop_plan_recognition", camera_cmd_pub, "finish", res_sub, True), "general")
-    bt.add_node(ActionFunctionNode("start_main", bt_main.start_strategy), "general")
-    bt.add_node(ActionFunctionNode("start_secondary", bt_secondary.start_strategy), "general")
+    bt.add_node(ActionFunctionNode("start_main", brain_main.start_strategy), "general")
+    bt.add_node(ActionFunctionNode("start_secondary", brain_secondary.start_strategy), "general")
     bt.add_node(ActionNode("stop_wait_wire", stm_node_cmd_pub, "stop_wire", res_sub, True), "general")
 
     # # The stop
-    bt.add_node(TimeoutNode("100_sec_wait", 100), "general")
-    bt.add_node(ActionFunctionNode("stop_main", bt_main.stop_strategy), "general")
-    bt.add_node(ActionFunctionNode("stop_secondary", bt_secondary.stop_strategy), "general")
+    active_work = ParallelNode("active_work")
+    bt.add_node(active_work, "general")
+    wait_and_stop = SequenceNode("wait_and_stop")
+    bt.add_node(wait_and_stop, "active_work")
+
+    bt.add_node(TimeoutNode("100_sec_wait", 100), "wait_and_stop")
+    bt.add_node(ActionFunctionNode("recover_main_robot", brain_main.emergency_strategy), "active_work")
+    bt.add_node(ActionFunctionNode("stop_main", brain_main.stop_strategy), "wait_and_stop")
+    bt.add_node(ActionFunctionNode("stop_secondary", brain_secondary.stop_strategy), "wait_and_stop")
+    bt.add_node(ActionFunctionNode("calculate_points", calculate_points), "general")
     r = rospy.Rate(10)
     bt.root_node.start()
     while not rospy.is_shutdown() and bt.root_node.check_status() != "finished":
