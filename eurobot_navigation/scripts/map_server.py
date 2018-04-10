@@ -100,7 +100,7 @@ class MapServer():
         self.pub_social_main = rospy.Publisher("/main_robot/people", People, queue_size=10)
         self.pub_response_main_robot = rospy.Publisher("/main_robot/response", String, queue_size=1)
         self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
-        self.pub_opponent_robots = rospy.Publisher("opponent_robots", PointCloud, queue_size=10)
+        self.pub_opponent_robots = rospy.Publisher("/map_server/opponent_robots", PointCloud, queue_size=10)
         rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
         rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
         self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)

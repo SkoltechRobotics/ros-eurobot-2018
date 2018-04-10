@@ -63,13 +63,12 @@ def img_callback(img):
 
 
 def cmd_callback(data):
-    global is_start
-    global is_finish
+    global is_active
     data_splitted = data.data.split()
     if data_splitted[1] == "start":
-        is_start = True
+        is_active = True
     if data_splitted[1] == "finish":
-        is_finish = True
+        is_active = False
 
 
 if __name__ == '__main__':
@@ -82,19 +81,18 @@ if __name__ == '__main__':
     rate = rospy.Rate(100)
 
     rospy.loginfo("Start camera node")
-    is_start = False
-    while not is_start and not rospy.is_shutdown():
-        rate.sleep()
+    is_active = False
     rospy.loginfo("Start capture video")
     cap = cv2.VideoCapture(1)
     cap.set(cv2.CAP_PROP_FPS, 10)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
     rospy.loginfo("Capturing started")
-    is_finish = False
-    while not rospy.is_shutdown() and not is_finish:
+    while not rospy.is_shutdown():
         ret, frame = cap.read()
-        colors = img_callback(frame)
-        color_str = COLOR_NAMES[colors[0]] + " " + COLOR_NAMES[colors[1]] + " " + COLOR_NAMES[colors[2]]
-        pub_plan.publish(color_str)
-        rospy.loginfo("colors " + color_str)
+        if is_active:
+            colors = img_callback(frame)
+            color_str = COLOR_NAMES[colors[0]] + " " + COLOR_NAMES[colors[1]] + " " + COLOR_NAMES[colors[2]]
+            pub_plan.publish(color_str)
+            rospy.loginfo("colors " + color_str)
+        rate.sleep()
