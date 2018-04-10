@@ -57,7 +57,8 @@ class MainRobotBrain(object):
         self.done_bts = []
 
     def init_strategy(self, plan):
-        self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
+        if plan in POSSIBLE_PLANS:
+            self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
         # btb.add_strategy(MAIN_ROBOT_STRATEGY)
@@ -128,6 +129,8 @@ def calculate_points():
     is_cleanwater_tower = False
     is_wastewater_reservoir = False
     is_wastewater_clean_disposal = False
+    is_move_wastewater_tower = False
+    is_move_cleanwater_tower = False
 
     heap_points = 0
     for bt1 in bts:
@@ -154,6 +157,11 @@ def calculate_points():
                     is_wastewater_tower = True
                 elif child.name.find("wastewater_reservoir") != -1:
                     is_wastewater_reservoir = True
+            if child.name.find("wastewater_tower") != -1:
+                for child1 in child.children_list:
+                    if child1.name.find("move_tower") != -1 and child1.status == "finished":
+                        is_move_wastewater_tower = True
+
     points = 20 + \
         is_disposal * heap_points + \
         is_cleanwater_tower * 40 + \
@@ -161,8 +169,8 @@ def calculate_points():
         is_wastewater_tower * is_wastewater_clean_disposal * 20 + \
         is_bee * 50 + \
         is_button * 25 +\
-        is_wastewater_tower * 10 +\
-        is_cleanwater_tower * 10
+        is_move_wastewater_tower * 10 +\
+        is_move_cleanwater_tower * 10
     print("points = ", points)
     return 0
 
