@@ -139,10 +139,6 @@ class stm_node(STMprotocol):
                                                                                                  0xc1,
                                                                                                  0xc4) else GET_MANIPULATOR_STATUS))
 
-        if action_type == GET_STARTUP_STATUS:
-            self.startup_id = action_name
-            self.timer_startup = rospy.Timer(rospy.Duration(1. / RATE), self.startup_wire_timer)
-
         return successfully, args_response
 
     def publish_odom(self, coords, vel):
@@ -216,17 +212,17 @@ class stm_node(STMprotocol):
 
         return m_timer
 
-    def stm_node_cammand_callback(self, data):
+    def stm_node_command_callback(self, data):
         splitted_data = data.data.split()
-        if splitted_data[1] == "start_wire":
+        if splitted_data[0] == "start_wire":
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
-        elif splitted_data[1] == "stop_wire":
+        elif splitted_data[0] == "stop_wire":
             self.wire_timer.shutdown()
 
     def wire_timer_callback(self, event):
-        successfully, args_response = self.send('GET_STARTUP_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        successfully, args_response = self.send('GET_STARTUP_STATUS', GET_STARTUP_STATUS, [])
         if successfully:
-            self.pub_wire.publish(str(args_response))
+            self.pub_wire.publish(str(args_response[0]))
 
 
 if __name__ == '__main__':
