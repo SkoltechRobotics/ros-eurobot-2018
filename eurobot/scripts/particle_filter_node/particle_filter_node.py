@@ -10,6 +10,7 @@ import tf
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler
 
+
 def pf_cmd_callback(data):
     data_splitted = data.data.split()
     cmd = data_splitted[0]
@@ -30,7 +31,6 @@ def pf_cmd_callback(data):
             rospy.loginfo('PF has calibrated beacon coords:' + str(beacons))
         else:
             rospy.loginfo('Pf failed to calibrate beacon coords.')
-
 
 
 def odom_callback(odom):

@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <rosparam file="$(find eurobot)/config/field_params.yaml" command="load" ns="field" />
-
     <!-- Map server -->
     <node name="map_server" pkg="eurobot_navigation" type="map_server.py"  output="screen" />
 
@@ -13,7 +11,9 @@
         <!-- Navigation -->
         <node pkg="global_planner" type="planner" respawn="true" name="global_planner" output="screen">
             <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
-            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_main_robot.yaml" command="load" ns="costmap" />
+            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
+            <param name="costmap/robot_base_frame" value="main_robot" />
+            <param name="costmap/footprint" value="[[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]" />
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
@@ -28,7 +28,9 @@
         <!-- Navigation -->
         <node pkg="global_planner" type="planner" respawn="true" name="global_planner" output="screen">
             <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
-            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params_secondary_robot.yaml" command="load" ns="costmap" />
+            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
+            <param name="costmap/robot_base_frame" value="secondary_robot" />
+            <param name="costmap/robot_radius" value="0.140" />
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
