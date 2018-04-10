@@ -139,10 +139,6 @@ class stm_node(STMprotocol):
                                                                                                  0xc1,
                                                                                                  0xc4) else GET_MANIPULATOR_STATUS))
 
-        if action_type == GET_STARTUP_STATUS:
-            self.startup_id = action_name
-            self.timer_startup = rospy.Timer(rospy.Duration(1. / RATE), self.startup_wire_timer)
-
         return successfully, args_response
 
     def publish_odom(self, coords, vel):
