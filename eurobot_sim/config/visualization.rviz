@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /TF1/Tree1
-        - /OpponentRobotCenter1/Status1
       Splitter Ratio: 0.592190862
     Tree Height: 1055
   - Class: rviz/Selection
@@ -102,7 +101,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -125,7 +124,7 @@ Visualization Manager:
       Robot State Topic: display_robot_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -208,12 +207,12 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: Map Initial Main
       Topic: /main_robot/map
       Unreliable: false
       Use Timestamp: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -336,7 +335,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0700000003
       Style: Spheres
-      Topic: /spy/center
+      Topic: /spy/detected_robots
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -486,7 +485,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.46042299
+      Distance: 3.76485801
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1

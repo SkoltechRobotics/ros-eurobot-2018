@@ -4,6 +4,8 @@ import rospy
 from nav_msgs.msg import OccupancyGrid
 from nav_msgs.srv import GetMap
 from std_msgs.msg import String
+from geometry_msgs.msg import Point
+from sensor_msgs.msg import PointCloud
 import tf
 from people_msgs.msg import People, Person
 from copy import deepcopy
@@ -18,6 +20,7 @@ class MapServer():
         self.pub_response_main_robot = rospy.Publisher("/main_robot/response", String, queue_size=1)
         self.pub_social_secondary = rospy.Publisher("/secondary_robot/people", People, queue_size=10)
         rospy.Subscriber("/map_server/cmd", String, self.cmd_callback, queue_size=1)
+        rospy.Subscriber("/spy/detected_robots", PointCloud, self.detected_robots_callback, queue_size=1)
         self.service_main = rospy.Service('/main_robot/static_map', GetMap, self.handle_get_map_main)
         self.service_secondary = rospy.Service('/secondary_robot/static_map', GetMap, self.handle_get_map_secondary)
         self.listener = tf.TransformListener()
@@ -31,10 +34,16 @@ class MapServer():
         self.size_secondary = np.array([rospy.get_param('/secondary_robot/dim_x'), rospy.get_param('/secondary_robot/dim_y')]) / self.resolution / 1000
         self.radius_secondary = rospy.get_param('/secondary_robot/dim_r')
 
+        self.coords_main = np.array([0, 0, 0])
+        self.coords_secondary = np.array([0, 0, 0])
+        self.ROBOT_R = 0.2
+        self.SEPARATE_ROBOT_DISTANCE = 0.2
+        self.robots = []
+
         self.size = (204, 304)
         self.border = 2
         self.FREE = 0
-        self.OCCUPIED = 100
+        self.OCCUPIED = 10
 
         self.field = np.zeros(self.size, dtype=np.int8)
         # borders
@@ -126,18 +135,13 @@ class MapServer():
             n = int(data_splitted[2])
             if cmd == "rm":
                 self.remove_heap(n)
-                rospy.Timer(rospy.Duration(0.05), lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"),
-                        oneshot=True)
                 self.grid.data = self.field.flatten()
                 self.pub()
             elif cmd == "add":
                 self.add_heap(n)
-                rospy.Timer(rospy.Duration(0.05), lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"),
-                            oneshot=True)
                 self.grid.data = self.field.flatten()
                 self.pub()
-        print cmd_id + " finished"
-        rospy.sleep(0.1) # TODO
+        rospy.Timer(rospy.Duration(0.05), lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"), oneshot=True)
 
 
     def handle_get_map_main(self, req):
@@ -150,7 +154,16 @@ class MapServer():
         return self.grid_secondary
 
 
-    def robot(self, size, coords):
+    def opponent_robots(self):
+        mask = np.full(self.size, True, dtype='bool')
+        if True: # (rospy.Time.now() - self.robots_upd_time).secs < 1:
+            xy = np.array(np.meshgrid(np.arange(0, self.size[1]), np.arange(0,self.size[0]))).T
+            for robot in self.robots:
+                mask[np.linalg.norm(xy - robot) < self.ROBOT_R] = False
+        return mask
+
+
+    def our_robot(self, size, coords):
         # 'occupy' all cells
         robot = np.full(self.size, True, dtype='bool')
 
@@ -195,20 +208,24 @@ class MapServer():
             # get secondary robot coords
             (trans,rot) = self.listener.lookupTransform('/map', '/secondary_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
-            coords_secondary = np.array([trans[0], trans[1], yaw])
+            self.coords_secondary = np.array([trans[0], trans[1], yaw])
             
             # get main robot coords
             (trans,rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
-            coords_main = np.array([trans[0], trans[1], yaw])
+            self.coords_main = np.array([trans[0], trans[1], yaw])
 
             # this copies will be processed and sent
             field_main = self.field.copy()
-            field_secondary = self.field.copy()
+            #field_secondary = self.field.copy()
+            
+            # put opponent robots on the map
+            field_main[self.opponent_robots()] = self.OCCUPIED
+            field_secondary = field_main.copy()
             
             # put the other robot on the map of each robot
-            field_main[self.robot(self.size_secondary, coords_secondary)] = self.OCCUPIED
-            field_secondary[self.robot(self.size_main, coords_main)] = self.OCCUPIED
+            field_main[self.our_robot(self.size_secondary, self.coords_secondary)] = self.OCCUPIED
+            field_secondary[self.our_robot(self.size_main, self.coords_main)] = self.OCCUPIED
 
             # publish both maps
             self.grid_main.data = field_main.flatten()
@@ -239,11 +256,27 @@ class MapServer():
             #self.pub_social_secondary.publish(people)
 
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            # this copies will be processed and sent
+            field_main = self.field.copy()
+            # put opponent robots on the map
+            field_main[self.opponent_robots()] = self.OCCUPIED
+            
             # pub maps without robots in case of tf listener failure
-            self.grid.data = self.field.flatten()
+            self.grid.data = field_main.flatten()
             self.pub_main_map.publish(self.grid)
             self.pub_secondary_map.publish(self.grid)
             pass
+
+    def detected_robots_callback(self, data):
+        robots = np.array([[robot.x, robot.y] for robot in data.points])
+        if robots.shape[0] == 0:
+            self.robots = robots
+            self.robots_upd_time = data.header.stamp
+            return
+        # exclude our robots
+        ind = np.where(np.logical_and(np.linalg.norm(robots - self.coords_main[:2], axis=1) > self.SEPARATE_ROBOT_DISTANCE, np.linalg.norm(robots - self.coords_secondary[:2], axis=1) > self.SEPARATE_ROBOT_DISTANCE))
+        self.robots = robots[ind]
+        self.robots_upd_time = data.header.stamp 
 
 if __name__ == '__main__':
     map_server = MapServer()
