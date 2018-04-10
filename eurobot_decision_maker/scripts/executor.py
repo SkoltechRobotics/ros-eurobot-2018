@@ -5,6 +5,7 @@ from std_msgs.msg import String
 
 import re
 
+
 class TreeNode:
     """
         Base class for all possible nodes in tree.
@@ -13,6 +14,7 @@ class TreeNode:
 
         TODO: rewrite this in approtiate way
     """
+
     def __init__(self, name):
         self.status = "not started"
         self.time_start = 0
@@ -23,12 +25,12 @@ class TreeNode:
         self.status = "not started"
 
     def start(self):
-        rospy.loginfo( self.name + ' started!' )
+        rospy.loginfo(self.name + ' started!')
         self.time_start = rospy.get_time()
 
     def finish(self):
         self.time_finish = rospy.get_time()
-        rospy.loginfo( self.name + ' finished! time ' + str(self.time_finish - self.time_start))
+        rospy.loginfo(self.name + ' finished! time ' + str(self.time_finish - self.time_start))
 
     def check_status(self):
         return self.status
@@ -38,6 +40,7 @@ class TreeNode:
             return self.time_finish - self.time_start
         else:
             return rospy.get_time() - self.time_start
+
 
 class ActionNode(TreeNode):
     """
@@ -51,8 +54,9 @@ class ActionNode(TreeNode):
 
         TODO: rewrite this docs in approtiate way
     """
-    def __init__(self,command_id, command_publisher, message, request_topic_name):
-        
+
+    def __init__(self, command_id, command_publisher, message, request_topic_name):
+
         # super(ActionNode, self).__init__()
         # doesn't work ??!! -> replaced with
         TreeNode.__init__(self, command_id)
@@ -61,27 +65,28 @@ class ActionNode(TreeNode):
         # unique command id
         # it's also $self.name
 
-        self.command_pub = command_publisher     
+        self.command_pub = command_publisher
         # this is ros publisher
 
-        self.request_topic_name = request_topic_name    
+        self.request_topic_name = request_topic_name
         # this is name, subscriber will be created later
-        
+
         self.message = message
         # this is python string
 
     def callback_for_terminating(self):
         def cb(msg):
             rospy.loginfo(msg.data)
-            action_id, action_status = re.match("(\S*)\s(\S*)",msg.data).group(1,2) # finish it!
+            action_id, action_status = re.match("(\S*)\s(\S*)", msg.data).group(1, 2)  # finish it!
             if action_id == self.id:
                 self.status = action_status
                 if self.status in ["finished", "failed"]:
                     self.finish()
+
         return cb
 
     def start(self):
-        if self.status == "not started": # do we need some mutex here?
+        if self.status == "not started":  # do we need some mutex here?
             TreeNode.start(self)
             self.status = "active"
             if isinstance(self.message, str):
@@ -96,18 +101,19 @@ class ActionNode(TreeNode):
     def finish(self):
         TreeNode.finish(self)
         self.sub.unregister()
-	
+
     def tick(self):
         if self.status == "not started":
             self.start()
-        
+
         return self.status
-		
+
+
 class ControlMultiChildrenNode(TreeNode):
     def __init__(self, name):
         TreeNode.__init__(self, name)
         self.children_list = []
-        
+
     def append_child(self, child):
         self.children_list.append(child)
 
@@ -115,6 +121,7 @@ class ControlMultiChildrenNode(TreeNode):
         if self.status == "not started":
             self.start()
             self.status = "active"
+
 
 class ControlSingleChildNode(TreeNode):
     def __init__(self, name):
@@ -129,7 +136,7 @@ class ControlSingleChildNode(TreeNode):
             self.start()
             self.status = "active"
 
-    
+
 class SequenceNode(ControlMultiChildrenNode):
     def __init__(self, name):
         ControlMultiChildrenNode.__init__(self, name)
@@ -155,7 +162,7 @@ class SequenceNode(ControlMultiChildrenNode):
         except:
             print ("Unexpected error in " + self.name)
             raise
-        
+
         while child.check_status() == "finished":
             try:
                 child = child_iter.next()
@@ -167,7 +174,7 @@ class SequenceNode(ControlMultiChildrenNode):
             except:
                 print ("Unexpected error in " + self.name)
                 raise
-        
+
         current_child_status = child.check_status()
         if current_child_status in ["active", "not started"]:
             child.tick()
@@ -177,8 +184,9 @@ class SequenceNode(ControlMultiChildrenNode):
             self.status = current_child_status
             return current_child_status
 
+
 class TryUntilSuccessNode(ControlSingleChildNode):
-    def __init__(self, name, max_reset_attempts = None):
+    def __init__(self, name, max_try=0, max_reset_attempts=None):
         ControlSingleChildNode.__init__(self, name)
         self.max_reset_attempts = max_try if max_try else 100
         self.reset_attempts = 0
@@ -194,24 +202,30 @@ class TryUntilSuccessNode(ControlSingleChildNode):
         elif child_status == "finished":
             self.status = "finished"
 
+
 class ActionFunctionNode(TreeNode):
+    # function return status
+    # 0 - finished
+    # 1 - active
+    # 2 - error
     def __init__(self, name, function=None):
         TreeNode.__init__(self, name)
         self.function = function
 
     def tick(self):
         if self.function:
-            self.function(self)
+            status = self.function()
+            self.status = ["finished", "active", "error"][status]
 
 
 class ParallelNode(ControlMultiChildrenNode):
-    def __init__(self, name, maximum_failed = 0):
+    def __init__(self, name, maximum_failed=0):
         ControlMultiChildrenNode.__init__(self, name)
         self.maximum_failed = maximum_failed
 
     def tick(self):
-        ControlMultiChildrenNode.tick(self) # set status="active"
-        
+        ControlMultiChildrenNode.tick(self)  # set status="active"
+
         children_status = [child.tick() for child in self.children_list]
 
         if not "active" in children_status and not "running" in children_status:
@@ -222,6 +236,7 @@ class ParallelNode(ControlMultiChildrenNode):
                 self.status = "error"
 
         return self.status
+
 
 class TimeoutNode(TreeNode):
     def __init__(self, name, sleep_time):
@@ -239,10 +254,11 @@ class TimeoutNode(TreeNode):
 
         return self.status
 
+
 class SelectorNode(ControlMultiChildrenNode):
     def __init__(self, name):
         ControlMultiChildrenNode.__init__(self, name)
-        
+
     def tick(self):
         ControlMultiChildrenNode.tick(self)
 
@@ -260,7 +276,7 @@ class SelectorNode(ControlMultiChildrenNode):
         except:
             print ("Unexpected error in " + self.name)
             raise
-        
+
         # find first not executed child
         # previous are all failed
 
@@ -281,35 +297,34 @@ class SelectorNode(ControlMultiChildrenNode):
         # continue execution
         if current_child_status in ["active", "not started"]:
             child.tick()
-            
+
         # finish execution
         if current_child_status in ["error", "finished"]:
             self.status = current_child_status
-            
+
         return self.status
-   
 
 
 class RootNode(TreeNode):
-    def __init__(self, name, execution_rate = 100):
+    def __init__(self, name, execution_rate=100):
         # execution rate is 100Hz by default
-        
+
         TreeNode.__init__(self, name)
 
         self.child = None
         self.execution_rate = execution_rate
         # self.looped = loop_execution
         self.timer = None
-        
+
     def append_child(self, child):
         self.set_child(child)
-    
+
     def set_child(self, child):
         self.child = child
-    
+
     def tick(self):
         self.child.tick()
-        
+
         child_status = self.child.check_status()
 
         if child_status in ["failed", "finished", "error"]:
@@ -321,47 +336,43 @@ class RootNode(TreeNode):
             return
 
         TreeNode.start(self)
-        
+
         def _callback_tick(e):
             return self.tick()
-        self.timer = rospy.Timer(rospy.Duration(1.0/self.execution_rate), _callback_tick)
+
+        self.timer = rospy.Timer(rospy.Duration(1.0 / self.execution_rate), _callback_tick)
         self.status = "active"
-        
 
     def finish(self):
         TreeNode.finish(self)
 
         if self.timer != None:
             self.timer.shutdown()
-        
 
-        
+
 class BehaviorTree:
-    def __init__(self, name,  execution_rate = 100):
+    def __init__(self, name, execution_rate=100):
         self.name = name
         self.root_node = RootNode(self.name, execution_rate)
         self.nodes = {self.name: self.root_node}
-        self.node_types = { 
-            "action":   ActionNode,
+        self.node_types = {
+            "action": ActionNode,
             "sequence": SequenceNode,
             "parallel": ParallelNode,
             "selector": SelectorNode,
-            "wait":     TimeoutNode,
-            "timeout":  TimeoutNode
-            }
+            "wait": TimeoutNode,
+            "timeout": TimeoutNode
+        }
 
         self.pubs = {}
 
     def add_publisher(self, pub_name, pub):
         self.pubs[pub_name] = pub
 
-    
-    
-
     def add_node(self, node, parent_name):
-        
+
         parent_node = None
-        
+
         try:
             parent_node = self.nodes[parent_name]
         except KeyError:
@@ -372,14 +383,14 @@ class BehaviorTree:
 
         try:
             parent_node.append_child(node)
-        except: # type of exception ?
+        except:  # type of exception ?
             print ("Error: parent_node is not a ControlNode")
             raise
         else:
             self.nodes[node.name] = node
 
     def add_node_by_string(self, node_string):
-        
+
         # first substring       parent name
         # second substring      node type
         # third substring       node name
@@ -387,19 +398,15 @@ class BehaviorTree:
 
         # TODO: add constructors from parameters string!
 
-        
-
         try:
-            parent_name, node_type, node_name, node_params = re.match("(\S*)\s(\S*)\s(\S*)\s([\S\s]*)", node_string).group(1,2,3,4)
+            parent_name, node_type, node_name, node_params = re.match("(\S*)\s(\S*)\s(\S*)\s([\S\s]*)",
+                                                                      node_string).group(1, 2, 3, 4)
         except AttributeError:
             try:
-                parent_name, node_type, node_name = re.match("(\S*)\s(\S*)\s(\S*)", node_string).group(1,2,3)
+                parent_name, node_type, node_name = re.match("(\S*)\s(\S*)\s(\S*)", node_string).group(1, 2, 3)
             except:
                 print ("Error: wrong string description")
                 raise
-        
-            
-
 
         try:
             NodeClass = self.node_types[node_type]
@@ -408,16 +415,17 @@ class BehaviorTree:
             raise
         except:
             raise
-        
+
         node = None
 
         if node_type == "action":
             # print node_params
-            publisher_name, request_topic_name, message = re.match("(\S*)\s(\S*)\s([\S\s]*)", node_params).group(1,2,3)
+            publisher_name, request_topic_name, message = re.match("(\S*)\s(\S*)\s([\S\s]*)", node_params).group(1, 2,
+                                                                                                                 3)
             node = ActionNode(node_name, self.pubs[publisher_name], message, request_topic_name)
 
         # elif node_type == "parallel":
-            # add parameter about n_failed
+        # add parameter about n_failed
         elif node_type in ["wait", "timeout"]:
             try:
                 sleep_time = float(node_params)
@@ -431,7 +439,6 @@ class BehaviorTree:
         self.add_node(node, parent_name)
 
 
-       
 """ 
     pub = rospy.Publisher("fake_stm_command", String, queue_size=100)
     a1 = ActionNode("a1", pub, "move 0 0 0", "fake_stm_response")
