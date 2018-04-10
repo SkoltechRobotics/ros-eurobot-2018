@@ -390,12 +390,12 @@ class BehaviorTreeBuilder:
             if da != 0 and i != 0:
                 self.add_new_heap_rotation(main_seq_name, da)
                 self.add_sleep_time(main_seq_name, 0.5)
-                a -= da
+                a += da
             if dx ** 2 + dy ** 2 > 0:
-                rospy.loginfo("SHIFTS " + str(self.shifts.index((dx,dy))))
+                rospy.loginfo("SHIFTS " + str(self.shifts.index((dx, dy))))
                 rospy.loginfo(a)
-                ndx, ndy = self.rotate((dx, dy), a).tolist()
-                #ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a) % 4]
+                # ndx, ndy = self.rotate((dx, dy), a).tolist()
+                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) + a -1) % 4]
                 rospy.loginfo((ndx, ndy))
                 dX = np.array([ndx, ndy, 0]) * 5.8
 
@@ -742,10 +742,10 @@ if __name__ == "__main__":
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
-    btb.bt.root_node.start()
-    btb.man_load[0] = 3
-    btb.man_load[1] = 4
-    btb.man_load[2] = 3
+    #btb.bt.root_node.start()
+    # btb.man_load[0] = 3
+    # btb.man_load[1] = 4
+    # btb.man_load[2] = 3
     r = rospy.Rate(10)
     while not rospy.is_shutdown() and btb.bt.root_node.check_status() != "finished":
         r.sleep()

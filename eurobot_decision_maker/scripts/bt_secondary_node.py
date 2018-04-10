@@ -36,7 +36,6 @@ class BtSecondary(object):
         while not rospy.is_shutdown() and self.btb.bt.root_node.check_status() != "finished":
             r.sleep()
 
-            
 if __name__ == "__main__":
     rospy.init_node("btb_secondary_node", anonymous=True)
 

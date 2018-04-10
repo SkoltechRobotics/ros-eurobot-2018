@@ -84,7 +84,6 @@ class stm_node(STMprotocol):
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status = "finished"):
-
         if action_name in self.time_started and rospy.get_time() - self.time_started[action_name] < self.min_time_for_response:
             rospy.Timer(rospy.Duration(self.min_time_for_response), lambda e: self.pub_response.publish(action_name + " " + action_status),
                         oneshot=True)
@@ -101,6 +100,7 @@ class stm_node(STMprotocol):
         if action_type in DEBUG_COMMANDS:
             rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' +"successfully? :" + \
                           str(successfully) + ' ' +  str(responses))
+
     def send(self, action_name, action_type, args):
 
         # Lock() is used to prevent mixing bytes of diff commands to STM
@@ -171,9 +171,6 @@ class stm_node(STMprotocol):
                 self.pub_rf.publish(Int32MultiArray(data=rf_data))
             else:
                 rospy.loginfo(successfully3)
-
-        #rospy.loginfo(self.rf_it) 
-        #rospy.loginfo(self.ask_rf_every)
         self.rf_it += 1
 
     def odometry_movement_timer(self, event):

@@ -68,7 +68,7 @@ class STMprotocol(object):
             0xc2: "=BB",
             0xc3: "=BB",
             0xc4: "=BB",
-            0xd0: "=BBBBBB"
+            0xd0: "=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
         }
 
 
