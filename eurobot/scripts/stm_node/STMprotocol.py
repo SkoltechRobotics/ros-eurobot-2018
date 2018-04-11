@@ -36,7 +36,8 @@ class STMprotocol(object):
             0xc3: "=B",
             0xc4: "=BB",
             0xd0: "=",
-            0xa3: "="
+            0xa3: "=",
+            0xe0: "=B"
 
         }
 
@@ -70,7 +71,8 @@ class STMprotocol(object):
             0xc3: "=BB",
             0xc4: "=BB",
             0xd0: "=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
-            0xa3: "=B"
+            0xa3: "=B",
+            0xe0: "=BB"
         }
 
 
