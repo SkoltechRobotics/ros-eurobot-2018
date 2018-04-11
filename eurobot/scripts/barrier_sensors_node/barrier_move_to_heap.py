@@ -58,12 +58,20 @@ class BarrierNavigator():
         self.i = 0
         self.started_sensors = None
         self.CMD_NAME = "MOVEODOM"
+        self.rf_broken_flag = False
 
     def barrier_sensors_callback(self):
         def cb(data):
             sd = np.array(data.data)
-            self.sensors_queue = np.roll(self.sensors_queue, -1, axis=0)
-            self.sensors_queue[0] = sd
+
+            rf_nav_status = sd[-6:]
+            if np.any(rf_nav_status):
+                self.rf_broken_flag = True
+                self.sensors_queue = np.roll(self.sensors_queue, -1, axis=0)
+                self.sensors_queue[0] = sd[10:16]
+            else:
+                self.rf_broken_flag = False
+
             # print(self.sensors_queue)
             self.sensors = np.sum(self.sensors_queue, axis=0) >= 3
             # print(self.sensors)
@@ -80,6 +88,9 @@ class BarrierNavigator():
         rospy.loginfo("started from " + str(self.sensors))
         while not rospy.is_shutdown() and (not X_finished or not Y_finished):
             rospy.loginfo(self.sensors)
+            if self.rf_broken_flag:
+                rospy.sleep(0.05)
+                continue
             # YYYYYYYYYYYYYYYYYYYYYYYYYYY axis
             dY = 0
             dX = 0
@@ -172,6 +183,9 @@ class BarrierNavigator():
         phase_x = phases_x[0]
         allowed_mask = self.get_allowed_mask(case)
         while not rospy.is_shutdown():
+            if self.rf_broken_flag:
+                rospy.sleep(0.05)
+                continue
             phase_0_cond = np.any(self.sensors[:3] * allowed_mask) and phase_y == 0
             phase_1_cond = np.all(self.sensors[:3] * allowed_mask == 0) and phase_y == 1
             if phase_0_cond or phase_1_cond:
