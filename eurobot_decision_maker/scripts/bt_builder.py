@@ -77,6 +77,8 @@ class BehaviorTreeBuilder:
         self.magic_cube_action_name = str(0xb4)
         self.funny_action_name = str(0xb6)
 
+        self.heap_score = 0
+
         self.last_coordinates = [0,0,0]
         self.last_angle = self.black_angle
         self.heaps_sequences = []
@@ -377,8 +379,10 @@ class BehaviorTreeBuilder:
         return 0
 
     def add_new_heap_pick(self, parent_name, heap_num, heap_strat):
-        main_seq_name = self.construct_string(parent_name, heap_num)
+
+        main_seq_name = self.construct_string(parent_name, heap_strat[-1], heap_num)
         self.add_sequence_node(parent_name, main_seq_name)
+        heap_strat = heap_strat[0]
 
         self.colors_left = {0, 1, 2, 3, 4}
         heap = self.action_places["heaps"][heap_num]
@@ -749,7 +753,7 @@ if __name__ == "__main__":
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
     rospy.loginfo("AAAAAAAAAAAAAAa")
-    with open("very_important_bt_paths2.bin","rb") as f:
+    with open("cubes_paths_beta_0.bin","rb") as f:
         heap_strats = pickle.load(f)
     # btb.add_cubes_sequence([[[], [0], []],
     #                         [[3], [2], [1]],
@@ -762,8 +766,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[2]['001'])
-    btb.add_cubes_sequence_new(heap_strats[2]['001'])
+    rospy.loginfo(heap_strats[2]['012'])
+    btb.add_cubes_sequence_new(heap_strats[2]['012'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
