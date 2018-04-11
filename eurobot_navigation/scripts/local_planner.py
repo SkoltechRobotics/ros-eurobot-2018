@@ -88,8 +88,8 @@ class LocalPlanner:
 
         # get ROS params
         self.map_service_name = '/' + self.robot_name + '/static_map'
-        self.coords = np.array([rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"), rospy.get_param("/" + self.robot_name + "/start_a")])
-        self.another_robot_coords = np.array([rospy.get_param("/" + self.another_robot_name + "/start_x"), rospy.get_param("/" + self.another_robot_name + "/start_y"), rospy.get_param("/" + self.another_robot_name + "/start_a")])
+        self.coords = np.array([rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"), rospy.get_param("/" + self.robot_name + "/start_a")]) / 1000.0
+        self.another_robot_coords = np.array([rospy.get_param("/" + self.another_robot_name + "/start_x"), rospy.get_param("/" + self.another_robot_name + "/start_y"), rospy.get_param("/" + self.another_robot_name + "/start_a")]) / 1000.0
         self.pose = self.coords2pose(self.coords)
         self.vel = np.zeros(3)
         # TODO: extrapolate pose (because its update rate is low)
@@ -126,7 +126,7 @@ class LocalPlanner:
             self.pose = Pose(Point(*trans), Quaternion(*rot))
             self.coords = self.pose2coords(self.pose)
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
-            self.another_robot_coords = self.pose2coords(Pose((Point(*trans), Quaternion(*rot))))
+            self.another_robot_coords = self.pose2coords(Pose(Point(*trans), Quaternion(*rot)))
         except (LookupException, ConnectivityException, ExtrapolationException):
             # rospy.loginfo("LocalPlanner failed to lookup tf.")
             self.mutex.release()
@@ -193,7 +193,9 @@ class LocalPlanner:
         speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
         if self.LOGINFO:
             rospy.loginfo('speed_limit = ' + str(speed_limit_acs) + ' (acceleration)')
-        speed_limit_collision_avoidance = self.distance_to_closest_robot * self.collision_avoidance_coefficient
+        speed_limit_collision_avoidance = self.distance_to_closest_robot() * self.COLLISION_AVOIDANCE_COEFFICIENT
+        if self.LOGINFO:
+            rospy.loginfo('speed_limit = ' + str(speed_limit_collision_avoidance) + ' (collision_avoidance)')
 
         speed_limit = min(speed_limit_dec, speed_limit_acs, speed_limit_collision_avoidance)
         if self.LOGINFO:
@@ -545,7 +547,7 @@ class LocalPlanner:
         self.robots_upd_time = data.header.stamp
 
     def distance_to_closest_robot(self):
-        ans = np.linalg.norm(self.another_robot_coords) / 1000.0
+        ans = np.linalg.norm(self.another_robot_coords)
         if self.opponent_robots.shape[0] > 0:
             ans = min(ans, np.min(np.linalg.norm(self.opponent_robots)))
         return ans
