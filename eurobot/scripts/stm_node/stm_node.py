@@ -32,15 +32,17 @@ DEBUG_COMMANDS = [0x0c]
 
 class stm_node(STMprotocol):
     min_time_for_response = 0.25
+    response_time = 1.0
+    response_period = 0.05
 
     def __init__(self, serial_port):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
-        rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
         self.robot_name = rospy.get_param("robot_name")
+        rospy.Subscriber("stm_command", String, self.stm_command_callback)
+        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
 
         super(stm_node, self).__init__(serial_port, BAUD_RATE[self.robot_name])
         self.mutex = Lock()
@@ -87,7 +89,7 @@ class stm_node(STMprotocol):
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(18, GPIO.OUT)
-        self.pwm = GPIO.PWM(18, 50)
+        self.pwm = GPIO.PWM(18, 100)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -104,13 +106,18 @@ class stm_node(STMprotocol):
 
     def finish_command(self, action_name, action_status="finished"):
 
-        if action_name in self.time_started and rospy.get_time() - self.time_started[
-             action_name] < self.min_time_for_response:
-            rospy.Timer(rospy.Duration(self.min_time_for_response),
-                        lambda e: self.pub_response.publish(action_name + " " + action_status),
-                        oneshot=True)
-        else:
-            self.pub_response.publish(action_name + " " + action_status)
+        if action_name in self.time_started:    
+            timer = rospy.Timer(rospy.Duration(self.response_period),
+                        lambda e: self.pub_response.publish(action_name + " " + action_status))
+            rospy.Timer(rospy.Duration(self.response_time),
+                        lambda e: timer.shutdown(), oneshot=True)
+        #if action_name in self.time_started and rospy.get_time() - self.time_started[
+        #     action_name] < self.min_time_for_response:
+        #    rospy.Timer(rospy.Duration(self.min_time_for_response),
+        #                lambda e: self.pub_response.publish(action_name + " " + action_status),
+        #                oneshot=True)
+        #else:
+        #    self.pub_response.publish(action_name + " " + action_status)
         self.time_started.pop(action_name)
 
     def stm_command_callback(self, data):
