@@ -21,7 +21,7 @@ GET_STARTUP_STATUS = 0xa3
 GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
-IMMEDIATE_FINISHED = [0xc4]
+IMMEDIATE_FINISHED = [0xc4, 0xb6, 0xe0]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA = 0xd0
@@ -31,7 +31,7 @@ DEBUG_COMMANDS = [0x0c]
 
 
 class stm_node(STMprotocol):
-    min_time_for_response = 0.15
+    min_time_for_response = 0.25
 
     def __init__(self, serial_port):
         # ROS
