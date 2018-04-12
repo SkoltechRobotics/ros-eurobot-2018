@@ -21,7 +21,7 @@ GET_STARTUP_STATUS = 0xa3
 GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
-IMMEDIATE_FINISHED = [0xc4]
+IMMEDIATE_FINISHED = [0xc4, 0xb6, 0xe0]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA = 0xd0
@@ -31,18 +31,18 @@ DEBUG_COMMANDS = [0x0c]
 
 
 class stm_node(STMprotocol):
-    min_time_for_response = 0.15
+    min_time_for_response = 0.25
     response_time = 1.0
     response_period = 0.05
 
     def __init__(self, serial_port):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
-        rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
         self.robot_name = rospy.get_param("robot_name")
+        rospy.Subscriber("stm_command", String, self.stm_command_callback)
+        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
 
         super(stm_node, self).__init__(serial_port, BAUD_RATE[self.robot_name])
         self.mutex = Lock()
@@ -89,7 +89,7 @@ class stm_node(STMprotocol):
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(18, GPIO.OUT)
-        self.pwm = GPIO.PWM(36, 100)
+        self.pwm = GPIO.PWM(18, 100)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -184,7 +184,7 @@ class stm_node(STMprotocol):
         odom.pose.pose.orientation.z = quat[2]
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = vel[0]
-        odom.twist.twist.linear.x = vel[1]
+        odom.twist.twist.linear.y = vel[1]
         odom.twist.twist.angular.z = vel[2]
         self.pub_odom.publish(odom)
 
