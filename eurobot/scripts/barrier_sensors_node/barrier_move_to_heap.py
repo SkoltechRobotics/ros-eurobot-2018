@@ -245,8 +245,13 @@ class BarrierNavigator():
                 dy = 0
 
             rospy.loginfo("X_touched %d Y_touched %d s_x %d s_y %d "%(X_touched, Y_touched, s_x, s_y))
+            command, dx, dy = self.get_command_dx_dy(dx,dy)
             if dx == 0 and dy == 0:
-                rospy.loginfo("FINISHED BY DX DY")
+                rospy.loginfo("FINISHED by dx dy")
+                break
+            rospy.loginfo(command)
+            self.command_pub.publish(command)
+            self.wait_for_movement("MOVEODOM" + str(self.i))
 
 
 
@@ -374,8 +379,8 @@ class BarrierNavigator():
                     phases_x = [1] if sum(self.sensors[3:] * mask) != 0 else [0, 1]
                     rospy.loginfo(phases_x)
                     rospy.loginfo(phases_y)
-                    self.move_cycle_one(phases_x, phases_y, case)
-
+                    # self.move_cycle_one(phases_x, phases_y, case)
+                    self.move_cycle_one_new(mask)
                 if case == 9 and yellow_fix == 1:
                     cmd, dx, dy = self.get_command_dx_dy(0.004, 0)
                     self.command_pub.publish(cmd)
