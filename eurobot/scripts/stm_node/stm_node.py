@@ -84,9 +84,10 @@ class stm_node(STMprotocol):
         rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
 
         # servo
+        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(17, GPIO.OUT)
-        self.pwm = GPIO.PWM(17, 50)
+        GPIO.setup(18, GPIO.OUT)
+        self.pwm = GPIO.PWM(18, 50)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -114,20 +115,23 @@ class stm_node(STMprotocol):
 
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
-        successfully, responses = self.send(action_name, action_type, args)
 
         # servo
-        if self.action_type == 256:
-            self.pwm.start(5) # servo manipulator-ON angle
+        if action_type == 256:
+            self.pwm.start(10) # servo manipulator-ON angle
+            self.pwm.ChangeDutyCycle(5)
 
             def servo_response_wait_stop(event):
                 self.pub_response.publish(action_name + str(" finished"))
-                rospy.sleep(3)
+                rospy.sleep(2)
                 self.pwm.ChangeDutyCycle(10)
+                rospy.sleep(1)
                 self.pwm.stop()
 
-            rospy.Timer(rospy.Duration(.1), servo_response_wait_stop, oneshot=True)
+            rospy.Timer(rospy.Duration(.2), servo_response_wait_stop, oneshot=True)
             return
+
+        successfully, responses = self.send(action_name, action_type, args)
 
         self.time_started[action_name] = rospy.get_time()
         if action_type in IMMEDIATE_FINISHED:
