@@ -184,7 +184,7 @@ class stm_node(STMprotocol):
         odom.pose.pose.orientation.z = quat[2]
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = vel[0]
-        odom.twist.twist.linear.x = vel[1]
+        odom.twist.twist.linear.y = vel[1]
         odom.twist.twist.angular.z = vel[2]
         self.pub_odom.publish(odom)
 
