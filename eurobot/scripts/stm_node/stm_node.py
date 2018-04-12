@@ -32,6 +32,8 @@ DEBUG_COMMANDS = [0x0c]
 
 class stm_node(STMprotocol):
     min_time_for_response = 0.15
+    response_time = 1.0
+    response_period = 0.05
 
     def __init__(self, serial_port):
         # ROS
@@ -87,7 +89,7 @@ class stm_node(STMprotocol):
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(18, GPIO.OUT)
-        self.pwm = GPIO.PWM(18, 50)
+        self.pwm = GPIO.PWM(36, 100)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -104,13 +106,18 @@ class stm_node(STMprotocol):
 
     def finish_command(self, action_name, action_status="finished"):
 
-        if action_name in self.time_started and rospy.get_time() - self.time_started[
-             action_name] < self.min_time_for_response:
-            rospy.Timer(rospy.Duration(self.min_time_for_response),
-                        lambda e: self.pub_response.publish(action_name + " " + action_status),
-                        oneshot=True)
-        else:
-            self.pub_response.publish(action_name + " " + action_status)
+        if action_name in self.time_started:    
+            timer = rospy.Timer(rospy.Duration(self.response_period),
+                        lambda e: self.pub_response.publish(action_name + " " + action_status))
+            rospy.Timer(rospy.Duration(self.response_time),
+                        lambda e: timer.shutdown(), oneshot=True)
+        #if action_name in self.time_started and rospy.get_time() - self.time_started[
+        #     action_name] < self.min_time_for_response:
+        #    rospy.Timer(rospy.Duration(self.min_time_for_response),
+        #                lambda e: self.pub_response.publish(action_name + " " + action_status),
+        #                oneshot=True)
+        #else:
+        #    self.pub_response.publish(action_name + " " + action_status)
         self.time_started.pop(action_name)
 
     def stm_command_callback(self, data):
