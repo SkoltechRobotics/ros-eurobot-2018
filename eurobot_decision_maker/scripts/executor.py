@@ -98,11 +98,11 @@ class ActionNode(TreeNode):
                 # CHECKME ??? 
             rospy.loginfo(self.message)
 
-            self.command_pub.publish(self.message)
-
             if not self.without_response:
                 self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
+                self.command_pub.publish(self.message)
             else:
+                self.command_pub.publish(self.message)
                 self.status = 'finished'
                 TreeNode.finish(self)
 
