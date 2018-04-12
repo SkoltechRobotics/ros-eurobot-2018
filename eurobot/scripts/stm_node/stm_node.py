@@ -120,11 +120,13 @@ class stm_node(STMprotocol):
         if self.action_type == 256:
             self.pwm.start(5) # servo manipulator-ON angle
 
-            def servo_stop():
+            def servo_response_wait_stop(event):
+                self.pub_response.publish(action_name + str(" finished"))
+                rospy.sleep(3)
                 self.pwm.ChangeDutyCycle(10)
                 self.pwm.stop()
 
-            rospy.Timer(rospy.Duration(3), servo_stop(), oneshot=True)
+            rospy.Timer(rospy.Duration(.1), servo_response_wait_stop, oneshot=True)
             return
 
         self.time_started[action_name] = rospy.get_time()
