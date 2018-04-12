@@ -249,9 +249,6 @@ class LocalPlanner:
     def set_plan(self, plan, goal_id):
         self.mutex.acquire()
 
-        np.set_printoptions(threshold=np.nan)
-        print np.array(plan)
-
         if self.LOGINFO:
             rospy.loginfo("Setting a new global plan.")
         self.plan = np.array(plan)
@@ -340,8 +337,6 @@ class LocalPlanner:
                     stop_length = self.REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH
                     success, plan = self.approaching_plan(heap, goal_coords)
                     if success:
-                        np.set_printoptions(threshold=np.nan)
-                        print plan
                         self.set_plan(plan, cmd_id)
                 else:
                     success, plan = self.request_plan(self.pose, goal)

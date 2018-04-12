@@ -193,8 +193,10 @@ class BehaviorTreeBuilder:
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
             self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
             self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
         else: # TODO: change coords
             self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
                                  0.79)
@@ -229,11 +231,15 @@ class BehaviorTreeBuilder:
 
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
-            self.add_command_action(main_seq_name, 162, -0.3, 0, 0, 0.2, 0, 6)
-            #self.add_command_action(main_seq_name, 256) # rise the manipulator
-            self.add_command_action(main_seq_name, 162, 0.02, 0.3, 0, 0.01, 0.15, 0)
-            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0, -0.3, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+            self.add_command_action(main_seq_name, 182, 1) # manipulator
+            self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.2, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, 0.3, 0.025, 0, 0.57, 0.05, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 182, 0) # manipulator
+            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            # self.add_command_action(main_seq_name, 162, 0, -0.3, 0, 0, 0.57, 0)
+
         else: # TODO: change coords
             self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
                                  0.79)
@@ -611,7 +617,7 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parallel_name, magic_seq_name)
 
         parallel_down = self.construct_string("parallel", "shift_down_mans", self.get_next_id())
-        self.bt.add_node_by_string(self.construct_string(magic_seq_name_name, "parallel", parallel_name, sep=' '))
+        self.bt.add_node_by_string(self.construct_string(magic_seq_name, "parallel", parallel_name, sep=' '))
 
         self.add_command_action(parallel_down, 179, 0)
         self.add_command_action(parallel_down, 179, 2)
@@ -723,6 +729,7 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
         self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
@@ -741,8 +748,11 @@ class BehaviorTreeBuilder:
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["waste"])
                 self.add_sleep_time(main_seq_name, delay)
 
+        self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
+
     def add_wastewater_reservoir(self, parent_name):
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
+        self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         self.add_sequence_node(parent_name, main_seq_name)
         self.add_command_action(main_seq_name, 162, 0.05, 0.1, 0, 0.57, 0.57, 0)
         self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
@@ -755,12 +765,14 @@ class BehaviorTreeBuilder:
         self.add_wastewater_action(main_seq_name, "close")
 
         self.add_command_action(main_seq_name, 162, 0.1, -0.1, 0, 0.5, 0.5, 0)
+        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
 
 
     def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
         if not with_4_balls:
             self.add_shoot_sort_action(main_seq_name, "release " + to)
@@ -776,12 +788,17 @@ class BehaviorTreeBuilder:
                 #self.add_first_sort_action(main_seq_name, "clean", .5)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
                 self.add_sleep_time(main_seq_name, .5)
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
+                self.add_sleep_time(main_seq_name, .5)
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
+                self.add_sleep_time(main_seq_name, .5)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
                 self.add_sleep_time(main_seq_name, .5)
 
                 # self.add_shoot_sort_action(main_seq_name, to, .8)
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
+        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
 
     def time_checker(self, parent_name, time):
         time_node_name = self.construct_string("time_checker", self.get_next_id())
@@ -855,7 +872,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
-    btb.add_strategy([("bee_main",0), ("switch_main",0)])
+    btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", 1), ("heaps", 0), ("heaps", 2)])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
     # btb.add_strategy([("heaps",1)])
