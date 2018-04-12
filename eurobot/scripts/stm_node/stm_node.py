@@ -27,7 +27,7 @@ DEBUG_COMMANDS = [0x0c]
 
 
 class stm_node(STMprotocol):
-    min_time_for_response = 0.2
+    min_time_for_response = 0.15
 
     def __init__(self, serial_port):
         # ROS
@@ -215,9 +215,9 @@ class stm_node(STMprotocol):
     def stm_node_command_callback(self, data):
         rospy.loginfo("stm node command " + data.data)
         splitted_data = data.data.split()
-        if splitted_data[0] == "start_wire":
+        if splitted_data[1] == "start_wire":
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
-        elif splitted_data[0] == "stop_wire":
+        elif splitted_data[1] == "stop_wire":
             self.wire_timer.shutdown()
 
     def wire_timer_callback(self, event):
