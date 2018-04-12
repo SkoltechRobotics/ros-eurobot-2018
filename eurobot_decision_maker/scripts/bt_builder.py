@@ -184,6 +184,83 @@ class BehaviorTreeBuilder:
         self.bt.add_node_by_string(self.construct_string(parent_name, "sequence", main_seq_name, sep=' '))
         self.add_move_action(main_seq_name, *place)
 
+    def add_switch_secondary(self, parent_name):
+        main_seq_name = self.construct_string("switch", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+                                 0.79)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
+            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+        else: # TODO: change coords
+            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+                                 0.79)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
+            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+
+    def add_switch_main(self, parent_name):
+        main_seq_name = self.construct_string("switch", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.22, 0.35, 1.57)
+            self.add_command_action(main_seq_name, 182, 2) # manipulator
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+            self.add_command_action(main_seq_name, 162, -0.2, 0, 0, 0.1, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.1, 0, 0)
+            self.add_command_action(main_seq_name, 182, 0)  # manipulator
+            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+        else: # TODO: change coords
+            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+                                 0.79)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
+            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+
+    def add_bee_secondary(self, parent_name):
+        main_seq_name = self.construct_string("bee", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
+            self.add_command_action(main_seq_name, 162, -0.3, 0, 0, 0.2, 0, 6)
+            #self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 162, 0.02, 0.3, 0, 0.01, 0.15, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.3, 0, 0, 0.57, 0)
+        else: # TODO: change coords
+            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+                                 0.79)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
+            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+
+    def add_bee_main(self, parent_name):
+        main_seq_name = self.construct_string("bee", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
+            self.add_command_action(main_seq_name, 162, -0.3, 0, 0, 0.2, 0, 6)
+            #self.add_command_action(main_seq_name, 256)
+            self.add_command_action(main_seq_name, 162, 0.02, 0.3, 0, 0.01, 0.15, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.3, 0, 0, 0.57, 0)
+        else: # TODO: change coords
+            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+                                 0.79)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
+            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+
     def add_wire_start(self, parent_name):
         node_name = self.construct_string('wire_start', self.get_next_id())
         self.add_command_action(parent_name, node_name, self.wire_start_name)
@@ -730,9 +807,15 @@ class BehaviorTreeBuilder:
             elif name == "help":
                 self.add_open_or_close_all_action(self.root_seq_name, num)
             elif name == 'disposal':
-                self.add_disposal_action(self.root_seq_name)
-            elif name in ['funny']:
-                self.add_big_action(self.root_seq_name, self.construct_string(name, num), self.action_places[name][num])
+                self.add_disposal_action(self.root_seq_name, True or (len(self.strategy_sequence) > 2))
+            elif name in ['switch_secondary']:
+                self.add_switch_secondary(self.root_seq_name)
+            elif name in ['bee_secondary']:
+                self.add_bee_secondary(self.root_seq_name)
+            elif name in ['switch_main']:
+                self.add_switch_main(self.root_seq_name)
+            elif name in ['bee_main']:
+                self.add_bee_main(self.root_seq_name)
             elif name == 'heaps':
                 self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[num])
             elif name == 'cleanwater_tower_after_waste':
@@ -767,8 +850,11 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
-   #btb.add_strategy([("heaps",1)])
-    btb.add_strategy([("heaps", 0),("heaps", 1)])
+    btb.add_strategy([("switch_main",0)])
+    # btb.add_strategy([("heaps", 0)])
+    # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
+    # btb.add_strategy([("heaps",1)])
+    # btb.add_strategy([("heaps", 0),("heaps", 1)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
     # so = StrategyOperator(file='first_bank.txt')
 

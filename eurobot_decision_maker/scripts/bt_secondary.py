@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("cleanwater_tower_before_waste",0)])
     # btb.add_strategy([("cleanwater_tower_after_waste", 0)])
     # btb.add_strategy([("disposal",0)])
-    btb.add_strategy([("wastewater_reservoir",0)])
+    btb.add_strategy([("bee",0)])
     #btb.add_strategy([("cleanwater_tower_before_waste",0)])
     #btb.add_strategy([("cleanwater_tower_only_shoot4", 0)])
 
