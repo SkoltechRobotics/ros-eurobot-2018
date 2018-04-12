@@ -4,6 +4,7 @@ from executor import *
 from bt_builder import BehaviorTreeBuilder
 import pickle
 import os
+from std_msgs.msg import Int32
 
 print(os.getcwd())
 
@@ -171,7 +172,8 @@ def calculate_points():
         is_button * 25 +\
         is_move_wastewater_tower * 10 +\
         is_move_cleanwater_tower * 10
-    print("points = ", points)
+    points_pub.publish(str(points))
+    rospy.loginfo("POINTS " + str(points))
     return 0
 
 
@@ -207,6 +209,7 @@ if __name__ == "__main__":
     rospy.sleep(1.0)
     camera_cmd_pub = rospy.Publisher("/server/camera_command", String, queue_size=100)
     stm_node_cmd_pub = rospy.Publisher("/server/stm_node_command", String, queue_size=10)
+    points_pub = rospy.Publisher("/server/points", String, queue_size=100)
     res_sub = "/server/response"
     rospy.Subscriber("/server/plan", String, plan_callback)
     rospy.Subscriber("/server/wire_status", String, wire_callback)
