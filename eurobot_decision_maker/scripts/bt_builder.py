@@ -662,10 +662,9 @@ class BehaviorTreeBuilder:
     def add_wastewater_reservoir(self, parent_name):
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
-        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.5, 0)
+        self.add_command_action(main_seq_name, 162, 0.05, 0.1, 0, 0.57, 0.57, 0)
         self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
-        self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.5, 0, 0)
-        self.add_command_action(main_seq_name, 162, -0.1, 0.1, 0, 0.07, 0.07, 0)
+        self.add_command_action(main_seq_name, 162, -0.12, 0.09, 0, 0.16, 0.12, 0)
 
         self.add_wastewater_action(main_seq_name, "release")
         self.add_sleep_time(main_seq_name,1)

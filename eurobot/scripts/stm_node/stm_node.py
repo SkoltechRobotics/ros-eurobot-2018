@@ -9,6 +9,10 @@ from std_msgs.msg import Int32MultiArray
 import tf
 import numpy as np
 
+# libs for servo-motor (home automation panel switch manipulator)
+import RPi.GPIO as GPIO
+import time
+
 RATE = 20
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
@@ -79,6 +83,11 @@ class stm_node(STMprotocol):
 
         rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
 
+        # servo
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(17, GPIO.OUT)
+        self.pwm = GPIO.PWM(17, 50)
+
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
 
@@ -106,6 +115,19 @@ class stm_node(STMprotocol):
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
         successfully, responses = self.send(action_name, action_type, args)
+
+        # servo
+        if self.action_type == 256:
+            self.pwm.start(5) # servo manipulator-ON angle
+
+            def servo_response_wait_stop(event):
+                self.pub_response.publish(action_name + str(" finished"))
+                rospy.sleep(3)
+                self.pwm.ChangeDutyCycle(10)
+                self.pwm.stop()
+
+            rospy.Timer(rospy.Duration(.1), servo_response_wait_stop, oneshot=True)
+            return
 
         self.time_started[action_name] = rospy.get_time()
         if action_type in IMMEDIATE_FINISHED:
