@@ -37,8 +37,8 @@ class STMprotocol(object):
             0xc4: "=BB",
             0xd0: "=",
             0xa3: "=",
-            0xe0: "=B"
-
+            0xe0: "=B",
+            256: "=H"
         }
 
         self.unpack_format = {
