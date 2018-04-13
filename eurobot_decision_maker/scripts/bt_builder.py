@@ -47,6 +47,14 @@ class BehaviorTreeBuilder:
             "cleanwater_tower": np.array([[82.6, 16.6, 4.71]], dtype=np.float64)
         }
     }
+    heap_sides = {
+        0: (3, 2, 2),
+        1: (1, 0, 2),
+        2: (0, 0, 1),
+        3: (0, 0, 3),
+        4: (3, 0, 2),
+        5: (1, 2, 2)
+    }
     shifts = [(-1, 0), (0, -1), (1, 0), (0, 1)]
     def rotate(self, shift, a):
         alpha = np.pi/2*(a-1)
@@ -308,7 +316,7 @@ class BehaviorTreeBuilder:
         self.man_load[m] += 1
 
     def add_cubes_pick(self, parent_name, heap_num, manipulators, colors, **kvargs):
-        delay = 0
+        delay = 1
         if "delay" in kvargs:
             delay = kvargs["delay"]
         new = False
@@ -318,6 +326,7 @@ class BehaviorTreeBuilder:
         if "doors" in kvargs:
             doors = kvargs['doors']
 
+        rospy.loginfo(colors)
         pick_seq_name = self.construct_string("pick_with_doors", heap_num, self.get_next_id())
         self.add_sequence_node(parent_name, pick_seq_name)
         if doors:
@@ -358,9 +367,12 @@ class BehaviorTreeBuilder:
         rospy.loginfo(ss)
         self.bt.add_node_by_string(ss)
 
-    def add_rf_move(self, parent_name, heap_status):
+    def add_rf_move(self, parent_name, heap_status, colors=[], mans=[]):
         # add heap_status
-        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP", heap_status)
+        rospy.loginfo("RF MOVE colors "+str(colors))
+        rospy.loginfo("RF MOVE mans "+str(mans))
+        rospy.loginfo("RF MOVE colors "+str(colors+mans))
+        self.add_action_node(parent_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP", heap_status, *(colors + mans))
 
     def add_move_to_heap(self, parent_name, heap_num, angle):
         move_seq_name = self.construct_string("move_to_heap", heap_num, self.get_next_id())
@@ -369,7 +381,7 @@ class BehaviorTreeBuilder:
         # self.add_move_action(move_seq_name, *heap_coords, shift_multiplier=1)  # 3
         self.add_action_node(move_seq_name,"move_heap_by_nav","move_publisher",self.move_response,"move_heap",heap_num,angle)
         # self.add_move_action(move_seq_name, *heap_coords, move_type="move_odometry")
-        self.add_rf_move(move_seq_name, 0)
+        # self.add_rf_move(move_seq_name, 0)
         # self.add_action_node(move_seq_name, "rf_move", "move_publisher", self.move_response, "MOVETOHEAP")
 
     def add_heap_rotation(self, parent_name, angle):
@@ -473,21 +485,32 @@ class BehaviorTreeBuilder:
             # return 7
         return 0
 
-    def add_new_heap_pick(self, parent_name, heap_num, heap_strat):
-
+    def add_new_heap_pick(self, parent_name, heap_num, heap_strat, next_heap_num):
         main_seq_name = self.construct_string(parent_name, heap_strat[-1], heap_num)
         self.add_sequence_node(parent_name, main_seq_name)
         heap_strat = heap_strat[0]
 
         self.colors_left = {0, 1, 2, 3, 4}
         heap = self.action_places["heaps"][heap_num]
-        a = 0
-        self.add_move_to_heap(main_seq_name, heap_num, ((heap_strat[0][2]+4)%4)*np.pi/2)
+        a, c, m = self.heap_sides[heap_num]
+        rospy.loginfo("move_to_heap with params %d %d %d"%self.heap_sides[heap_num])
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
+
+        self.add_move_to_heap(main_seq_name, heap_num, a*np.pi/2)
         self.add_remove_heap_request(main_seq_name, heap_num)
-        self.add_rf_move(main_seq_name, self.get_heap_status(a*np.pi/2))
+        self.add_rf_move(main_seq_name, self.get_heap_status(a*np.pi/2), [c], [m])
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
-            a += da
+            if i == 0:
+                a_old = a
+                a = da
+                da = (a - a_old)%4
+                if da == 3:
+                    da = -1
+                rospy.loginfo("!!!!!!!!!!!!!!!!A ALERT %d %d" % (a, a_old))
+                if da != 0:
+                    self.add_new_heap_rotation(main_seq_name, da)
             if da != 0 and i != 0:
+                a += da
                 self.add_new_heap_rotation(main_seq_name, da)
             if dx ** 2 + dy ** 2 > 0:
                 rospy.loginfo("SHIFTS " + str(self.shifts.index((dx, dy))))
@@ -498,13 +521,20 @@ class BehaviorTreeBuilder:
                 dX = np.array([ndx, ndy, 0]) * 5.8
                 self.add_command_action(main_seq_name, 162, ndx*0.058, ndy*0.058, 0, 0.15, 0.15, 0)
                 #self.add_move_action(main_seq_name, *dX.tolist(), move_type="move_stm")
-            if i != 0:
-                self.add_sleep_time(main_seq_name, 0.5)
-                rospy.loginfo(a)
-                rospy.loginfo(mans)
-                self.add_rf_move(main_seq_name, self.get_heap_status((a*np.pi/2) % (2*np.pi), mans))
+            self.add_sleep_time(main_seq_name, 0.5)
+            rospy.loginfo(a)
+            rospy.loginfo(mans)
+            if da != 0 or dx != 0 or dy != 0:
+                self.add_rf_move(main_seq_name, self.get_heap_status((a*np.pi/2) % (2*np.pi), mans), colors, mans)
             #self.add_sleep_time(main_seq_name, 5)
             self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
+        # if heap_num != None:
+        #     next_a,_,_ = self.heap_sides[heap_num]
+        #     da = next_a - a
+        #     if da != 0:
+        #         self.add_new_heap_rotation(main_seq_name, da)
+
+        self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
     def add_full_heap_pick(self, parent_name, heap_num, cubes2):
         main_seq_name = self.construct_string("heap", heap_num, self.get_next_id())
@@ -847,7 +877,9 @@ class BehaviorTreeBuilder:
             elif name in ['bee_main']:
                 self.add_bee_main(self.root_seq_name)
             elif name == 'heaps':
-                self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[num])
+                next_num = num[1]
+                num = num[0]
+                self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[num], next_num)
             elif name == 'cleanwater_tower_after_waste':
                 self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", True, False)
             elif name == 'cleanwater_tower_before_waste':
@@ -881,11 +913,12 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
     btb.add_strategy([("bee_main",0), ("heaps", 1), ("heaps", 0), ("heaps", 2)])
+    # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
     # btb.add_strategy([("heaps",1)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
+    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None))])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -903,7 +936,7 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[4]['012'])
+    rospy.loginfo(heap_strats[3]['012'])
     btb.add_cubes_sequence_new(heap_strats[4]['012'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])

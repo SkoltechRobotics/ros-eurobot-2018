@@ -105,7 +105,7 @@ class stm_node(STMprotocol):
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status="finished"):
-
+        rospy.loginfo(self.time_started)
         if action_name in self.time_started:    
             timer = rospy.Timer(rospy.Duration(self.response_period),
                         lambda e: self.pub_response.publish(action_name + " " + action_status))
@@ -153,11 +153,13 @@ class stm_node(STMprotocol):
 
     def send(self, action_name, action_type, args):
 
+        rospy.loginfo("RECIEVED ODOM " + str(action_name) + ' ' + str(action_type))
         # Lock() is used to prevent mixing bytes of diff commands to STM
         self.mutex.acquire()
         # send command to STM32
         # rospy.loginfo('Sendid to STM: ' + str(action_type) + '|with args: ' + str(args))
         successfully, args_response = self.send_command(action_type, args)
+        rospy.loginfo("RECIEVED ODOM 2" + str(action_name) + ' ' + str(action_type))
         self.mutex.release()
 
         # high-level commands handling
@@ -224,6 +226,7 @@ class stm_node(STMprotocol):
 
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
+        rospy.loginfo("ODOMETRY ? %d" % (successfully))
         if successfully:
             # finished
             if args_response[0] == 0:
