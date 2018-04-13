@@ -14,12 +14,14 @@ class App:
 
         frame = Frame(master, bg="white", colormap="new")
         frame.pack()
-        frame1 = Frame(frame, bg="white", colormap="new")
+        frame0 = Frame(frame, bg="white", colormap="new")
+        frame0.pack(side="top")
+        frame1 = Frame(frame0, bg="white", colormap="new")
         frame1.pack(side="left")
-        frame2 = Frame(frame, bg="white", colormap="new")
+        frame2 = Frame(frame0, bg="white", colormap="new")
         frame2.pack(side="left")
         frame3 = Frame(frame, bg="white", colormap="new")
-        frame3.pack(side="left")
+        frame3.pack(side="top")
 
         Label(frame1, bg="white", height=1, width=8, font=("Helvetica", 32), text="POINTS").pack(side="top")
         self.points = StringVar()
