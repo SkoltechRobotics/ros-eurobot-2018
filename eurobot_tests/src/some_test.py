@@ -1,3 +1,9 @@
-import rospy
+from Tkinter import *
 
-print(rospy.get_published_topics())
+ROOT = Tk()
+LABEL = Label(ROOT, text="Hello, world!")
+LABEL.pack()
+ROOT.mainloop()
+LOOP_ACTIVE = True
+while LOOP_ACTIVE:
+    print("something")

@@ -6,6 +6,26 @@ from std_msgs.msg import String
 import re
 
 
+class SubscriberHandler(object):
+    def __init__(self, topic_name):
+        self.nodes = {}
+        self.topic_name = topic_name
+        rospy.Subscriber(topic_name, String, self.response_callback)
+
+    def handle_response(self, node, name):
+        self.nodes[name] = node
+
+    def response_callback(self, data):
+        action_id, action_status = re.match("(\S*)\s(\S*)", data.data).group(1, 2)  # finish it!
+        if action_id in self.nodes:
+            self.nodes[action_id].status = action_status
+            if action_status in ["finished", "failed"]:
+                self.nodes[action_id].finish()
+                self.nodes.pop(action_id)
+        else:
+            rospy.logwarn("Node %s not found in subscriber handler" % action_id)
+
+
 class TreeNode:
     """
         Base class for all possible nodes in tree.
@@ -56,7 +76,7 @@ class ActionNode(TreeNode):
         TODO: rewrite this docs in approtiate way
     """
 
-    def __init__(self, command_id, command_publisher, message, request_topic_name, without_response=False):
+    def __init__(self, command_id, command_publisher, message, sub_handler, without_response=False):
 
         # super(ActionNode, self).__init__()
         # doesn't work ??!! -> replaced with
@@ -69,23 +89,12 @@ class ActionNode(TreeNode):
         self.command_pub = command_publisher
         # this is ros publisher
 
-        self.request_topic_name = request_topic_name
+        self.sub_handler = sub_handler
         # this is name, subscriber will be created later
 
         self.message = message
         # this is python string
         self.without_response = without_response
-
-    def callback_for_terminating(self):
-        def cb(msg):
-            # rospy.loginfo(msg.data)
-            action_id, action_status = re.match("(\S*)\s(\S*)", msg.data).group(1, 2)  # finish it!
-            if action_id == self.id:
-                self.status = action_status
-                if self.status in ["finished", "failed"]:
-                    self.finish()
-
-        return cb
 
     def start(self):
         if self.status == "not started":  # do we need some mutex here?
@@ -95,11 +104,10 @@ class ActionNode(TreeNode):
                 self.message = self.id + ' ' + self.message
             else:
                 self.message.goal_id.id = self.id
-                # CHECKME ??? 
             rospy.loginfo(self.message)
 
             if not self.without_response:
-                self.sub = rospy.Subscriber(self.request_topic_name, String, self.callback_for_terminating())
+                self.sub_handler.handle_response(self, self.id)
                 self.command_pub.publish(self.message)
             else:
                 self.command_pub.publish(self.message)
@@ -108,7 +116,6 @@ class ActionNode(TreeNode):
 
     def finish(self):
         TreeNode.finish(self)
-        self.sub.unregister()
 
     def tick(self):
         if self.status == "not started":
@@ -377,9 +384,13 @@ class BehaviorTree:
         }
 
         self.pubs = {}
+        self.subs = {}
 
     def add_publisher(self, pub_name, pub):
         self.pubs[pub_name] = pub
+
+    def add_subscriber(self, sub_name, sub):
+        self.subs[sub_name] = sub
 
     def add_node(self, node, parent_name):
 
@@ -434,7 +445,7 @@ class BehaviorTree:
             # print node_params
             publisher_name, request_topic_name, message = re.match("(\S*)\s(\S*)\s([\S\s]*)", node_params).group(1, 2,
                                                                                                                  3)
-            node = ActionNode(node_name, self.pubs[publisher_name], message, request_topic_name)
+            node = ActionNode(node_name, self.pubs[publisher_name], message, self.subs[request_topic_name])
 
         # elif node_type == "parallel":
         # add parameter about n_failed

@@ -10,7 +10,7 @@ from std_msgs.msg import Int32
 print(os.getcwd())
 
 SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
-MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", 2), ("heaps", 1), ("heaps", 0)]
+MAIN_ROBOT_STRATEGY = [("bee_main", (0, 2)), ("heaps", (1, None)), ("disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 
@@ -35,6 +35,7 @@ class MainRobotBrain(object):
         self.move_pub = rospy.Publisher("/main_robot/move_command", String, queue_size=100)
         self.cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
+        self.res_sub = SubscriberHandler("/main_robot/response")
 
         self.rospack = rospkg.RosPack()
 
@@ -43,7 +44,7 @@ class MainRobotBrain(object):
             heap_strats = pickle.load(f)
         for i in range(N_STR):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
-                                      "/main_robot/response", "/main_robot/response", move_type='standard')
+                                      self.res_sub, self.res_sub, move_type='standard')
             btb.add_strategy(MAIN_ROBOT_STRATEGY)
             btb.add_cubes_sequence_new(heap_strats[i]['012'])
             btb.create_tree_from_strategy(wire_start=False)
@@ -52,7 +53,7 @@ class MainRobotBrain(object):
         self.is_active = False
 
         btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
-                                  "/main_robot/response", "/main_robot/response", move_type='standard')
+                                  self.res_sub, self.res_sub, move_type='standard')
         btb.add_strategy(EMERGENCY_MAIN_ROBOT_STRATEGY)
         btb.create_tree_from_strategy(wire_start=False)
         self.emerge_bt = btb.bt
@@ -99,9 +100,9 @@ class SecondaryRobotBrain(object):
         self.move_pub = rospy.Publisher("/secondary_robot/move_command", String, queue_size=100)
         self.cmd_pub = rospy.Publisher("/secondary_robot/stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
-
+        self.res_sub = SubscriberHandler("/secondary_robot/response")
         self.btb = BehaviorTreeBuilder("secondary_robot", self.move_pub, self.cmd_pub, self.map_pub,
-                                       "/secondary_robot/response", "/secondary_robot/response", move_type='standard')
+                                       self.res_sub, self.res_sub, move_type='standard')
         self.btb.add_strategy(SMALL_ROBOT_STRATEGY)
         self.btb.create_tree_from_strategy(wire_start=False)
         self.current_bt = self.btb.bt
@@ -214,7 +215,7 @@ if __name__ == "__main__":
     camera_cmd_pub = rospy.Publisher("/server/camera_command", String, queue_size=100)
     stm_node_cmd_pub = rospy.Publisher("/server/stm_node_command", String, queue_size=10)
     points_pub = rospy.Publisher("/server/points", String, queue_size=100)
-    res_sub = "/server/response"
+    res_sub = SubscriberHandler("/server/response")
     rospy.Subscriber("/server/plan", String, plan_callback)
     rospy.Subscriber("/server/wire_status", String, wire_callback)
     brain_secondary = SecondaryRobotBrain()

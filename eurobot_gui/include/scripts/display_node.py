@@ -59,8 +59,23 @@ if __name__ == '__main__':
     rate = rospy.Rate(100)
     rospy.loginfo("Start display")
 
-    root.mainloop()
-    root.destroy()
+
+    # def quit(event):
+    #     print "you pressed control c"
+    #     root.quit()
+
+
+    def check():
+        root.after(50, check)  # 50 stands for 50 ms.
+    root.after(50, check)
+
+    # root.bind('<Control-c>', quit)
+
+    try:
+        root.mainloop()
+    except:
+        print "you pressed control c"
+        sys.exit(0)
 
 
 

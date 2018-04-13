@@ -69,8 +69,10 @@ class BehaviorTreeBuilder:
         self.bt.add_publisher("move_publisher", move_pub)
         self.bt.add_publisher("cmd_publisher", cmd_pub)
         self.bt.add_publisher("map_publisher", map_pub)
-        self.move_response = move_response
-        self.cmd_response = cmd_response
+        self.move_response = move_response.topic_name
+        self.cmd_response = cmd_response.topic_name
+        self.bt.add_subscriber(move_response.topic_name, move_response)
+        self.bt.add_subscriber(cmd_response.topic_name, cmd_response)
         self.black_angle = 0  # angle for black cube to be picked by central manipulator
         self.opt_units = "cm"  # from self.opt_units to self.track_units
         self.track_units = "m"
@@ -92,6 +94,7 @@ class BehaviorTreeBuilder:
         self.heaps_sequences = []
         self.strategy_sequence = []
         self.cube_vector = np.array([[0], [5.8], [0.0]])
+        self.pick_one_by_one = False
 
         # secondary_robot
         self.bottom_sorter = str(0xc3)
@@ -544,16 +547,21 @@ class BehaviorTreeBuilder:
             rospy.loginfo(a)
             rospy.loginfo(mans)
 
-            if 0 in mans and 2 in mans:
-                mans_sep = [mans[:1], mans[1:]]
-                colors_sep = [colors[:1], colors[1:]]
-                for mans,colors in zip(mans_sep, colors_sep):
-                    self.add_rf_move(main_seq_name, *self.get_heap_status_new(mans, colors))
-                    self.add_cubes_pick(main_seq_name,heap_num, mans, colors, new=True, doors=False)
+            if self.pick_one_by_one:
+                for m, c in zip(mans, colors):
+                    self.add_rf_move(main_seq_name, *self.get_heap_status_new([m], [c]))
+                    self.add_cubes_pick(main_seq_name, heap_num, [m], [c], new=True, doors=False)
             else:
-                self.add_rf_move(main_seq_name, *self.get_heap_status_new(mans, colors))
-                #self.add_sleep_time(main_seq_name, 5)
-                self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
+                if 0 in mans and 2 in mans:
+                    mans_sep = [mans[:1], mans[1:]]
+                    colors_sep = [colors[:1], colors[1:]]
+                    for mans,colors in zip(mans_sep, colors_sep):
+                        self.add_rf_move(main_seq_name, *self.get_heap_status_new(mans, colors))
+                        self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
+                else:
+                    self.add_rf_move(main_seq_name, *self.get_heap_status_new(mans, colors))
+                    #self.add_sleep_time(main_seq_name, 5)
+                    self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
         # if heap_num != None:
         #     next_a,_,_ = self.heap_sides[heap_num]
         #     da = next_a - a
@@ -943,7 +951,8 @@ if __name__ == "__main__":
     cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
     map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
     move_type = 'standard'
-    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, "/main_robot/response", "/main_robot/response",
+    response_sub = SubscriberHandler("/main_robot/response")
+    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, response_sub, response_sub,
                               move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
@@ -954,7 +963,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
     # btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0), ("switch_main", 0), ("bee_main", 0)])
+    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0)])#, ("switch_main", 0), ("bee_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -972,11 +981,13 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[4]['012'])
-    btb.add_cubes_sequence_new(heap_strats[4]['012'])
+    rospy.loginfo(heap_strats[0]['012'])
+    btb.add_cubes_sequence_new(heap_strats[0]['012'])
+    btb.pick_one_by_one = True
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
+
     btb.bt.root_node.start()
     # btb.man_load[0] = 3
     # btb.man_load[1] = 4
