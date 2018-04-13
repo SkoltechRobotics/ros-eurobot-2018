@@ -1,3 +1,4 @@
+#! /bin/bash
 source /opt/ros/kinetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
 # export ROS_MASTER_URI=http://192.168.2.104:11311
