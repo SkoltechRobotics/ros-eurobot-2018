@@ -25,10 +25,10 @@ if __name__ == "__main__":
     # btb.add_strategy([("cleanwater_tower_before_waste",0)])
     # btb.add_strategy([("cleanwater_tower_after_waste", 0)])
     # btb.add_strategy([("disposal",0)])
-    btb.add_strategy([("cleanwater_tower_before_waste",0),("switch_secondary",0),("bee_secondary",0)])
+    # btb.add_strategy([("cleanwater_tower_before_waste",0),("switch_secondary",0),("bee_secondary",0)])
     # btb.add_strategy([("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower", 0), ("wastewater_reservoir", 0), ("bee_secondary",0)])
     # btb.add_strategy([("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)])
-    # btb.add_strategy([("wastewater_reservoir", 0)])
+    btb.add_strategy([("bee_secondary", 0)])
 
     #so = StrategyOperator(file='first_bank.txt')
     
