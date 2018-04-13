@@ -36,6 +36,13 @@ class BarrierNavigator():
             8: np.array([0, 1, 0]),
             9: np.array([0, 0, 1])
             }
+    shifts = { #by color, mm
+        0: 0.005,
+        1: 0.003,
+        2: 0.002,
+        3: 0.002,
+        4: 0.002
+    }
     def __init__(self, stm_command_publisher_name, response_pub_name, corrected_rf_data_pub_name):
         self.sensors = []
         self.phase = 0
@@ -137,34 +144,12 @@ class BarrierNavigator():
                     X_finished = True
 
 
-            # minS = ds[2]
-            # maxS = ds[0] or ds[1]
-            # started_ds = self.started_sensors[3:]*mask
-            # st_minS = started_ds[2]
-            # st_maxS = started_ds[0] or started_ds[1]
-            # if st_minS and st_maxS:
-            #     dX = 0
-            #     X_finished = True
-            # elif not st_minS and not st_maxS:
-            #     if not minS:
-            #         dX = -self.dx_quant
-            #     if minS:
-            #         dX = +self.dx_finish
-            #         X_finished = True
-            # elif st_minS and minS:
-            #     dX = -1
-            # elif st_maxS and maxS:
-            #     dX = 1
-            # elif st_minS and not minS:
-            #     dX = self
-
-
 
 
             cmd, _, _ = self.get_command_dx_dy(dX,dY)
             rospy.loginfo((dX, dY))
-            self.command_pub.publish(cmd)
-            self.wait_for_movement(self.CMD_NAME + str(self.i))
+            # self.command_pub.publish(cmd)
+            self.wait_for_movement(cmd, self.CMD_NAME + str(self.i))
 
     def move_cycle(self, phase, mask = np.array([1,1,1])):
         while not rospy.is_shutdown():
@@ -183,8 +168,8 @@ class BarrierNavigator():
                 rospy.loginfo("FINISHED by dx dy")
                 break
             rospy.loginfo(command)
-            self.command_pub.publish(command)
-            self.wait_for_movement("MOVEODOM" + str(self.i))
+            # self.command_pub.publish(command)
+            self.wait_for_movement(command, "MOVEODOM" + str(self.i))
 
     def move_cycle_one_new(self, mask):
         Y_finished = False
@@ -223,6 +208,7 @@ class BarrierNavigator():
             if X_touched and not s_x:
                 dx = 0
 
+            dx = -dx
             if reversed_x:
                 dx = -dx
 
@@ -250,8 +236,8 @@ class BarrierNavigator():
                 rospy.loginfo("FINISHED by dx dy")
                 break
             rospy.loginfo(command)
-            self.command_pub.publish(command)
-            self.wait_for_movement("MOVEODOM" + str(self.i))
+            # self.command_pub.publish(command)
+            self.wait_for_movement(command, "MOVEODOM" + str(self.i))
 
 
 
@@ -300,8 +286,8 @@ class BarrierNavigator():
                 rospy.loginfo("FINISED by dx dy")
                 break
             rospy.loginfo(command)
-            self.command_pub.publish(command)
-            self.wait_for_movement("MOVEODOM" + str(self.i))
+            # self.command_pub.publish(command)
+            self.wait_for_movement(command, "MOVEODOM" + str(self.i))
 
 
     def get_allowed_mask(self, case):
@@ -338,9 +324,12 @@ class BarrierNavigator():
             if action_type == "MOVETOHEAP":
                 rospy.loginfo("Receive command " + data.data)
 
-                if len(sys.argv) < 2:
-                    self.angle_calibration()
-
+                try:
+                    if len(sys.argv) < 2:
+                        self.angle_calibration()
+                except:
+                    pass
+                
                 case = int(data_splitted[2])
                 rospy.loginfo(case)
                 yellow_fix = case // 20
@@ -383,21 +372,21 @@ class BarrierNavigator():
                     self.move_cycle_one_new(mask)
                 if case == 9 and yellow_fix == 1:
                     cmd, dx, dy = self.get_command_dx_dy(0.004, 0)
-                    self.command_pub.publish(cmd)
-                    self.wait_for_movement("MOVEODOM" + str(self.i))
+                    # self.command_pub.publish(cmd)
+                    self.wait_for_movement(cmd, "MOVEODOM" + str(self.i))
                 rospy.loginfo("MOVETOHEAP FINNISH")
                 self.response_pub.publish(data_splitted[0] + ' finished')
 
         return cb
 
-    def wait_for_movement(self, name="MOVEODOM"):
+    def wait_for_movement(self, cmd, name="MOVEODOM"):
         self.has_moved = False
-
         def cb(msg):
             if msg.data == name + " finished":
                 self.has_moved = True
 
         rospy.Subscriber(self.response_pub_name, String, cb)
+        self.command_pub.publish(cmd)
         while not self.has_moved:
             rospy.sleep(0.1)
             # msg = rospy.wait_for_message(self.response_pub_name, String, timeout=3)
