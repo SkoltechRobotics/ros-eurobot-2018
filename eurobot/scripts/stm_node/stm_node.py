@@ -32,8 +32,8 @@ DEBUG_COMMANDS = [0x0c]
 
 class stm_node(STMprotocol):
     min_time_for_response = 0.25
-    response_time = 1.0
-    response_period = 0.05
+    response_time = 0.5
+    response_period = 0.1
 
     def __init__(self, serial_port):
         # ROS
@@ -136,13 +136,14 @@ class stm_node(STMprotocol):
 
             rospy.Timer(rospy.Duration(.2), servo_response_wait_stop, oneshot=True)
             return
-
-        successfully, responses = self.send(action_name, action_type, args)
-
+        
         self.time_started[action_name] = (rospy.get_time(), False)
         rospy.loginfo(self.time_started)
 
-        if action_type in IMMEDIATE_FINISHED:
+
+        successfully, responses = self.send(action_name, action_type, args)
+
+                if action_type in IMMEDIATE_FINISHED:
             self.finish_command(action_name, "finished")
         if action_type in DEBUG_COMMANDS:
             rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' + "successfully? :" + \
