@@ -182,6 +182,9 @@ class stm_node(STMprotocol):
         return successfully, args_response
 
     def publish_odom(self, coords, vel):
+        # check if no nan values
+        if np.any(coords != coords) or np.any(vel != vel):
+            return
         odom = Odometry()
         odom.header.frame_id = '%s_odom' % self.robot_name
         odom.child_frame_id = self.robot_name
