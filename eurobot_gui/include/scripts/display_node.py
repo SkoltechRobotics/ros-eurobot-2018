@@ -29,7 +29,11 @@ class App:
         self.points.set("0")
 
         Label(frame2, bg="white", height=1, width=13, font=("Helvetica", 32), text="SIDE").pack(side="top")
-        Label(frame2, bg='#%02x%02x%02x' % tuple(COLORS[1]), height=1, width=13, font=("Helvetica", 32)).pack(side="top")
+        if side == "orange":
+            Label(frame2, bg='#%02x%02x%02x' % tuple(COLORS[1]), height=1, width=13, font=("Helvetica", 32)).pack(side="top")
+        else:
+            Label(frame2, bg='#%02x%02x%02x' % tuple(COLORS[3]), height=1, width=13, font=("Helvetica", 32)).pack(
+                side="top")
         Label(frame2, bg="white", height=1, width=13, font=("Helvetica", 32), text="COLORS PLAN").pack(side="top")
         self.w = Canvas(frame2, bg="white", width=300, height=100)
         self.rect1 = self.w.create_rectangle(0, 0, 100, 100, fill="red", outline='white')
@@ -70,6 +74,7 @@ if __name__ == '__main__':
     root = Tk()
     root.title("Eurobot Reset")
     # root.geometry("500x400")
+    side = rospy.get_param("/field/color")
     app = App(root)
 
     rospy.Subscriber("/server/point", String, app.points_callback)
