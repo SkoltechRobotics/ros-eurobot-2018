@@ -23,7 +23,7 @@ class SubscriberHandler(object):
                 self.nodes[action_id].finish()
                 self.nodes.pop(action_id)
         else:
-            rospy.logwarn("Node %s name not found" % action_id)
+            rospy.logwarn("Node %s not found in subscriber handler" % action_id)
 
 
 class TreeNode:
