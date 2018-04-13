@@ -13,6 +13,9 @@ from copy import deepcopy
 
 
 class MapServer():
+    response_period = 0.1
+    response_time = 1.0
+
     def __init__(self):
         rospy.init_node('map_server', anonymous=True)
 
@@ -143,7 +146,10 @@ class MapServer():
                 self.add_heap(n)
                 self.grid.data = self.field.flatten()
                 self.pub()
-        rospy.Timer(rospy.Duration(0.05), lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"), oneshot=True)
+        timer = rospy.Timer(rospy.Duration(self.response_period),
+                            lambda e: self.pub_response_main_robot.publish(cmd_id + " finished"))
+        rospy.Timer(rospy.Duration(self.response_time),
+                    lambda e: timer.shutdown(), oneshot=True)
 
 
     def handle_get_map_main(self, req):

@@ -109,8 +109,13 @@ class stm_node(STMprotocol):
         if action_name in self.time_started:    
             timer = rospy.Timer(rospy.Duration(self.response_period),
                         lambda e: self.pub_response.publish(action_name + " " + action_status))
+
+            def stop_timer():
+                timer.shutdown()
+                self.time_started.pop(action_name)
+
             rospy.Timer(rospy.Duration(self.response_time),
-                        lambda e: timer.shutdown(), oneshot=True)
+                        stop_timer, oneshot=True)
         #if action_name in self.time_started and rospy.get_time() - self.time_started[
         #     action_name] < self.min_time_for_response:
         #    rospy.Timer(rospy.Duration(self.min_time_for_response),
@@ -118,7 +123,6 @@ class stm_node(STMprotocol):
         #                oneshot=True)
         #else:
         #    self.pub_response.publish(action_name + " " + action_status)
-        self.time_started.pop(action_name)
 
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)

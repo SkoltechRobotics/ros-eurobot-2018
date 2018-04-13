@@ -9,8 +9,8 @@ from std_msgs.msg import Int32
 
 print(os.getcwd())
 
-SMALL_ROBOT_STRATEGY = [("wastewater_tower", 0), ("wastewater_reservoir", 0), ("cleanwater_tower_after_waste", 0)]
-MAIN_ROBOT_STRATEGY = [("bee_main",0), ("switch_main",0), ("heaps", 1), ("heaps", 0), ("heaps", 2)]
+SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
+MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", 2), ("heaps", 1), ("heaps", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 
