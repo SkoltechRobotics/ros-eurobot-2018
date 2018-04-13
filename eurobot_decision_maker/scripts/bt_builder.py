@@ -197,7 +197,7 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.19,
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.22, 0.19,
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
@@ -238,24 +238,26 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("bee", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        if self.side == "orange":
+        if not self.side == "orange":
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-            self.add_command_action(main_seq_name, 182, 1) # manipulator
+            self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.2, 0.2, 0)
             self.add_command_action(main_seq_name, 162, 0.3, 0.025, 0, 0.57, 0.05, 0)
             self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
-            # self.add_command_action(main_seq_name, 162, 0, -0.3, 0, 0, 0.57, 0)
 
         else: # TODO: change coords
-            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
-                                 0.79)
-            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
-            self.add_command_action(main_seq_name, 256) # rise the manipulator
-            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75,
+                                 1.75, -0.8)
+            self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
+            self.add_command_action(main_seq_name, 182, 2)  # manipulator
+            self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, -0.225, -0.2, 0, 0.57, 0.52, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, -0.2, 0, 0.57, 0.57, 0)
+            self.add_command_action(main_seq_name, 182, 0)  # manipulator
+            self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
     def add_bee_main(self, parent_name):
         main_seq_name = self.construct_string("bee", self.get_next_id())

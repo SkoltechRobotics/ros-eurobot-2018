@@ -12,6 +12,13 @@ dim_z: 350.0
 dim_r: 141.0
 
 # LIDAR scanner coordinates in robot frame
-lidar_x: -24.0
+lidar_x: -25.0
 lidar_y: 36.0
 lidar_a: 1.57
+
+# Manipulators
+bee_manipulator_x: -113.0
+switch_manipulator_y: 77.0
+
+# Vortex for balls
+vortex: [-17.0, -81.0]
