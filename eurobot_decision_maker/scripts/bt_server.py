@@ -10,9 +10,9 @@ from std_msgs.msg import Int32
 print(os.getcwd())
 
 SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
-MAIN_ROBOT_STRATEGY = [("bee_main", (0, 2)), ("heaps", (1, None)), ("disposal", 0)]
-# EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
-EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
+MAIN_ROBOT_STRATEGY = [("heaps", (2, None)),  ("disposal", 0), ("bee_main", 0)]
+EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
+# EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 
 POSSIBLE_PLANS = [
     ['orange', 'black', 'green'],
@@ -141,15 +141,17 @@ def calculate_points():
     heap_points = 0
     for bt1 in bts:
         for child in bt1.root_node.child.children_list:
+            print(child.name)
+            print(child.status)
             if child.status == "finished":
-                if child.name.find("disposal") != -1:
+                if child.name.find("parallel_shift_down_man") != -1:
                     is_disposal = True
                 elif child.name.find("bee") != -1:
                     is_bee = True
-                elif child.name.find("button") != -1:
+                elif child.name.find("switch") != -1:
                     is_button = True
-                elif child.name.find("heaps") != -1:
-                    ind = child.name.find("heaps")
+                elif child.name.find("strategy") != -1:
+                    ind = child.name.find("strategy")
                     p = int(child.name[ind:].split("_")[1])
                     heap_points = max(heap_points, p)
                 elif child.name.find("cleanwater_tower_before_waste") != -1:
@@ -214,7 +216,7 @@ if __name__ == "__main__":
     rospy.sleep(1.0)
     camera_cmd_pub = rospy.Publisher("/server/camera_command", String, queue_size=100)
     stm_node_cmd_pub = rospy.Publisher("/server/stm_node_command", String, queue_size=10)
-    points_pub = rospy.Publisher("/server/points", String, queue_size=100)
+    points_pub = rospy.Publisher("/server/point", String, queue_size=100)
     res_sub = SubscriberHandler("/server/response")
     rospy.Subscriber("/server/plan", String, plan_callback)
     rospy.Subscriber("/server/wire_status", String, wire_callback)

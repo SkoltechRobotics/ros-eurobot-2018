@@ -19,7 +19,8 @@ if __name__ == "__main__":
     cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
     map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
     move_type = 'standard'
-    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, "/main_robot/response", "/main_robot/response",
+    res_sub = SubscriberHandler("/main_robot/response")
+    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, res_sub, res_sub,
                               move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
