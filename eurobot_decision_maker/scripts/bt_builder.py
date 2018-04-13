@@ -265,7 +265,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.18, -0.24, 0, 0.15, 0.2, 0)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
-            self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0.35, 0, 0, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
             self.add_command_action(main_seq_name, 162, 0.18, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
@@ -945,13 +945,13 @@ if __name__ == "__main__":
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
     # btb.add_strategy([("disposal",0)])
-    btb.add_strategy([("bee_main",0), ("heaps", 1), ("heaps", 0), ("heaps", 2)])
+    # btb.add_strategy([("bee_main",0), ("heaps", 1), ("heaps", 0), ("heaps", 2)])
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    # btb.add_strategy([("magic_cubes",0)])
+    btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal",0)])
+    # btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0), ("switch_main", 0), ("bee_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -969,8 +969,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[9]['012'])
-    btb.add_cubes_sequence_new(heap_strats[9]['012'])
+    rospy.loginfo(heap_strats[6]['012'])
+    btb.add_cubes_sequence_new(heap_strats[6]['012'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
