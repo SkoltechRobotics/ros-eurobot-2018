@@ -82,9 +82,9 @@ class STMprotocol(object):
 
 
     def pure_send_command(self, cmd, args):
-        self.log_file.write("-------------------------")
-        self.log_file.write("New response " + str(time.time()))
-        self.log_file.write("cmd: " + str(cmd) + " " + str(args))
+        self.log_file.write("-------------------------/n")
+        self.log_file.write("New response " + str(time.time()) + "/n")
+        self.log_file.write("cmd: " + str(cmd) + " " + str(args) + "/n")
         # Clear buffer
         self.ser.reset_output_buffer()
         self.ser.reset_input_buffer()
@@ -120,7 +120,7 @@ class STMprotocol(object):
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
 
-        self.log_file.write("return " + str(args))
+        self.log_file.write("return " + str(args) + "/n")
         return True, args
 
 

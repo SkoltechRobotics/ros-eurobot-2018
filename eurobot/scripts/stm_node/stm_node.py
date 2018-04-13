@@ -216,7 +216,7 @@ class stm_node(STMprotocol):
             if v[1] and current_time - v[0] < self.response_time:
                 # rospy.loginfo(k + ' ' + str(v[-1]))
                 self.pub_response.publish(k + ' ' + v[-1])
-            elif v[1]:
+            elif v[1] and current_time - v[0] > self.response_time:
                 delete_list.append(k)
         for k in delete_list:
             self.time_started.pop(k)
