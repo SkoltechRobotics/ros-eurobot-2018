@@ -1,7 +1,7 @@
 import serial
 import struct
 import datetime
-
+import time
 
 class STMprotocol(object):
     def __init__(self, serial_port, baudrate=64000):
@@ -78,8 +78,13 @@ class STMprotocol(object):
             0xe0: "=BB"
         }
 
+        self.log_file = open("stm_log_file%f"%time.time(), "w")
+
 
     def pure_send_command(self, cmd, args):
+        self.log_file.write("-------------------------")
+        self.log_file.write("New response " + str(time.time()))
+        self.log_file.write("cmd: " + str(cmd) + " " + str(args))
         # Clear buffer
         self.ser.reset_output_buffer()
         self.ser.reset_input_buffer()
@@ -114,6 +119,8 @@ class STMprotocol(object):
         if (sync + adr + answer_len + sum(answer[:-1])) % 256 != answer[-1]:
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
+
+        self.log_file.write("return " + str(args))
         return True, args
 
 
