@@ -88,8 +88,11 @@ class LocalPlanner:
 
         # get ROS params
         self.map_service_name = '/' + self.robot_name + '/static_map'
-        self.coords = np.array([rospy.get_param("/" + self.robot_name + "/start_x"), rospy.get_param("/" + self.robot_name + "/start_y"), rospy.get_param("/" + self.robot_name + "/start_a")]) / 1000.0
-        self.another_robot_coords = np.array([rospy.get_param("/" + self.another_robot_name + "/start_x"), rospy.get_param("/" + self.another_robot_name + "/start_y"), rospy.get_param("/" + self.another_robot_name + "/start_a")]) / 1000.0
+        self.team_color = rospy.get_param("/field/color")
+        self.coords = np.array(rospy.get_param('start_' + self.team_color))
+        self.coords[:2] /= 1000.0
+        self.another_robot_coords = np.array(rospy.get_param("/" + self.another_robot_name + "/start_" + self.team_color))
+        self.another_robot_coords[:2] /= 1000.0
         self.pose = self.coords2pose(self.coords)
         self.vel = np.zeros(3)
         # TODO: extrapolate pose (because its update rate is low)

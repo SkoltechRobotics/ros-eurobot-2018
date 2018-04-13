@@ -67,7 +67,10 @@ class stm_node():
         self.freq = 400
         self.rate = rospy.Rate(self.freq)  # 100Hz
 
-        self.coords = np.array([rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0, rospy.get_param('start_a')])
+        self.color = rospy.get_param("/field/color")
+
+        self.coords = np.array(rospy.get_param('start_' + self.color))
+        self.coords[:2] /= 1000.0
         self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
         self.vel = np.array([0.0, 0.0, 0.0])
 

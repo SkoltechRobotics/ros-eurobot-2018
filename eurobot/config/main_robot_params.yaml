@@ -1,6 +1,8 @@
 robot_name: "main_robot"
 
 # initial coordinates (robot center, not LIDAR coords)
+start_orange: [207.0, 217.0, 3.93]
+start_green: [2793.0, 217.0, 2.36]
 start_x: 207.0
 start_y: 217.0
 start_a: 3.93
