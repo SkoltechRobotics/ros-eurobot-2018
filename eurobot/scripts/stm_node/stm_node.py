@@ -74,7 +74,7 @@ class stm_node(STMprotocol):
         # turn stm inverse kinematics handler ON
         self.send("set_inverse_kinematics_ON", 13, [1])
 
-        self.color = rospy.get_param("team_color")
+        self.color = rospy.get_param("/field/color")
 
         # set initial coords in STM
         self.initial_coords = np.array(rospy.get_param('start_' + self.color))
