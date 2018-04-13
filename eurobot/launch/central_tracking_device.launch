@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 
+  <arg name="color" default="orange" />
+  <param name="/field/color" value="$(arg color)" />
+
   <include file="$(find eurobot)/launch/params.launch"/>
   <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
   <include file="$(find eurobot_navigation)/launch/spy.launch"/>
