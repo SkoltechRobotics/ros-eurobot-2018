@@ -208,7 +208,7 @@ class stm_node(STMprotocol):
     def response_timer_callback(self, event):
         current_time = rospy.get_time()
         delete_list = []
-        for k, v in self.time_started:
+        for k, v in self.time_started.items():
             if v[1] and current_time - v[0] < self.response_time:
                 self.pub_response.publish(k + ' ' + v[-1])
             else:
