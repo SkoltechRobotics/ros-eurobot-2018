@@ -69,8 +69,10 @@ class BehaviorTreeBuilder:
         self.bt.add_publisher("move_publisher", move_pub)
         self.bt.add_publisher("cmd_publisher", cmd_pub)
         self.bt.add_publisher("map_publisher", map_pub)
-        self.move_response = move_response
-        self.cmd_response = cmd_response
+        self.move_response = move_response.topic_name
+        self.cmd_response = cmd_response.topic_name
+        self.bt.add_subscriber(move_response.topic_name, move_response)
+        self.bt.add_subscriber(cmd_response.topic_name, cmd_response)
         self.black_angle = 0  # angle for black cube to be picked by central manipulator
         self.opt_units = "cm"  # from self.opt_units to self.track_units
         self.track_units = "m"
@@ -941,7 +943,8 @@ if __name__ == "__main__":
     cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
     map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
     move_type = 'standard'
-    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, "/main_robot/response", "/main_robot/response",
+    response_sub = SubscriberHandler("/main_robot/response")
+    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, response_sub, response_sub,
                               move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])
