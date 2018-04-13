@@ -123,6 +123,16 @@ class BarrierNavigator():
         self.started_sensors = None
         self.CMD_NAME = "MOVEODOM"
         self.rf_broken_flag = False
+        self.has_moved = {}
+
+        def cb(msg):
+            data_splitted = msg.data.split()
+            name = data_splitted[0]
+            status = data_splitted[1]
+            if name in self.has_moved:
+                self.has_moved[name] = status
+
+        self.wait_sub = rospy.Subscriber(self.response_pub_name, String, cb)
 
     def barrier_sensors_callback(self):
         def cb(data):
@@ -448,19 +458,14 @@ class BarrierNavigator():
         return cb
 
     def wait_for_movement(self, cmd, name="MOVEODOM"):
-        self.has_moved = False
-        def cb(msg):
-            if msg.data == name + " finished":
-                self.has_moved = True
-
-        self.wait_sub = rospy.Subscriber(self.response_pub_name, String, cb)
+        self.has_moved[name] = "started"
         self.command_pub.publish(cmd)
-        while not self.has_moved:
-            rospy.sleep(0.1)
+        while not self.has_moved[name] == "finished":
+            rospy.sleep(0.05)
             # msg = rospy.wait_for_message(self.response_pub_name, String, timeout=3)
             # if msg.data == name + " finished":
             #    break
-        self.wait_sub.unregister()
+
 
     def set_sensors_goals(self, phase):
         if phase == 0:
