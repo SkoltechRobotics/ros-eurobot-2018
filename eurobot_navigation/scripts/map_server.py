@@ -40,7 +40,7 @@ class MapServer():
         self.ROBOT_R = 0.2
         # detected robots close to field walls alogn axis X will not count (those are probably our beacons
         self.WALL_DIST_X = 0.05
-        self.SEPARATE_ROBOT_DISTANCE = 0.2
+        self.SEPARATE_ROBOT_DISTANCE = 0.25
         self.robots = []
         self.robots_upd_time = rospy.Time.now()
 
@@ -230,22 +230,27 @@ class MapServer():
         # put opponent robots on the map
         field_main[self.opponent_robots()] = self.OCCUPIED
         field_secondary = field_main.copy()
-
         # put our robots on the maps
         try:
             # get secondary robot coords
             (trans,rot) = self.listener.lookupTransform('/map', '/secondary_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
             self.coords_secondary = np.array([trans[0], trans[1], yaw])
-            
+            field_secondary[self.our_robot(self.size_main, self.coords_main)] = self.OCCUPIED
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as msg:
+            # rospy.loginfo("map_server failed to get TF of one or two robot")
+            pass
+        try:
             # get main robot coords
             (trans,rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
             yaw = tf.transformations.euler_from_quaternion(rot)[2]
             self.coords_main = np.array([trans[0], trans[1], yaw])
+            field_main[self.our_robot(self.size_secondary, self.coords_secondary)] = self.OCCUPIED
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as msg:
+            # rospy.loginfo("map_server failed to get TF of one or two robot")
+            pass
 
             # put the other robot on the map of each robot
-            field_main[self.our_robot(self.size_secondary, self.coords_secondary)] = self.OCCUPIED
-            field_secondary[self.our_robot(self.size_main, self.coords_main)] = self.OCCUPIED
 
             # publish robots for the social costmap layer
             #people = People()
@@ -270,7 +275,7 @@ class MapServer():
             #people.people = [main_rob]
             #self.pub_social_secondary.publish(people)
 
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as msg:
             #rospy.loginfo("map_server failed to get TF of one or two robot")
             pass
         
