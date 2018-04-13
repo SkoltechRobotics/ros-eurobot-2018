@@ -149,13 +149,14 @@ class stm_node(STMprotocol):
 
     def send(self, action_name, action_type, args):
 
-        rospy.loginfo("RECIEVED ODOM " + str(action_name) + ' ' + str(action_type))
+        # rospy.loginfo("RECIEVED ODOM " + str(action_name) + ' ' + str(action_type))
+        
         # Lock() is used to prevent mixing bytes of diff commands to STM
         self.mutex.acquire()
         # send command to STM32
         # rospy.loginfo('Sendid to STM: ' + str(action_type) + '|with args: ' + str(args))
         successfully, args_response = self.send_command(action_type, args)
-        rospy.loginfo("RECIEVED ODOM 2" + str(action_name) + ' ' + str(action_type))
+        # rospy.loginfo("RECIEVED ODOM 2" + str(action_name) + ' ' + str(action_type))
         self.mutex.release()
 
         # high-level commands handling
