@@ -1,4 +1,4 @@
-cost_factor: 3.0
+cost_factor: 0.8
 lethal_cost: 255
 neutral_cost: 50
 orientation_mode: 2
