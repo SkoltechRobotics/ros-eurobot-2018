@@ -866,7 +866,7 @@ class BehaviorTreeBuilder:
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
                 self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
                 # self.add_sleep_time(main_seq_name, .1)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
+                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
                 self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
                 self.add_sleep_time(main_seq_name, .1)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
