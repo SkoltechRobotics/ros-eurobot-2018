@@ -69,8 +69,10 @@ class BehaviorTreeBuilder:
         self.bt.add_publisher("move_publisher", move_pub)
         self.bt.add_publisher("cmd_publisher", cmd_pub)
         self.bt.add_publisher("map_publisher", map_pub)
-        self.move_response = move_response
-        self.cmd_response = cmd_response
+        self.move_response = move_response.topic_name
+        self.cmd_response = cmd_response.topic_name
+        self.bt.add_subscriber(move_response.topic_name, move_response)
+        self.bt.add_subscriber(cmd_response.topic_name, cmd_response)
         self.black_angle = 0  # angle for black cube to be picked by central manipulator
         self.opt_units = "cm"  # from self.opt_units to self.track_units
         self.track_units = "m"
@@ -198,14 +200,15 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.19,
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
-            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
             self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            self.add_command_action(main_seq_name, 182, 0) # manipulator
         else: # TODO: change coords
             self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
                                  0.79)
@@ -220,12 +223,12 @@ class BehaviorTreeBuilder:
 
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.22, 0.35, 1.57)
-            self.add_command_action(main_seq_name, 182, 2) # manipulator
+            self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.2, 0, 0, 0.2, 0, 0)
             self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
-            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         else: # TODO: change coords
             self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
                                  0.79)
@@ -946,7 +949,8 @@ if __name__ == "__main__":
     cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
     map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
     move_type = 'standard'
-    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, "/main_robot/response", "/main_robot/response",
+    response_sub = SubscriberHandler("/main_robot/response")
+    btb = BehaviorTreeBuilder("main_robot", move_pub, cmd_pub, map_pub, response_sub, response_sub,
                               move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("heaps", 0), ("heaps", 1), ("heaps", 2), ("disposal", 0)])

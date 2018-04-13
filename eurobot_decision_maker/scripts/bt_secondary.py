@@ -19,13 +19,15 @@ if __name__ == "__main__":
     move_type = 'standard'
     if len(sys.argv) > 1 and sys.argv[1] in ['simple','standard']:
         move_type = sys.argv[1]
-    btb = BehaviorTreeBuilder("secondary_robot", move_pub, cmd_pub, map_pub, "/secondary_robot/response", "/secondary_robot/response", move_type=move_type)
+    response_sub = SubscriberHandler("/secondary_robot/response")
+    btb = BehaviorTreeBuilder("secondary_robot", move_pub, cmd_pub, map_pub, response_sub, response_sub, move_type=move_type)
     # btb.add_strategy([("heaps",1),("funny",1),("heaps",2),("heaps",0),("disposal",0),("funny",0)])
     # btb.add_strategy([("cleanwater_tower_before_waste",0)])
     # btb.add_strategy([("cleanwater_tower_after_waste", 0)])
     # btb.add_strategy([("disposal",0)])
+    btb.add_strategy([("cleanwater_tower_before_waste",0),("switch_secondary",0),("bee_secondary",0)])
     # btb.add_strategy([("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower", 0), ("wastewater_reservoir", 0), ("bee_secondary",0)])
-    btb.add_strategy([("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)])
+    # btb.add_strategy([("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)])
     # btb.add_strategy([("wastewater_reservoir", 0)])
 
     #so = StrategyOperator(file='first_bank.txt')

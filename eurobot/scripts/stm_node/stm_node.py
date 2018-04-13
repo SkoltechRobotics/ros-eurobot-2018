@@ -32,8 +32,8 @@ DEBUG_COMMANDS = [0x0c]
 
 class stm_node(STMprotocol):
     min_time_for_response = 0.25
-    response_time = 0.7
-    response_period = 0.15
+    response_time = 0.5
+    response_period = 0.1
 
     def __init__(self, serial_port):
         # ROS
@@ -109,7 +109,7 @@ class stm_node(STMprotocol):
     def finish_command(self, action_name, action_status="finished"):
         if action_name in self.time_started:
             time_action = self.time_started[action_name][0]
-            self.time_started[action_name] = (time_action, True, action_status)
+            self.time_started[action_name] = (rospy.get_time(), True, action_status)
 
         #if action_name in self.time_started and rospy.get_time() - self.time_started[
         #     action_name] < self.min_time_for_response:
@@ -136,10 +136,13 @@ class stm_node(STMprotocol):
 
             rospy.Timer(rospy.Duration(.2), servo_response_wait_stop, oneshot=True)
             return
+        
+        self.time_started[action_name] = (rospy.get_time(), False)
+        rospy.loginfo(self.time_started)
+
 
         successfully, responses = self.send(action_name, action_type, args)
 
-        self.time_started[action_name] = (rospy.get_time(), False)
         if action_type in IMMEDIATE_FINISHED:
             self.finish_command(action_name, "finished")
         if action_type in DEBUG_COMMANDS:
@@ -209,9 +212,11 @@ class stm_node(STMprotocol):
         current_time = rospy.get_time()
         delete_list = []
         for k, v in self.time_started.items():
+            # rospy.loginfo(k + ' ' + str(v[-1]) + ' ' + str(current_time))
             if v[1] and current_time - v[0] < self.response_time:
+                # rospy.loginfo(k + ' ' + str(v[-1]))
                 self.pub_response.publish(k + ' ' + v[-1])
-            elif v[1]:
+            elif v[1] and current_time - v[0] > self.response_time:
                 delete_list.append(k)
         for k in delete_list:
             self.time_started.pop(k)
