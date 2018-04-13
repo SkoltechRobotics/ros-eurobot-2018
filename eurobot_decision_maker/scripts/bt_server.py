@@ -4,12 +4,15 @@ from executor import *
 from bt_builder import BehaviorTreeBuilder
 import pickle
 import os
+import rospkg
+from std_msgs.msg import Int32
 
 print(os.getcwd())
 
 SMALL_ROBOT_STRATEGY = [("wastewater_tower", 0), ("wastewater_reservoir", 0), ("cleanwater_tower_after_waste", 0)]
-MAIN_ROBOT_STRATEGY = [("heaps", 0), ("time", 30), ("heaps", 1), ("time", 50), ("heaps", 2), ("disposal", 0)]
-EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
+MAIN_ROBOT_STRATEGY = [("bee_main",0), ("switch_main",0), ("heaps", 1), ("heaps", 0), ("heaps", 2)]
+# EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
+EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 
 POSSIBLE_PLANS = [
     ['orange', 'black', 'green'],
@@ -33,14 +36,16 @@ class MainRobotBrain(object):
         self.cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
 
+        self.rospack = rospkg.RosPack()
+
         self.bts = {}
-        with open("very_important_bt_paths2.bin", "rb") as f:
+        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_1.bin", "rb") as f:
             heap_strats = pickle.load(f)
         for i in range(N_STR):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
                                       "/main_robot/response", "/main_robot/response", move_type='standard')
             btb.add_strategy(MAIN_ROBOT_STRATEGY)
-            btb.add_cubes_sequence_new(heap_strats[i]['001'])
+            btb.add_cubes_sequence_new(heap_strats[i]['012'])
             btb.create_tree_from_strategy(wire_start=False)
             self.bts[i] = btb.bt
         self.current_bt = self.bts[0]
@@ -171,7 +176,8 @@ def calculate_points():
         is_button * 25 +\
         is_move_wastewater_tower * 10 +\
         is_move_cleanwater_tower * 10
-    print("points = ", points)
+    points_pub.publish(str(points))
+    rospy.loginfo("POINTS " + str(points))
     return 0
 
 
@@ -207,6 +213,7 @@ if __name__ == "__main__":
     rospy.sleep(1.0)
     camera_cmd_pub = rospy.Publisher("/server/camera_command", String, queue_size=100)
     stm_node_cmd_pub = rospy.Publisher("/server/stm_node_command", String, queue_size=10)
+    points_pub = rospy.Publisher("/server/points", String, queue_size=100)
     res_sub = "/server/response"
     rospy.Subscriber("/server/plan", String, plan_callback)
     rospy.Subscriber("/server/wire_status", String, wire_callback)

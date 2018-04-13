@@ -21,7 +21,7 @@ GET_STARTUP_STATUS = 0xa3
 GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
 # TAKE_CUBE = 0xb0
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
-IMMEDIATE_FINISHED = [0xc4]
+IMMEDIATE_FINISHED = [0xc4, 0xb6, 0xe0]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA = 0xd0
@@ -31,16 +31,18 @@ DEBUG_COMMANDS = [0x0c]
 
 
 class stm_node(STMprotocol):
-    min_time_for_response = 0.2
+    min_time_for_response = 0.25
+    response_time = 1.0
+    response_period = 0.05
 
     def __init__(self, serial_port):
         # ROS
         rospy.init_node('stm_node', anonymous=True)
-        rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
         self.robot_name = rospy.get_param("robot_name")
+        rospy.Subscriber("stm_command", String, self.stm_command_callback)
+        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
 
         super(stm_node, self).__init__(serial_port, BAUD_RATE[self.robot_name])
         self.mutex = Lock()
@@ -84,9 +86,10 @@ class stm_node(STMprotocol):
         rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
 
         # servo
+        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(17, GPIO.OUT)
-        self.pwm = GPIO.PWM(17, 50)
+        GPIO.setup(18, GPIO.OUT)
+        self.pwm = GPIO.PWM(18, 100)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -103,31 +106,39 @@ class stm_node(STMprotocol):
 
     def finish_command(self, action_name, action_status="finished"):
 
-        if action_name in self.time_started and rospy.get_time() - self.time_started[
-             action_name] < self.min_time_for_response:
-            rospy.Timer(rospy.Duration(self.min_time_for_response),
-                        lambda e: self.pub_response.publish(action_name + " " + action_status),
-                        oneshot=True)
-        else:
-            self.pub_response.publish(action_name + " " + action_status)
+        if action_name in self.time_started:    
+            timer = rospy.Timer(rospy.Duration(self.response_period),
+                        lambda e: self.pub_response.publish(action_name + " " + action_status))
+            rospy.Timer(rospy.Duration(self.response_time),
+                        lambda e: timer.shutdown(), oneshot=True)
+        #if action_name in self.time_started and rospy.get_time() - self.time_started[
+        #     action_name] < self.min_time_for_response:
+        #    rospy.Timer(rospy.Duration(self.min_time_for_response),
+        #                lambda e: self.pub_response.publish(action_name + " " + action_status),
+        #                oneshot=True)
+        #else:
+        #    self.pub_response.publish(action_name + " " + action_status)
         self.time_started.pop(action_name)
 
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
-        successfully, responses = self.send(action_name, action_type, args)
 
         # servo
-        if self.action_type == 256:
-            self.pwm.start(5) # servo manipulator-ON angle
+        if action_type == 256:
+            self.pwm.start(10) # servo manipulator-ON angle
+            self.pwm.ChangeDutyCycle(5)
 
             def servo_response_wait_stop(event):
                 self.pub_response.publish(action_name + str(" finished"))
-                rospy.sleep(3)
+                rospy.sleep(2)
                 self.pwm.ChangeDutyCycle(10)
+                rospy.sleep(1)
                 self.pwm.stop()
 
-            rospy.Timer(rospy.Duration(.1), servo_response_wait_stop, oneshot=True)
+            rospy.Timer(rospy.Duration(.2), servo_response_wait_stop, oneshot=True)
             return
+
+        successfully, responses = self.send(action_name, action_type, args)
 
         self.time_started[action_name] = rospy.get_time()
         if action_type in IMMEDIATE_FINISHED:
@@ -173,7 +184,7 @@ class stm_node(STMprotocol):
         odom.pose.pose.orientation.z = quat[2]
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = vel[0]
-        odom.twist.twist.linear.x = vel[1]
+        odom.twist.twist.linear.y = vel[1]
         odom.twist.twist.angular.z = vel[2]
         self.pub_odom.publish(odom)
 
@@ -235,10 +246,11 @@ class stm_node(STMprotocol):
         return m_timer
 
     def stm_node_command_callback(self, data):
+        rospy.loginfo("stm node command " + data.data)
         splitted_data = data.data.split()
-        if splitted_data[0] == "start_wire":
+        if splitted_data[1] == "start_wire":
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
-        elif splitted_data[0] == "stop_wire":
+        elif splitted_data[1] == "stop_wire":
             self.wire_timer.shutdown()
 
     def wire_timer_callback(self, event):

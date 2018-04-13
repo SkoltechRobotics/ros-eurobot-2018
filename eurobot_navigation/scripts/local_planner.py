@@ -42,7 +42,7 @@ class LocalPlanner:
     # speed for odometry movements
     V_MAX_ODOMETRY_MOVEMENT = 0.4
     # loginfo flag
-    LOGINFO = True
+    LOGINFO = False
     # whether to request a global plan only ones
     ONESHOT = False
     # coefficient for speed limit to avoid collisions
@@ -56,7 +56,7 @@ class LocalPlanner:
         if self.robot_name == "main_robot":
             # maximum linear and rotational speed
             self.V_MAX = 0.35
-            self.W_MAX = 1.5
+            self.W_MAX = 1
             # acceleration of the robot until V_MAX
             self.ACCELERATION = 1
             # length of acceleration/deceleration tracks
@@ -142,7 +142,7 @@ class LocalPlanner:
             rospy.loginfo("self coords: " + str(self.coords))
         # current linear and angular goal distance
         goal_distance = self.distance(self.plan_length - 1)
-        goal_yaw_distance = abs(self.plan[-1][2] - self.coords[2])
+        goal_yaw_distance = min(abs(self.plan[-1][2] - self.coords[2]), 2 * np.pi - abs(self.plan[-1][2] - self.coords[2]))
         goal_yaw_distance = goal_yaw_distance if goal_yaw_distance < np.pi else np.abs(2 * np.pi - goal_yaw_distance)
         if self.LOGINFO:
             rospy.loginfo('goal_distance: ' + str(goal_distance) + ' ; ' + str(goal_yaw_distance))
@@ -337,8 +337,6 @@ class LocalPlanner:
                     stop_length = self.REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH
                     success, plan = self.approaching_plan(heap, goal_coords)
                     if success:
-                        np.set_printoptions(threshold=np.nan)
-                        print plan
                         self.set_plan(plan, cmd_id)
                 else:
                     success, plan = self.request_plan(self.pose, goal)

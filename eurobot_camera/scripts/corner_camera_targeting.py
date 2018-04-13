@@ -83,7 +83,7 @@ if __name__ == '__main__':
     rospy.loginfo("Start camera node")
     is_active = False
     rospy.loginfo("Start capture video")
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, 10)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
