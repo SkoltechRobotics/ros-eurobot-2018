@@ -453,13 +453,14 @@ class BarrierNavigator():
             if msg.data == name + " finished":
                 self.has_moved = True
 
-        rospy.Subscriber(self.response_pub_name, String, cb)
+        self.wait_sub = rospy.Subscriber(self.response_pub_name, String, cb)
         self.command_pub.publish(cmd)
         while not self.has_moved:
             rospy.sleep(0.1)
             # msg = rospy.wait_for_message(self.response_pub_name, String, timeout=3)
             # if msg.data == name + " finished":
             #    break
+        self.wait_sub.unregister()
 
     def set_sensors_goals(self, phase):
         if phase == 0:

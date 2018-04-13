@@ -949,9 +949,9 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
+    # btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    # btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0), ("switch_main", 0), ("bee_main", 0)])
+    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0), ("switch_main", 0), ("bee_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -969,8 +969,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[6]['012'])
-    btb.add_cubes_sequence_new(heap_strats[6]['012'])
+    rospy.loginfo(heap_strats[4]['012'])
+    btb.add_cubes_sequence_new(heap_strats[4]['012'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
