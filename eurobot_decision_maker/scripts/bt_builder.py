@@ -197,14 +197,15 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.19,
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
-            self.add_command_action(main_seq_name, 256) # rise the manipulator
+            self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
             self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            self.add_command_action(main_seq_name, 182, 0) # manipulator
         else: # TODO: change coords
             self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
                                  0.79)
@@ -219,12 +220,12 @@ class BehaviorTreeBuilder:
 
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.22, 0.35, 1.57)
-            self.add_command_action(main_seq_name, 182, 2) # manipulator
+            self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.2, 0, 0, 0.2, 0, 0)
             self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
-            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         else: # TODO: change coords
             self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
                                  0.79)
