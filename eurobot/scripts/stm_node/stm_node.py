@@ -85,6 +85,8 @@ class stm_node(STMprotocol):
 
         rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
 
+        rospy.Timer(rospy.Duration(self.response_period), self.response_timer_callback)
+
         # servo
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
@@ -105,17 +107,10 @@ class stm_node(STMprotocol):
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status="finished"):
-        rospy.loginfo(self.time_started)
-        if action_name in self.time_started:    
-            timer = rospy.Timer(rospy.Duration(self.response_period),
-                        lambda e: self.pub_response.publish(action_name + " " + action_status))
+        if action_name in self.time_started:
+            time_action = self.time_started[action_name][0]
+            self.time_started[action_name] = (rospy.get_time(), True, action_status)
 
-            def stop_timer():
-                timer.shutdown()
-                self.time_started.pop(action_name)
-
-            rospy.Timer(rospy.Duration(self.response_time),
-                        stop_timer, oneshot=True)
         #if action_name in self.time_started and rospy.get_time() - self.time_started[
         #     action_name] < self.min_time_for_response:
         #    rospy.Timer(rospy.Duration(self.min_time_for_response),
@@ -144,7 +139,9 @@ class stm_node(STMprotocol):
 
         successfully, responses = self.send(action_name, action_type, args)
 
-        self.time_started[action_name] = rospy.get_time()
+        self.time_started[action_name] = (rospy.get_time(), False)
+        rospy.loginfo(self.time_started)
+
         if action_type in IMMEDIATE_FINISHED:
             self.finish_command(action_name, "finished")
         if action_type in DEBUG_COMMANDS:
@@ -210,6 +207,20 @@ class stm_node(STMprotocol):
                               '%s_laser' % self.robot_name,
                               self.robot_name)
 
+    def response_timer_callback(self, event):
+        current_time = rospy.get_time()
+        delete_list = []
+        for k, v in self.time_started.items():
+            # rospy.loginfo(k + ' ' + str(v[-1]) + ' ' + str(current_time))
+            if v[1] and current_time - v[0] < self.response_time:
+                # rospy.loginfo(k + ' ' + str(v[-1]))
+                self.pub_response.publish(k + ' ' + v[-1])
+            elif v[1]:
+                delete_list.append(k)
+        for k in delete_list:
+            self.time_started.pop(k)
+
+
     def pub_timer_callback(self, event):
         successfully1, coords = self.send('request_stm_coords', 15, [])
         successfully2, vel = self.send('request_stm_vel', 9, [])
@@ -230,7 +241,6 @@ class stm_node(STMprotocol):
 
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
-        rospy.loginfo("ODOMETRY ? %d" % (successfully))
         if successfully:
             # finished
             if args_response[0] == 0:
