@@ -211,7 +211,7 @@ class stm_node(STMprotocol):
         for k, v in self.time_started.items():
             if v[1] and current_time - v[0] < self.response_time:
                 self.pub_response.publish(k + ' ' + v[-1])
-            else:
+            elif v[1]:
                 delete_list.append(k)
         for k in delete_list:
             self.time_started.pop(k)
