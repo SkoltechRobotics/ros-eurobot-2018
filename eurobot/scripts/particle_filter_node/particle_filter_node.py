@@ -139,7 +139,10 @@ if __name__ == '__main__':
         sense_noise = rospy.get_param("particle_filter/sense_noise")
         distance_noise = rospy.get_param("particle_filter/distance_noise")
         angle_noise = rospy.get_param("particle_filter/angle_noise")
-        pf_coords = np.array([rospy.get_param("start_x"), rospy.get_param("start_y"), rospy.get_param("start_a")])
+
+        pf_coords = np.array(rospy.get_param('start_' + color))
+        pf_coords[:2] /= 1000.0
+
         lidar_coords = np.array([rospy.get_param("lidar_x"), rospy.get_param("lidar_y"), rospy.get_param("lidar_a")])
         max_itens = rospy.get_param("particle_filter/max_itens")
         max_dist = rospy.get_param("particle_filter/max_dist")

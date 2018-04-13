@@ -22,14 +22,21 @@ class MapServer():
         # grid cell size in meters
         self.resolution = 0.01
 
+        # color of the team
+        self.team_color = rospy.get_param("/field/color")
+
         # get sizes of our robots
         self.size_main = np.array([rospy.get_param('/main_robot/dim_x'), rospy.get_param('/main_robot/dim_y')]) / self.resolution / 1000
         self.radius_main = rospy.get_param('/main_robot/dim_r')
         self.size_secondary = np.array([rospy.get_param('/secondary_robot/dim_x'), rospy.get_param('/secondary_robot/dim_y')]) / self.resolution / 1000
         self.radius_secondary = rospy.get_param('/secondary_robot/dim_r')
 
-        self.coords_main = np.array([rospy.get_param('/main_robot/start_x') / 1000.0, rospy.get_param('/main_robot/start_y') / 1000.0, rospy.get_param('/main_robot/start_a')])
-        self.coords_secondary = np.array([rospy.get_param('/secondary_robot/start_x') / 1000.0, rospy.get_param('/secondary_robot/start_y') / 1000.0, rospy.get_param('/secondary_robot/start_a')])
+        self.coords_main = np.array(rospy.get_param('/main_robot/start_' + self.team_color))
+        self.coords_main[:2] /= 1000.0
+
+        self.coords_secondary = np.array(rospy.get_param('/secondary_robot/start_' + self.team_color))
+        self.coords_secondary[:2] /= 1000.0
+
         self.ROBOT_R = 0.2
         # detected robots close to field walls alogn axis X will not count (those are probably our beacons
         self.WALL_DIST_X = 0.05
@@ -64,6 +71,9 @@ class MapServer():
         self.cube = np.full((18,18), False, dtype=bool)
         self.cube[6:12,:] = True
         self.cube[:,6:12] = True
+
+        if self.team_color == "green":
+            self.field = self.field[:,::-1]
 
         # initial coords of cubes
         self.heaps = []

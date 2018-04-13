@@ -74,9 +74,11 @@ class stm_node(STMprotocol):
         # turn stm inverse kinematics handler ON
         self.send("set_inverse_kinematics_ON", 13, [1])
 
+        self.color = rospy.get_param("team_color")
+
         # set initial coords in STM
-        self.initial_coords = [rospy.get_param('start_x') / 1000.0, rospy.get_param('start_y') / 1000.0,
-                               rospy.get_param('start_a')];
+        self.initial_coords = np.array(rospy.get_param('start_' + self.color))
+        self.initial_coords[:2] /= 1000.0
         self.send("set_initial_coords", 14, self.initial_coords)
 
         # get LIDAR coords
