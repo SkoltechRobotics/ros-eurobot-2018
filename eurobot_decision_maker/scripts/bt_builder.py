@@ -485,6 +485,20 @@ class BehaviorTreeBuilder:
             # return 7
         return 0
 
+    def get_heap_status_new(self, mans, colors):
+        if len(mans) == 1:
+            return mans[0] + 7, [colors[0]], [mans[0]]
+        else:
+            m_best = mans[0]
+            c_best = colors[0]
+
+            for m,c in zip(mans,colors):
+                rospy.loginfo(m)
+                if m in [0,2]:
+                    m_best = m
+                    c_best = c
+            return m_best + 7, [c_best], [m_best]
+
     def add_new_heap_pick(self, parent_name, heap_num, heap_strat, next_heap_num):
         main_seq_name = self.construct_string(parent_name, heap_strat[-1], heap_num)
         self.add_sequence_node(parent_name, main_seq_name)
@@ -498,8 +512,10 @@ class BehaviorTreeBuilder:
 
         self.add_move_to_heap(main_seq_name, heap_num, a*np.pi/2)
         self.add_remove_heap_request(main_seq_name, heap_num)
-        self.add_rf_move(main_seq_name, self.get_heap_status(a*np.pi/2), [c], [m])
+        if heap_strat[0][2] != a:
+            self.add_rf_move(main_seq_name, 0, [c], [m])
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
+            rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
             if i == 0:
                 a_old = a
                 a = da
@@ -524,10 +540,17 @@ class BehaviorTreeBuilder:
             self.add_sleep_time(main_seq_name, 0.5)
             rospy.loginfo(a)
             rospy.loginfo(mans)
-            if da != 0 or dx != 0 or dy != 0:
-                self.add_rf_move(main_seq_name, self.get_heap_status((a*np.pi/2) % (2*np.pi), mans), colors, mans)
-            #self.add_sleep_time(main_seq_name, 5)
-            self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
+
+            if 0 in mans and 2 in mans:
+                mans_sep = [mans[:1], mans[1:]]
+                colors_sep = [colors[:1], colors[1:]]
+                for mans,colors in zip(mans_sep, colors_sep):
+                    self.add_rf_move(main_seq_name, *self.get_heap_status_new(mans, colors))
+                    self.add_cubes_pick(main_seq_name,heap_num, mans, colors, new=True, doors=False)
+            else:
+                self.add_rf_move(main_seq_name, *self.get_heap_status_new(mans, colors))
+                #self.add_sleep_time(main_seq_name, 5)
+                self.add_cubes_pick(main_seq_name,heap_num, [m for m in mans], colors, new=True, doors=False)
         # if heap_num != None:
         #     next_a,_,_ = self.heap_sides[heap_num]
         #     da = next_a - a
@@ -627,10 +650,33 @@ class BehaviorTreeBuilder:
 
         for h in self.heaps_sequence:
             print(h)
+    def add_magic_cubes_action(self, parent_name):
+        magic_seq_name = self.construct_string("magic_cubes_action", self.get_next_id())
+        self.add_sequence_node(parent_name, magic_seq_name)
+
+        parallel_down = self.construct_string("parallel", "shift_down_mans", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(magic_seq_name, "parallel", parallel_down, sep=' '))
+
+        self.add_command_action(parallel_down, 179, 0)
+        self.add_command_action(parallel_down, 179, 1)
+        self.add_command_action(parallel_down, 179, 2)
+
+        parallel_magic = self.construct_string("parallel", "release_magic", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(magic_seq_name, "parallel", parallel_magic, sep=' '))
+
+        self.add_command_action(parallel_magic, self.magic_cube_action_name, 0)
+        self.add_command_action(parallel_magic, self.magic_cube_action_name, 2)
+
+
 
     def add_disposal_action(self, parent_name, odometry_shift=False):
+        super_parallel = self.construct_string("parallel", "shift_down_mans", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", super_parallel, sep=' '))
+
         main_seq_name = self.construct_string("disposal", self.get_next_id())
-        self.add_sequence_node(parent_name, main_seq_name)
+        self.add_sequence_node(super_parallel, main_seq_name)
+
+        self.add_magic_cubes_action(super_parallel)
 
         coordinates_first = np.array([80.0, 10.0, 3.14])
         # self.add_command_action(parent_name, 0xb2, 2, 0)
@@ -638,44 +684,29 @@ class BehaviorTreeBuilder:
         if odometry_shift:
             self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.1, 0)
 
-        parallel_name = self.construct_string("parallel", "move_and_magic", self.get_next_id())
-        self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", parallel_name, sep=' '))
-
-        self.add_move_action(parallel_name, *coordinates_first)
-
-        magic_seq_name = self.construct_string("magic_stuff", self.get_next_id())
-        self.add_sequence_node(parallel_name, magic_seq_name)
-
-        parallel_down = self.construct_string("parallel", "shift_down_mans", self.get_next_id())
-        self.bt.add_node_by_string(self.construct_string(magic_seq_name, "parallel", parallel_name, sep=' '))
-
-        self.add_command_action(parallel_down, 179, 0)
-        self.add_command_action(parallel_down, 179, 2)
-
-        parallel_magic = self.construct_string("parallel", "release_magic", self.get_next_id())
-        self.bt.add_node_by_string(self.construct_string(magic_seq_name, "parallel", parallel_name, sep=' '))
-
-        self.add_command_action(parallel_magic, self.magic_cube_action_name, 0)
-        self.add_command_action(parallel_magic, self.magic_cube_action_name, 1)
-
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
+        self.add_move_action(main_seq_name, *coordinates_first)
 
         self.add_command_action(main_seq_name, 0xb2, 0, 1)  # open left
         self.add_command_action(main_seq_name, 177, 0)
         self.add_command_action(main_seq_name, 0xb3, 0)
-        self.add_command_action(main_seq_name, 162, -0.15, 0, 0, 0.2, 0, 0)
-        self.add_command_action(main_seq_name, 162, 0.04, 0, 0, 0.1, 0, 0)
+        self.add_command_action(main_seq_name, 162, -0.15, 0, 0, 0.5, 0, 0)
+        self.add_command_action(main_seq_name, 162, 0.04, 0, 0, 0.2, 0, 0)
         self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.2, 0)
-        self.add_command_action(main_seq_name, 162, 0.36, 0, 0, 0.2, 0, 0)
-        self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.2, 0)
+        self.add_command_action(main_seq_name, 162, 0.33, 0, 0, 0.3, 0, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.5, 0)
         self.add_command_action(main_seq_name, 177, 1)
         self.add_command_action(main_seq_name, 0xb3, 1)
         self.add_command_action(main_seq_name, 0xb2, 2, 1)  # open right
         self.add_command_action(main_seq_name, 177, 2)
         self.add_command_action(main_seq_name, 0xb3, 2)
-        self.add_command_action(main_seq_name, 162, -0.07, 0, 0, 0.1, 0, 0)
+        self.add_command_action(main_seq_name, 162, -0.07, 0, 0, 0.3, 0, 0)
         self.add_command_action(main_seq_name, 162, 0, -0.5, 0, 0, 0.3, 0)
         self.add_command_action(main_seq_name, 0xb2, 0, 0)  # close
         self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
+
+
+        self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
     def test_main_robot_movements(self, parent_name):
         main_seq_name = self.construct_string("main_test", self.get_next_id())
@@ -867,7 +898,7 @@ class BehaviorTreeBuilder:
             elif name == "help":
                 self.add_open_or_close_all_action(self.root_seq_name, num)
             elif name == 'disposal':
-                self.add_disposal_action(self.root_seq_name, True or (len(self.strategy_sequence) > 2))
+                self.add_disposal_action(self.root_seq_name, False)
             elif name in ['switch_secondary']:
                 self.add_switch_secondary(self.root_seq_name)
             elif name in ['bee_secondary']:
@@ -895,6 +926,8 @@ class BehaviorTreeBuilder:
                 self.test_main_robot_movements(self.root_seq_name)
             elif name == "time":
                 self.time_checker(self.root_seq_name, num)
+            elif name == "magic_cubes":
+                self.add_magic_cubes_action(self.root_seq_name)
         return self.bt
 
 
@@ -915,9 +948,9 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    # btb.add_strategy([("heaps",1)])
+    # btb.add_strategy([("magic_cubes",0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None))])
+    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal",0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
@@ -935,8 +968,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[3]['012'])
-    btb.add_cubes_sequence_new(heap_strats[4]['012'])
+    rospy.loginfo(heap_strats[9]['012'])
+    btb.add_cubes_sequence_new(heap_strats[9]['012'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
