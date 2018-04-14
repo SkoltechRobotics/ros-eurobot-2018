@@ -5,6 +5,7 @@ from executor import *
 import copy
 import numpy as np
 import pickle
+import rospkg
 
 # from cube_picking_optimizer import *
 
@@ -200,22 +201,25 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.22, 0.19,
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.207, 0.25,
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.16, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
             self.add_command_action(main_seq_name, 182, 0) # manipulator
         else: # TODO: change coords
-            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.947, 0.25,
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
-            self.add_command_action(main_seq_name, 256) # rise the manipulator
-            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 182, 1) # manipulator
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+            self.add_command_action(main_seq_name, 162, -0.16, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            self.add_command_action(main_seq_name, 182, 0) # manipulator
 
     def add_switch_main(self, parent_name):
         main_seq_name = self.construct_string("switch", self.get_next_id())
@@ -223,42 +227,44 @@ class BehaviorTreeBuilder:
 
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.22, 0.35, 1.57)
-            self.add_command_action(main_seq_name, 182, 1) # manipulator
+            self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.2, 0, 0, 0.2, 0, 0)
             self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         else: # TODO: change coords
-            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
-                                 0.79)
-            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
-            self.add_command_action(main_seq_name, 256) # rise the manipulator
-            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.96, 0.35, 1.57)
+            self.add_command_action(main_seq_name, 182, 2) # manipulator
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+            self.add_command_action(main_seq_name, 162, -0.2, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 182, 0)  # manipulator
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
 
     def add_bee_secondary(self, parent_name):
         main_seq_name = self.construct_string("bee", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        if not self.side == "orange":
+        if self.side == "orange":
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 2) # manipulator
-            self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.2, 0.2, 0)
-            self.add_command_action(main_seq_name, 162, 0.3, 0.025, 0, 0.57, 0.05, 0)
-            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, -0.1, 0.3, 0, 0.07, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, 0.1, 0.025, 0, 0.57, 0.15, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, -0.8, 0, 0, 6)
+            self.add_command_action(main_seq_name, 162, 0.2, -0.2, 0, 0.57, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
 
-        else: # TODO: change coords
+        else:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75,
-                                 1.75, -0.8)
+                                 1.75, -0.6)
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
             self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.2, 0)
-            self.add_command_action(main_seq_name, 162, -0.225, -0.2, 0, 0.57, 0.52, 0)
-            self.add_command_action(main_seq_name, 162, 0.2, -0.2, 0, 0.57, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.7, 0, 0, 6)
+            self.add_command_action(main_seq_name, 162, -0.25, -0.25, 0, 0.5, 0.5, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
@@ -267,24 +273,27 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.65, 4.71)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.42, 1.6, -0.8)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-            self.add_command_action(main_seq_name, 162, -0.18, -0.24, 0, 0.15, 0.2, 0)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
-            self.add_command_action(main_seq_name, 162, 0, 0.35, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, -0.3, -0.05, 0, 0.3, 0.05, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, -1, 0, 0, 6)
+            self.add_command_action(main_seq_name, 162, -0.025, 0.2, 0, 0.08, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
-            self.add_command_action(main_seq_name, 162, 0.18, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
-            # self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
-            # self.add_command_action(main_seq_name, 182, 0)  # manipulator
-            # self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+
         else: # TODO: change coords
-            self.add_action_node(parent_name, "move", self.move_publisher_name, self.move_response, "move", 1.23, 0.2,
-                                 0.79)
-            self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
-            self.add_command_action(main_seq_name, 256) # rise the manipulator
-            self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.15, 0, 0, 0.57, 0, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.65, 1.53, 4.71)
+            self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+            # self.add_command_action(main_seq_name, 182, 1) # manipulator
+            self.add_command_action(main_seq_name, 162, -0.35, 0.35, 0, 0.2, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0.57, 0, 0)
+            # self.add_command_action(main_seq_name, 162, -0.025, -0.2, 0, 0.08, 0.57, 0)
+            # self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            # self.add_command_action(main_seq_name, 182, 0) # manipulator
+            self.add_command_action(main_seq_name, 162, 0.35, -0.1, 0, 0.57, 0.15, 0)
+            self.add_command_action(main_seq_name, 224, 1) # collision avoidance
 
     def add_wire_start(self, parent_name):
         node_name = self.construct_string('wire_start', self.get_next_id())
@@ -861,14 +870,14 @@ class BehaviorTreeBuilder:
                 # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
                 # self.add_sleep_time(main_seq_name, .1)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
-                self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
-                # self.add_sleep_time(main_seq_name, .1)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
-                self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+                # self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
+                self.add_sleep_time(main_seq_name, .2)
+                # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
+                # self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
                 # self.add_sleep_time(main_seq_name, .1)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
-                self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
-                self.add_sleep_time(main_seq_name, .1)
+                # self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
+                self.add_sleep_time(main_seq_name, .2)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
                 self.add_sleep_time(main_seq_name, .5)
 
@@ -961,14 +970,15 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    # btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
+    btb.add_strategy([("bee_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0)])#, ("switch_main", 0), ("bee_main", 0)])
+    # btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0)])#, ("switch_main", 0), ("bee_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
     rospy.loginfo("AAAAAAAAAAAAAAa")
-    with open("cubes_paths_beta_1.bin","rb") as f:
+    rospack = rospkg.RosPack()
+    with open(rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_1.bin","rb") as f:
         heap_strats = pickle.load(f)
     # btb.add_cubes_sequence([[[], [0], []],
     #                         [[3], [2], [1]],
