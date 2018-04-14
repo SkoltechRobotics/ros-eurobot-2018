@@ -529,7 +529,8 @@ class BehaviorTreeBuilder:
 
         angle = a *np.pi/2
         coordinate3 = self.action_places["heaps"][heap_num].reshape(3, 1)
-        shift = np.array([0,10,0],dtype=np.float).reshape(3, 1)
+        coordinate3[1], coordinate3[0] = coordinate3[0], coordinate3[1]
+        shift = np.array([0, 10, 0],dtype=np.float).reshape(3, 1)
         coordinate3 += rot_matrix(angle).dot(shift)
         rospy.loginfo("HEAP SHIFT " + str(coordinate3))
         self.add_move_action(main_seq_name, *coordinate3.ravel())

@@ -9,13 +9,13 @@ from std_msgs.msg import Int32
 
 print(os.getcwd())
 
+# MAIN STRATEGY FOR EUROBOT MOSCOW
 side = rospy.get_param("/field/color")
 if side == "orange":
-    MAIN_ROBOT_STRATEGY = [("bee_main", 0), ("heaps", (0, None)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
 else:
-    MAIN_ROBOT_STRATEGY = [("bee_main", 0), ("heaps", (5, None)), ("alt_disposal", 0)]
-SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0),
-                        ("wastewater_reservoir",0)]
+    MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (5, None)), ("alt_disposal", 0)]
+SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 
@@ -77,7 +77,6 @@ class MainRobotBrain(object):
         return 0
 
     def start_strategy(self):
-        self.cmd_pub.publish("start_main 13 1")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
@@ -94,8 +93,8 @@ class MainRobotBrain(object):
         return 1
 
     def stop_strategy(self):
-        self.cmd_pub.publish("stop_main 13 0")
         self.is_active = False
+        self.move_pub.publish("stop_main_cmd stop")
         self.current_bt.root_node.finish()
         self.done_bts.append(self.current_bt)
         return 0
@@ -120,14 +119,13 @@ class SecondaryRobotBrain(object):
         return 0
 
     def start_strategy(self):
-        self.cmd_pub.publish("start_secondary 13 1")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
 
     def stop_strategy(self):
-        self.cmd_pub.publish("stop_secondary 13 0")
         self.is_active = False
+        self.move_pub.publish("stop_secondary_cmd stop")
         self.current_bt.root_node.finish()
         self.done_bts.append(self.current_bt)
         return 0
