@@ -89,6 +89,8 @@ class stm_node(STMprotocol):
 
         rospy.Timer(rospy.Duration(self.response_period), self.response_timer_callback)
 
+        self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
+
         # servo
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
@@ -273,6 +275,7 @@ class stm_node(STMprotocol):
         rospy.loginfo("stm node command " + data.data)
         splitted_data = data.data.split()
         if splitted_data[1] == "start_wire":
+            self.wire_timer.shutdown()
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
         elif splitted_data[1] == "stop_wire":
             self.wire_timer.shutdown()
