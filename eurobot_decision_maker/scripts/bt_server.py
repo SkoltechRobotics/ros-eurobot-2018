@@ -77,6 +77,7 @@ class MainRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        self.cmd_pub.publish("start_main 13 1")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
@@ -93,6 +94,7 @@ class MainRobotBrain(object):
         return 1
 
     def stop_strategy(self):
+        self.cmd_pub.publish("stop_main 13 0")
         self.is_active = False
         self.current_bt.root_node.finish()
         self.done_bts.append(self.current_bt)
@@ -118,11 +120,13 @@ class SecondaryRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        self.cmd_pub.publish("start_secondary 13 1")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
 
     def stop_strategy(self):
+        self.cmd_pub.publish("stop_secondary 13 0")
         self.is_active = False
         self.current_bt.root_node.finish()
         self.done_bts.append(self.current_bt)

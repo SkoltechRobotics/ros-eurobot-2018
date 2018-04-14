@@ -525,7 +525,7 @@ class BehaviorTreeBuilder:
         a, c, m = self.heap_sides[heap_num]
         rospy.loginfo("move_to_heap with params %d %d %d"%self.heap_sides[heap_num])
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
-
+        
         self.add_move_to_heap(main_seq_name, heap_num, a*np.pi/2)
         self.add_remove_heap_request(main_seq_name, heap_num)
         if heap_strat[0][2] != a:
