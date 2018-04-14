@@ -835,6 +835,14 @@ class BehaviorTreeBuilder:
         for i in [0,2]:
             self.add_command_action(parallel_name2, 178, i, door_ac_type)
 
+    def add_shoot_all_small_robot(self, parent_name, to="left", repeat=8):
+        main_seq_name = self.construct_string("shoot_all", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+        self.add_shooting_motor_action(main_seq_name, "left", "on")
+        for _ in range(repeat):
+            self.add_shoot_sort_action(main_seq_name, to, .8)
+            self.add_sleep_time(main_seq_name, .8)
+
     def add_shooting_motor_action(self, parent_name, to="left", turn="on"):
         self.add_command_action(parent_name, self.shooting_motor, 0 if to == "left" else 1, 1 if turn == "on" else 0)
 
