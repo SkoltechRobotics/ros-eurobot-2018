@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="eurobot_camera" name="corner_camera_targeting" type="corner_camera_targeting.py" output="screen"/>
+</launch>

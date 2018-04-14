@@ -228,7 +228,6 @@ if __name__ == "__main__":
     bt.add_node(general, "server")
 
     # The main sequence before start
-    bt.add_node(ActionNode("start_wait_wire", stm_node_cmd_pub, "start_wire", res_sub, True), "general")
     bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", res_sub, True), "general")
     bt.add_node(ActionFunctionNode("init_secondary", brain_secondary.init_strategy), "general")
     main_cycle_if = TryUntilSuccessNode("main_cycle_if")
