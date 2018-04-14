@@ -79,7 +79,7 @@ class BehaviorTreeBuilder:
         self.track_units = "m"
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
-        self.side = "orange"
+        self.side = rospy.get_param("/field/color", "orange")
         self.action_places = self.action_places_both_sides[self.side]
 
         # main robot
@@ -262,10 +262,11 @@ class BehaviorTreeBuilder:
                                  1.75, -0.6)
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
-            self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.2, 0)
-            self.add_command_action(main_seq_name, 162, 0, 0, 0.7, 0, 0, 6)
-            self.add_command_action(main_seq_name, 162, -0.25, -0.25, 0, 0.5, 0.5, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0.25, 0, 0, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, -0.1, -0.075, 0, 0.57, 0.45, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
+            self.add_command_action(main_seq_name, 162, 0, 0, 2, 0, 0, 6)
             self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
     def add_bee_main(self, parent_name):
@@ -794,7 +795,10 @@ class BehaviorTreeBuilder:
             #     shift = self.wt_x_shift
             #     wt_coords_init = wt_coords - shift
             # self.add_move_action(main_seq_name, *wt_coords_init.tolist(), shift_multiplier=0)
-            tower_index = 1 if tower_name == "wastewater_tower" else 0
+            if self.side == "orange":
+                tower_index = 2 if tower_name == "wastewater_tower" else 0
+            else:
+                tower_index = 1 if tower_name == "wastewater_tower" else 3
             self.add_action_node(main_seq_name, "move_tower", self.move_publisher_name, self.move_response, "move_tower",tower_index)
 
         if only_odom:
@@ -835,9 +839,12 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("wastewater_reservoir", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
         self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-        self.add_command_action(main_seq_name, 162, 0.05, 0.1, 0, 0.57, 0.57, 0)
-        self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
-        self.add_command_action(main_seq_name, 162, -0.12, 0.05, 0, 0.16, 0.5, 0)
+        if self.side == "orange":
+            self.add_command_action(main_seq_name, 162, 0.05, 0.1, 0, 0.57, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, 3, 0, 0, 6)
+            self.add_command_action(main_seq_name, 162, -0.12, 0.05, 0, 0.16, 0.5, 0)
+        else:
+            self.add_command_action(main_seq_name, 162, -0.22, 0, 0.1, 0.25, 0, 0.08)
 
         self.add_wastewater_action(main_seq_name, "release")
         self.add_sleep_time(main_seq_name,1)
@@ -845,7 +852,11 @@ class BehaviorTreeBuilder:
         self.add_sleep_time(main_seq_name, 2)
         self.add_wastewater_action(main_seq_name, "close")
 
-        self.add_command_action(main_seq_name, 162, 0.1, -0.1, 0, 0.5, 0.5, 0)
+        if self.side == "orange":
+            self.add_command_action(main_seq_name, 162, 0.1, -0.1, 0, 0.57, 0.57, 0)
+        else:
+            self.add_command_action(main_seq_name, 162, 0.1, 0.2, 0, 0.3, 0.57, 0)
+
         self.add_command_action(main_seq_name, 224, 1) # collision avoidance
 
 
@@ -853,12 +864,11 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
-        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
         if not with_4_balls:
             self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
-        self.add_shooting_motor_action(main_seq_name,to,"on")
+        self.add_shooting_motor_action(main_seq_name, to, "on")
         if with_4_balls:
             for _ in range(4):
                 self.add_shoot_sort_action(main_seq_name, to, .8)
@@ -870,14 +880,14 @@ class BehaviorTreeBuilder:
                 # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
                 # self.add_sleep_time(main_seq_name, .1)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
-                # self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
-                self.add_sleep_time(main_seq_name, .2)
+                self.add_command_action(main_seq_name, 162, -0.0025, 0, 0, 0.57, 0, 0)
+                self.add_sleep_time(main_seq_name, .1)
                 # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
-                # self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
-                # self.add_sleep_time(main_seq_name, .1)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
-                # self.add_command_action(main_seq_name, 162, -0.005, 0, 0, 0.57, 0, 0)
-                self.add_sleep_time(main_seq_name, .2)
+                self.add_command_action(main_seq_name, 162, 0.005, 0, 0, 0.57, 0, 0)
+                self.add_sleep_time(main_seq_name, .1)
+                # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+                self.add_command_action(main_seq_name, 162, -0.0025, 0, 0, 0.57, 0, 0)
+                self.add_sleep_time(main_seq_name, .1)
                 self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
                 self.add_sleep_time(main_seq_name, .5)
 
@@ -887,7 +897,6 @@ class BehaviorTreeBuilder:
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
         self.add_command_action(main_seq_name, 162, 0.1, 0.1, 0, 0.57, 0.57, 0)
-        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
 
     def time_checker(self, parent_name, time):
         time_node_name = self.construct_string("time_checker", self.get_next_id())
@@ -970,7 +979,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    btb.add_strategy([("bee_main", 0)])
+    btb.add_strategy([("switch_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
     # btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0)])#, ("switch_main", 0), ("bee_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')

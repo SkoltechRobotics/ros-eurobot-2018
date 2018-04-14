@@ -42,7 +42,7 @@ class LocalPlanner:
     # speed for odometry movements
     V_MAX_ODOMETRY_MOVEMENT = 0.4
     # loginfo flag
-    LOGINFO = False
+    LOGINFO = True
     # whether to request a global plan only ones
     ONESHOT = False
     # coefficient for speed limit to avoid collisions
@@ -487,6 +487,7 @@ class LocalPlanner:
             get_map = rospy.ServiceProxy(self.map_service_name, GetMap)
             costmap = get_map().map
             res = costmap.info.resolution
+            print points
             return True, np.array([costmap.data[costmap.info.width * int(point.pose.position.y / res + 2) + int(
                 point.pose.position.x / res + 2)] == 100 for point in points])
         except Exception, e:
