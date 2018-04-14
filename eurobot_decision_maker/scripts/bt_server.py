@@ -11,9 +11,9 @@ print(os.getcwd())
 
 side = rospy.get_param("/field/color")
 if side == "orange":
-    MAIN_ROBOT_STRATEGY = [("bee_main", 0), ("heaps", (0, None)), ("disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("bee_main", 0), ("heaps", (0, None)), ("alt_disposal", 0)]
 else:
-    MAIN_ROBOT_STRATEGY = [("bee_main", 0), ("heaps", (5, None)), ("disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("bee_main", 0), ("heaps", (5, None)), ("alt_disposal", 0)]
 SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0),
                         ("wastewater_reservoir",0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]

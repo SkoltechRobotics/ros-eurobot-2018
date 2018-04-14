@@ -80,6 +80,7 @@ class BehaviorTreeBuilder:
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
         self.side = rospy.get_param("/field/color", "orange")
+        rospy.loginfo(self.side)
         self.action_places = self.action_places_both_sides[self.side]
 
         # main robot
@@ -95,7 +96,7 @@ class BehaviorTreeBuilder:
         self.heaps_sequences = []
         self.strategy_sequence = []
         self.cube_vector = np.array([[0], [5.8], [0.0]])
-        self.pick_one_by_one = False
+        self.pick_one_by_one = True
 
         # secondary_robot
         self.bottom_sorter = str(0xc3)
@@ -515,7 +516,7 @@ class BehaviorTreeBuilder:
                     c_best = c
             return m_best + 7, [c_best], [m_best]
 
-    def add_new_heap_pick(self, parent_name, heap_num, heap_strat, next_heap_num):
+    def add_new_heap_pick(self, parent_name, heap_num, heap_strat, next_heap_num, **kvargs):
         main_seq_name = self.construct_string(parent_name, heap_strat[-1], heap_num)
         self.add_sequence_node(parent_name, main_seq_name)
         heap_strat = heap_strat[0]
@@ -524,9 +525,23 @@ class BehaviorTreeBuilder:
         heap = self.action_places["heaps"][heap_num]
         a, c, m = self.heap_sides[heap_num]
         rospy.loginfo("move_to_heap with params %d %d %d"%self.heap_sides[heap_num])
+
+        angle = a *np.pi/2
+        coordinate3 = self.action_places["heaps"][heap_num].reshape(3, 1)
+        shift = np.array([0,10,0],dtype=np.float).reshape(3, 1)
+        coordinate3 += rot_matrix(angle).dot(shift)
+        rospy.loginfo("HEAP SHIFT " + str(coordinate3))
+        self.add_move_action(main_seq_name, *coordinate3.ravel())
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
-        
-        self.add_move_to_heap(main_seq_name, heap_num, a*np.pi/2)
+        if 'lift_up' in kvargs and kvargs['lift_up']:
+            parallel_up = self.construct_string("parallel", "shift_up_mans", self.get_next_id())
+            self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_up, sep=' '))
+
+            self.add_move_to_heap(parallel_up, heap_num, a*np.pi/2)
+            self.add_open_or_close_all_action(parallel_up, 1)
+        else:
+            self.add_move_to_heap(main_seq_name, heap_num, a * np.pi / 2)
+
         self.add_remove_heap_request(main_seq_name, heap_num)
         if heap_strat[0][2] != a:
             self.add_rf_move(main_seq_name, 0, [c], [m])
@@ -688,10 +703,8 @@ class BehaviorTreeBuilder:
         self.add_command_action(parallel_magic, self.magic_cube_action_name, 0)
         self.add_command_action(parallel_magic, self.magic_cube_action_name, 2)
 
-
-
-    def add_disposal_action(self, parent_name, odometry_shift=False):
-        super_parallel = self.construct_string("parallel", "shift_down_mans", self.get_next_id())
+    def add_alterinative_disposal_action(self, parent_name):
+        super_parallel = self.construct_string("parallel", "shift_down_mans_mans", self.get_next_id())
         self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", super_parallel, sep=' '))
 
         main_seq_name = self.construct_string("disposal", self.get_next_id())
@@ -699,33 +712,96 @@ class BehaviorTreeBuilder:
 
         self.add_magic_cubes_action(super_parallel)
 
-        coordinates_first = np.array([80.0, 10.0, 3.14])
+        if self.side == "orange":
+            coordinates_first = np.array([75.0, 30.0, 3.14])
+        else:
+            coordinates_first = np.array([225.0, 30.0, 3.14])
+
+        self.add_move_action(main_seq_name, *coordinates_first)
+
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
+        self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.1, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0.05, 0, 0.0, 0.05, 0)
+        self.add_command_action(main_seq_name, 162, 0, -0.05, 0, 0, 0.1, 0)
+
+        parallel_open = self.construct_string("parallel", "open_all", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_open, sep=' '))
+
+        self.add_command_action(parallel_open, 177, 0)
+        self.add_command_action(parallel_open, 177, 1)
+        self.add_command_action(parallel_open, 177, 2)
+
+        self.add_command_action(main_seq_name, 162, 0.1, 0, 0, 0.2, 0, 0)
+        self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+
+    def add_disposal_action(self, parent_name, odometry_shift=False):
+        super_parallel = self.construct_string("parallel", "shift_down_mans_mans", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", super_parallel, sep=' '))
+
+        main_seq_name = self.construct_string("disposal", self.get_next_id())
+        self.add_sequence_node(super_parallel, main_seq_name)
+
+        self.add_magic_cubes_action(super_parallel)
+
+        if self.side == "orange":
+            coordinates_first = np.array([85.0, 30.0, 3.14])
+        else:
+            coordinates_first = np.array([215.0, 30.0, 3.14])
         # self.add_command_action(parent_name, 0xb2, 2, 0)
         # self.add_command_action(parent_name, 0xb2, 1, 0)
         if odometry_shift:
             self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.1, 0)
 
-        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_move_action(main_seq_name, *coordinates_first)
 
-        self.add_command_action(main_seq_name, 0xb2, 0, 1)  # open left
-        self.add_command_action(main_seq_name, 177, 0)
-        self.add_command_action(main_seq_name, 0xb3, 0)
-        self.add_command_action(main_seq_name, 162, -0.15, 0, 0, 0.5, 0, 0)
-        self.add_command_action(main_seq_name, 162, 0.04, 0, 0, 0.2, 0, 0)
-        self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.2, 0)
-        self.add_command_action(main_seq_name, 162, 0.33, 0, 0, 0.3, 0, 0)
-        self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.5, 0)
-        self.add_command_action(main_seq_name, 177, 1)
-        self.add_command_action(main_seq_name, 0xb3, 1)
-        self.add_command_action(main_seq_name, 0xb2, 2, 1)  # open right
-        self.add_command_action(main_seq_name, 177, 2)
-        self.add_command_action(main_seq_name, 0xb3, 2)
-        self.add_command_action(main_seq_name, 162, -0.07, 0, 0, 0.3, 0, 0)
-        self.add_command_action(main_seq_name, 162, 0, -0.5, 0, 0, 0.3, 0)
-        self.add_command_action(main_seq_name, 0xb2, 0, 0)  # close
-        self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
-
+        self.add_command_action(main_seq_name, 224, 0)   # collision avoidance
+        self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.1, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0.0, 0.05, 0)
+        self.add_command_action(main_seq_name, 162, 0, -0.05, 0, 0, 0.1, 0)
+        if self.side == "orange":
+            self.add_command_action(main_seq_name, 0xb2, 0, 1)  # open left
+            self.add_command_action(main_seq_name, 177, 0)
+            self.add_command_action(main_seq_name, 0xb3, 0) #
+            self.add_command_action(main_seq_name, 162, -0.15, 0, 0, 0.5, 0, 0)
+            self.add_command_action(main_seq_name, 162, +0.05, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, 0.33, 0, 0, 0.3, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.5, 0)
+            parallel_open = self.construct_string("parallel", "open_all", self.get_next_id())
+            self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_open, sep=' '))
+            seq_mid_name = self.construct_string("seq_mid_name", self.get_next_id())
+            self.add_sequence_node(parallel_open, seq_mid_name)
+            self.add_command_action(seq_mid_name, 177, 1)
+            #self.add_command_action(seq_mid_name, 0xb3, 1)
+            seq_other_name = self.construct_string("seq_other_name", self.get_next_id())
+            self.add_sequence_node(parallel_open, seq_other_name)
+            self.add_command_action(seq_other_name, 177, 2)
+            #self.add_command_action(seq_other_name, 0xb3, 2)
+            self.add_command_action(seq_other_name, 0xb2, 2, 1)# open right
+            self.add_command_action(main_seq_name, 162, -0.07, 0, 0, 0.3, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.5, 0, 0, 0.3, 0)
+            # self.add_command_action(main_seq_name, 0xb2, 0, 0)  # close
+            # self.add_command_action(main_seq_name, 0xb2, 2, 0)  # close
+        else:
+            self.add_command_action(main_seq_name, 0xb2, 2, 1)  # open right
+            self.add_command_action(main_seq_name, 177, 2)
+            self.add_command_action(main_seq_name, 162, +0.15, 0, 0, 0.5, 0, 0) # x
+            self.add_command_action(main_seq_name, 162, -0.05, 0, 0, 0.2, 0, 0) # x
+            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.2, 0)  # y
+            self.add_command_action(main_seq_name, 162, -0.33, 0, 0, 0.3, 0, 0) # x
+            self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.5, 0)  # y
+            parallel_open = self.construct_string("parallel", "open_all", self.get_next_id())
+            self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_open, sep=' '))
+            seq_mid_name = self.construct_string("seq_mid_name", self.get_next_id())
+            self.add_sequence_node(parallel_open, seq_mid_name)
+            self.add_command_action(seq_mid_name, 177, 1)# open right
+            seq_other_name = self.construct_string("seq_other_name", self.get_next_id())
+            self.add_sequence_node(parallel_open, seq_other_name)
+            self.add_command_action(seq_other_name, 177, 0)
+           # self.add_command_action(seq_other_name, 0xb3, 0)
+            self.add_command_action(seq_other_name, 0xb2, 0, 1)
+            self.add_command_action(main_seq_name, 162, +0.07, 0, 0, 0.3, 0, 0) # x
+            self.add_command_action(main_seq_name, 162, 0, -0.3, 0, 0, 0.3, 0)  # y
 
         self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
@@ -814,10 +890,10 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
-        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
         self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_command_action(main_seq_name, self.bottom_sorter, 2)
         self.add_command_action(main_seq_name, self.wastewater_door, 0)
         delay = 0.5
@@ -885,6 +961,7 @@ class BehaviorTreeBuilder:
             self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
         self.add_shooting_motor_action(main_seq_name, to, "on")
+        self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         if with_4_balls:
             for _ in range(4):
                 self.add_shoot_sort_action(main_seq_name, to, .8)
@@ -912,6 +989,7 @@ class BehaviorTreeBuilder:
         self.add_sleep_time(main_seq_name, .5)
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
+        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
         self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.57, 0)
 
     def time_checker(self, parent_name, time):
@@ -931,7 +1009,7 @@ class BehaviorTreeBuilder:
         ss = self.construct_string(self.bt.name, "sequence", self.root_seq_name, sep=' ')
         rospy.loginfo(ss)
         self.bt.add_node_by_string(ss)
-
+        heap_index = 0
         if wire_start:
             self.add_wire_start(self.root_seq_name)
 
@@ -944,6 +1022,8 @@ class BehaviorTreeBuilder:
                 self.add_open_or_close_all_action(self.root_seq_name, num)
             elif name == 'disposal':
                 self.add_disposal_action(self.root_seq_name, False)
+            elif name == "alt_disposal":
+                self.add_alterinative_disposal_action(self.root_seq_name)
             elif name in ['switch_secondary']:
                 self.add_switch_secondary(self.root_seq_name)
             elif name in ['bee_secondary']:
@@ -955,7 +1035,8 @@ class BehaviorTreeBuilder:
             elif name == 'heaps':
                 next_num = num[1]
                 num = num[0]
-                self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[num], next_num)
+                self.add_new_heap_pick(self.root_seq_name, num, self.heaps_sequence[heap_index], next_num, lift_up=False)
+                heap_index += 1
             elif name == 'cleanwater_tower_after_waste':
                 self.add_cleanwater_tower(self.root_seq_name, "left" if self.side == "orange" else "right", True, False)
             elif name == 'cleanwater_tower_before_waste':
@@ -995,15 +1076,15 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    btb.add_strategy([("switch_main", 0)])
+    # btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    # btb.add_strategy([("heaps", (0,1)),("heaps", (1,None)),  ("disposal", 0)])#, ("switch_main", 0), ("bee_main", 0)])
+    btb.add_strategy([("bee_main", 0), ("heaps", (5, None)),  ("alt_disposal", 0)])#, ("switch_main", 0), ("bee_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
     rospy.loginfo("AAAAAAAAAAAAAAa")
     rospack = rospkg.RosPack()
-    with open(rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_1.bin","rb") as f:
+    with open(rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_2.bin", "rb") as f:
         heap_strats = pickle.load(f)
     # btb.add_cubes_sequence([[[], [0], []],
     #                         [[3], [2], [1]],
@@ -1016,8 +1097,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[0]['012'])
-    btb.add_cubes_sequence_new(heap_strats[0]['012'])
+    rospy.loginfo(heap_strats[0]['543'])
+    btb.add_cubes_sequence_new(heap_strats[0]['543'])
     btb.pick_one_by_one = True
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
