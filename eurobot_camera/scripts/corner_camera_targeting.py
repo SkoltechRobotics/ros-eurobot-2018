@@ -7,11 +7,15 @@ from std_msgs.msg import String
 from PlanRecognition import find_colors_geom, img_transformation, STEP, rag
 import numpy as np
 
+side = rospy.get_param("/field/color")
 COLORS = np.array([[0, 124, 176], [208, 93, 40], [14, 14, 16], [97, 153, 59],
                    [247, 181, 0]], dtype=np.uint8)
 # img_points = np.float32([(798, 549), (798, 488), (912, 487), (912, 553)])
 COLOR_NAMES = ["blue", "orange", "black", "green", "yellow"]
-img_points = np.float32([(950, 610), (950, 550), (1062, 550), (1062, 610)])
+if side == "orange":
+    img_points = np.float32([(950, 610), (950, 550), (1062, 550), (1062, 610)])
+else:
+    img_points = np.float32([(682, 602), (682, 536), (798, 536), (798, 595)])
 h_border = STEP * 2 * 3
 w_border = STEP * 2 * 7
 h_rect = int(130 / 30 * STEP)
@@ -43,6 +47,7 @@ def img_callback(img):
     global bridge
     global pub
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    pub_add_img.publish(bridge.cv2_to_imgmsg(cv2.cvtColor(img, cv2.COLOR_RGB2BGR), "bgr8"))
     img = cv2.warpPerspective(img, M, (w_border, h_border))
 
     img1 = img_transformation(img, **params)
@@ -75,6 +80,7 @@ if __name__ == '__main__':
     rospy.init_node('img_node', anonymous=True)
     pub = rospy.Publisher("/usb_cam/result_img", Image, queue_size=3)
     pub_add_img = rospy.Publisher("usb_cam/add_image", Image, queue_size=3)
+    pub_raw_img = rospy.Publisher("usb_cam/raw_image", Image, queue_size=3)
     pub_plan = rospy.Publisher("/server/plan", String, queue_size=3)
     rospy.Subscriber("/server/camera_command", String, cmd_callback)
     bridge = cv_bridge.CvBridge()
@@ -83,7 +89,7 @@ if __name__ == '__main__':
     rospy.loginfo("Start camera node")
     is_active = False
     rospy.loginfo("Start capture video")
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     cap.set(cv2.CAP_PROP_FPS, 10)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
