@@ -98,6 +98,11 @@ class BehaviorTreeBuilder:
         self.cube_vector = np.array([[0], [5.8], [0.0]])
         self.pick_one_by_one = True
 
+        self.heap_coords = np.zeros((self.N_HEAPS, 2))
+        for n in range(self.N_HEAPS):
+            self.heap_coords[n, 0] = rospy.get_param("/field/cube" + str(n + 1) + "c_x") / 1000
+            self.heap_coords[n, 1] = rospy.get_param("/field/cube" + str(n + 1) + "c_y") / 1000
+
         # secondary_robot
         self.bottom_sorter = str(0xc3)
         self.upper_sorter = str(0xc2)
@@ -527,11 +532,15 @@ class BehaviorTreeBuilder:
         rospy.loginfo("move_to_heap with params %d %d %d"%self.heap_sides[heap_num])
 
         angle = a *np.pi/2
-        coordinate3 = self.action_places["heaps"][heap_num].reshape(3, 1)
-        shift = np.array([0,10,0],dtype=np.float).reshape(3, 1)
-        coordinate3 += rot_matrix(angle).dot(shift)
-        rospy.loginfo("HEAP SHIFT " + str(coordinate3))
-        self.add_move_action(main_seq_name, *coordinate3.ravel())
+        # coordinate3 = self.action_places["heaps"][heap_num].reshape(3, 1)
+        # shift = np.array([0,10,0],dtype=np.float).reshape(3, 1)
+        # coordinate3 += rot_matrix(angle).dot(shift)
+        # self.add_move_action(main_seq_name, *coordinate3.ravel())
+        shift = np.array([0,0.06,0],dtype=np.float).reshape(3, 1)
+        coords = self.heap_coords[heap_num]
+        coords -= rot_matrix(angle).dot(shift*3)
+        rospy.loginfo("HEAP SHIFT " + str(coords))
+        self.add_action_node(main_seq_name, "move_approaching_heap", self.move_publisher_name, self.move_response, "move", coords[0], coords[1], angle)
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         if 'lift_up' in kvargs and kvargs['lift_up']:
             parallel_up = self.construct_string("parallel", "shift_up_mans", self.get_next_id())
@@ -1112,7 +1121,7 @@ if __name__ == "__main__":
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
 
-    btb.bt.root_node.start()
+    #btb.bt.root_node.start()
     # btb.man_load[0] = 3
     # btb.man_load[1] = 4
     # btb.man_load[2] = 3
