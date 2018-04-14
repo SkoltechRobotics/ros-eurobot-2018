@@ -42,7 +42,7 @@ class LocalPlanner:
     # speed for odometry movements
     V_MAX_ODOMETRY_MOVEMENT = 0.4
     # loginfo flag
-    LOGINFO = True
+    LOGINFO = False
     # whether to request a global plan only ones
     ONESHOT = False
     # coefficient for speed limit to avoid collisions
