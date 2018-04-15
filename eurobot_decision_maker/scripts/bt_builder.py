@@ -239,15 +239,16 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-        else: # TODO: change coords
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.86, 0.4, 1.57)
+        else:
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.96, 0.4, 1.57)
             self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-            self.add_command_action(main_seq_name, 162, 0, -0.125, 0, 0, 0.4, 0)
-            self.add_command_action(main_seq_name, 162, -0.25, 0, 0, 0.25, 0, 0)
-            self.add_command_action(main_seq_name, 162, -0.01, 0.05, 0, 0.1, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, -0.02, -0.1, 0, 0.1, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.25, 0, 0, 0.3, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.02, -0.05, 0, 0.25, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, -0.035, -0.05, 0, 0.4, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0.03, 0.1, 0, 0.2, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, -0.05,0.1, 0, 0.2, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0.25, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
 
@@ -272,7 +273,9 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
             self.add_command_action(main_seq_name, 162, 0, 0.25, 0, 0, 0.2, 0)
-            self.add_command_action(main_seq_name, 162, -0.1, -0.075, 0, 0.57, 0.45, 0)
+            self.add_command_action(main_seq_name, 162, -0.25, -0.2, 0, 0.57, 0.45, 0)
+            self.add_command_action(main_seq_name, 162, 0.05, 0.04, 0, 0.57, 0.45, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.8, 0, 0, 6)
             self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 162, 0, 0, 2, 0, 0, 6)
@@ -1110,9 +1113,9 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    # btb.add_strategy([("switch_main", 0), ("bee_main", 0)])
+    btb.add_strategy([("switch_main", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
-    btb.add_strategy([("bee_main", 0), ("switch_main", 0)])
+    # btb.add_strategy([("bee_main", 0), ("switch_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
