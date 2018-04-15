@@ -12,6 +12,7 @@ COLORS_NAME = ["blue", "orange", "black", "green", "yellow"]
 
 class App:
     def __init__(self, master):
+        self.master = master
 
         frame = Frame(master, bg="white", colormap="new")
         frame.pack()
@@ -68,6 +69,9 @@ class App:
             self.wire_label.configure(bg="yellow")
         elif data.data == "1":
             self.wire_label.configure(bg="green")
+
+    def server_status(self):
+        self.master.after(100, self.server_status)
 
 
 if __name__ == '__main__':
