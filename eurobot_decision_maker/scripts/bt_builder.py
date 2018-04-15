@@ -89,6 +89,8 @@ class BehaviorTreeBuilder:
         self.magic_cube_action_name = str(0xb4)
         self.funny_action_name = str(0xb6)
 
+        self.ok = rospy.get_param("/ok", False)
+
         self.heap_score = 0
 
         self.last_coordinates = [0,0,0]
@@ -257,7 +259,8 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.8, 1, 0)
+            if not self.ok:
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.8, 1, 0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 2) # manipulator
@@ -270,9 +273,9 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, 0, 0.2, 0, 0, 0.57, 0)
 
         else:
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.2, 1, -0.6)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75,
-                                 1.75, -0.6)
+            if not self.ok:
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.2, 1, -0.6)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75, 1.75, -0.6)
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
             self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.2, 0)
@@ -736,7 +739,9 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("disposal", self.get_next_id())
         self.add_sequence_node(super_parallel, main_seq_name)
 
-        self.add_magic_cubes_action(super_parallel)
+        self.add_command_action(super_parallel, 179, 0)
+        self.add_command_action(super_parallel, 179, 1)
+        self.add_command_action(super_parallel, 179, 2)
 
         if self.side == "orange":
             coordinates_first = np.array([75.0, 30.0, 3.14])
@@ -757,14 +762,18 @@ class BehaviorTreeBuilder:
         self.add_command_action(parallel_open, 177, 1)
         self.add_command_action(parallel_open, 177, 2)
 
-        parallel_open2 = self.construct_string("parallel", "open_all", self.get_next_id())
-        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_open2, sep=' '))
-
-        self.add_command_action(parallel_open2, 178, 0, 0)
-        self.add_command_action(parallel_open2, 178, 2, 0)
 
         # self.add_command_action(main_seq_name, 162, 0.1, 0, 0, 0.2, 0, 0)
         # self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
+
+        parallel_magic = self.construct_string("parallel", "release_magic", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_magic, sep=' '))
+
+        self.add_command_action(parallel_magic, self.magic_cube_action_name, 0)
+        self.add_command_action(parallel_magic, self.magic_cube_action_name, 2)
+
+        parallel_open2 = self.construct_string("parallel", "open_all", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_open2, sep=' '))
 
         self.add_command_action(parallel_open2, 178, 0, 1)
         self.add_command_action(parallel_open2, 178, 2, 1)
@@ -934,12 +943,13 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
-        if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
-        else:
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
+        if not self.ok:
+            if self.side == "orange":
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
+            else:
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
 
         self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
