@@ -2,4 +2,4 @@ cost_factor: 0.8
 lethal_cost: 255
 neutral_cost: 50
 orientation_mode: 2
-publish_potential: true
+publish_potential: false

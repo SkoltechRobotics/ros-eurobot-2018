@@ -257,6 +257,7 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.8, 1, 0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 2) # manipulator
@@ -269,6 +270,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, 0, 0.2, 0, 0, 0.57, 0)
 
         else:
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.2, 1, -0.6)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75,
                                  1.75, -0.6)
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
@@ -932,6 +934,13 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
+        else:
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
+
         self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
