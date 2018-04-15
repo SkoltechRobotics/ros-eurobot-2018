@@ -98,8 +98,8 @@ class BehaviorTreeBuilder:
         self.cube_vector = np.array([[0], [5.8], [0.0]])
         self.pick_one_by_one = True
 
-        self.heap_coords = np.zeros((self.N_HEAPS, 2))
-        for n in range(self.N_HEAPS):
+        self.heap_coords = np.zeros((6, 2))
+        for n in range(6):
             self.heap_coords[n, 0] = rospy.get_param("/field/cube" + str(n + 1) + "c_x") / 1000
             self.heap_coords[n, 1] = rospy.get_param("/field/cube" + str(n + 1) + "c_y") / 1000
 
@@ -298,7 +298,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_command_action(main_seq_name, 162, -0.25, 0.32, 0, 0.12, 0.25, 0)
-            self.add_command_action(main_seq_name, 162, -0.04, -0.45, 0, 0.07, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, -0.1, -0.55, 0, 0.1, 0.55, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
             self.add_command_action(main_seq_name, 162, 0.25, 0, 0, 0.22, 0, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
@@ -537,12 +537,17 @@ class BehaviorTreeBuilder:
         # shift = np.array([0,10,0],dtype=np.float).reshape(3, 1)
         # coordinate3 += rot_matrix(angle).dot(shift)
         # self.add_move_action(main_seq_name, *coordinate3.ravel())
-        shift = np.array([0,0.06,0],dtype=np.float).reshape(3, 1)
-        coords = self.heap_coords[heap_num]
-        coords -= rot_matrix(angle).dot(shift*3)
-        rospy.loginfo("HEAP SHIFT " + str(coords))
-        self.add_action_node(main_seq_name, "move_approaching_heap", self.move_publisher_name, self.move_response, "move", coords[0], coords[1], angle)
-        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
+        # shift = np.array([0,0.06,0],dtype=np.float).reshape(3, 1)
+        # coords = self.heap_coords[heap_num]
+        # rospy.loginfo(coords)
+        # sh = rot_matrix(angle).dot(shift*3).reshape(3,1)[:2,0].reshape(2,)
+        # rospy.loginfo("hm "+str(sh))
+        # rospy.loginfo(sh.shape)
+        # rospy.loginfo(coords.shape)
+        # coords -= sh
+        # rospy.loginfo("HEAP SHIFT " + str(coords))
+        # self.add_action_node(main_seq_name, "move_approaching_heap", self.move_publisher_name, self.move_response, "move", coords[0], coords[1], angle)
+
         if 'lift_up' in kvargs and kvargs['lift_up']:
             parallel_up = self.construct_string("parallel", "shift_up_mans", self.get_next_id())
             self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_up, sep=' '))
@@ -552,6 +557,8 @@ class BehaviorTreeBuilder:
         else:
             self.add_move_to_heap(main_seq_name, heap_num, a * np.pi / 2)
 
+
+        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_remove_heap_request(main_seq_name, heap_num)
         if heap_strat[0][2] != a:
             self.add_rf_move(main_seq_name, 0, [c], [m])
@@ -741,10 +748,16 @@ class BehaviorTreeBuilder:
         self.add_command_action(parallel_open, 177, 1)
         self.add_command_action(parallel_open, 177, 2)
 
+        parallel_open2 = self.construct_string("parallel", "open_all", self.get_next_id())
+        self.bt.add_node_by_string(self.construct_string(main_seq_name, "parallel", parallel_open2, sep=' '))
+
+        self.add_command_action(parallel_open2, 178, 0)
+        self.add_command_action(parallel_open2, 178, 2)
+
         self.add_command_action(main_seq_name, 162, 0.1, 0, 0, 0.2, 0, 0)
         self.add_command_action(main_seq_name, 162, -0.1, 0, 0, 0.2, 0, 0)
 
-    def add_disposal_action(self, parent_name, odometry_shift=False):
+    def add_disposal_action (self, parent_name, odometry_shift=False):
         super_parallel = self.construct_string("parallel", "shift_down_mans_mans", self.get_next_id())
         self.bt.add_node_by_string(self.construct_string(parent_name, "parallel", super_parallel, sep=' '))
 
