@@ -15,14 +15,17 @@ if SIDE == "orange":
     MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
 else:
     MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
-if side == "orange":
+if SIDE == "orange":
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("switch_secondary", 0), ("wastewater_tower", 0),
                             ("wastewater_reservoir", 0), ('bee_secondary', 0)]
 else:
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ("wastewater_tower",0), ("wastewater_reservoir",0), ('switch_secondary',0)]
-EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
+EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
-EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("switch_secondary", 0)]
+if SIDE == "orange":
+    EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("switch_secondary", 0)]
+else:
+    EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("bee_secondary", 0)]
 
 POSSIBLE_PLANS = [
     ['orange', 'black', 'green'],
