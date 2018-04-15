@@ -14,8 +14,12 @@ side = rospy.get_param("/field/color")
 if side == "orange":
     MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
 else:
-    MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (5, None)), ("alt_disposal", 0)]
-SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
+    MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
+if side == "orange":
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("switch_secondary", 0), ("wastewater_tower", 0),
+                            ("wastewater_reservoir", 0), ('bee_secondary', 0)]
+else:
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ("wastewater_tower",0), ("wastewater_reservoir",0), ('switch_secondary',0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("switch_secondary", 0)]
@@ -46,7 +50,7 @@ class MainRobotBrain(object):
         self.rospack = rospkg.RosPack()
 
         self.bts = {}
-        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_1.bin", "rb") as f:
+        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_2.bin", "rb") as f:
             heap_strats = pickle.load(f)
         for i in range(N_STR):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,

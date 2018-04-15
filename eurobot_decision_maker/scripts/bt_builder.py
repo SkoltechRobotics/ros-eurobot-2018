@@ -1057,6 +1057,8 @@ class BehaviorTreeBuilder:
                 self.add_command_action(self.root_seq_name, 162, +0.2, 0, 0, 0.2, 0, 0)
             elif name == "help":
                 self.add_open_or_close_all_action(self.root_seq_name, num)
+            elif name == "release":
+                self.add_shoot_all_small_robot(self.root_seq_name,num)
             elif name == 'disposal':
                 self.add_disposal_action(self.root_seq_name, False)
             elif name == "alt_disposal":
