@@ -52,7 +52,10 @@ class MainRobotBrain(object):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
                                       self.res_sub, self.res_sub, move_type='standard')
             btb.add_strategy(MAIN_ROBOT_STRATEGY)
-            btb.add_cubes_sequence_new(heap_strats[i]['012'])
+            if side == "orange":
+                btb.add_cubes_sequence_new(heap_strats[i]['012'])
+            else:
+                btb.add_cubes_sequence_new(heap_strats[i]['543'])
             btb.create_tree_from_strategy(wire_start=False)
             self.bts[i] = btb.bt
         self.current_bt = self.bts[0]
