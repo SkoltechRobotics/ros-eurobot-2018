@@ -70,6 +70,7 @@ class MainRobotBrain(object):
 
     def init_strategy(self, plan):
         if plan in POSSIBLE_PLANS:
+            print("USED PLAN ", plan)
             self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
@@ -190,10 +191,17 @@ def calculate_points():
                         is_move_wastewater_tower = True
             if child.name.find("cleanwater_tower") != -1:
                 for child1 in child.children_list:
-                    if child1.name.find("sort_and_shoot") and child1.status == "finished":
-                        balls += 1
-                    if child1.name.find("move_tower") != -1 and child1.status == "finished":
-                        is_move_cleanwater_tower = True
+
+                    if child1.name.find("sort_and_shoot"):
+                        print(child1.name)
+                        print(child1.status)
+                        if child1.status == "finished":
+                            balls += 1
+                    if child1.name.find("move_tower") != -1:
+                        print(child1.name)
+                        print(child1.status)
+                        if child1.status == "finished":
+                            is_move_cleanwater_tower = True
     points = 20 + \
         is_disposal * heap_points + \
         balls * 5 + \
