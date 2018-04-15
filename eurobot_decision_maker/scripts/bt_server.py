@@ -18,6 +18,7 @@ else:
 SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
+EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("switch_secondary", 0)]
 
 POSSIBLE_PLANS = [
     ['orange', 'black', 'green'],
@@ -115,6 +116,14 @@ class SecondaryRobotBrain(object):
         self.is_active = False
         self.done_bts = []
 
+        btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
+                                  self.res_sub, self.res_sub, move_type='standard')
+        btb.add_strategy(EMERGENCY_SECONDARY_ROBOT_STRATEGY)
+        btb.create_tree_from_strategy(wire_start=False)
+        self.emerge_bt = btb.bt
+
+        self.is_emerge = False
+
     def init_strategy(self):
         return 0
 
@@ -122,6 +131,17 @@ class SecondaryRobotBrain(object):
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
+
+    def emergency_strategy(self):
+        if not self.is_active:
+            return 0
+        else:
+            if self.current_bt.root_node.status == "failed" and not self.is_emerge:
+                self.done_bts.append(self.current_bt)
+                self.current_bt = self.emerge_bt
+                self.current_bt.root_node.start()
+                self.is_emerge = True
+        return 1
 
     def stop_strategy(self):
         self.is_active = False
@@ -262,6 +282,7 @@ if __name__ == "__main__":
 
     bt.add_node(TimeoutNode("100_sec_wait", 100), "wait_and_stop")
     bt.add_node(ActionFunctionNode("recover_main_robot", brain_main.emergency_strategy), "active_work")
+    bt.add_node(ActionFunctionNode("recover_secondary_robot", brain_secondary.emergency_strategy), "active_work")
     bt.add_node(ActionFunctionNode("stop_main", brain_main.stop_strategy), "wait_and_stop")
     bt.add_node(ActionFunctionNode("stop_secondary", brain_secondary.stop_strategy), "wait_and_stop")
     bt.add_node(ActionFunctionNode("calculate_points", calculate_points), "general")
