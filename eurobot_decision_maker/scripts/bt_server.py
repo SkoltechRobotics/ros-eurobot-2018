@@ -53,7 +53,7 @@ class MainRobotBrain(object):
         self.rospack = rospkg.RosPack()
 
         self.bts = {}
-        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_2.bin", "rb") as f:
+        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_3.bin", "rb") as f:
             heap_strats = pickle.load(f)
         for i in range(N_STR):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
