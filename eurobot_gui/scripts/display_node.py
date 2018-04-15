@@ -7,7 +7,6 @@ import random
 import numpy as np
 from Tkinter import *
 import rosnode
-rosnode.listn
 COLORS = np.array([[0, 123, 176], [208, 90, 40], [28, 28, 32], [96, 153, 59], [247, 181, 0]], dtype=np.uint8)
 COLORS_NAME = ["blue", "orange", "black", "green", "yellow"]
 
