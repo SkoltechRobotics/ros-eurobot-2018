@@ -16,6 +16,9 @@ class MapServer():
     response_period = 0.1
     response_time = 1.0
 
+    # width of walls for preventing paths through narrow corridors betw cubes and walls
+    wall_width = 4
+
     def __init__(self):
         rospy.init_node('map_server', anonymous=True)
 
@@ -127,11 +130,27 @@ class MapServer():
         self.field[y-9:y+9, x-9:x+9][self.cube] = self.OCCUPIED
         rospy.loginfo("Added heap number " + str(n) + " to the map.")
 
+        # add walls to prevent paths in narrow corridors between cubes and walls
+        if n == 1:
+            self.field[y-self.wall_width:y+self.wall_width, self.border:x] = self.OCCUPIED
+        elif n == 2 or n == 3:
+            self.field[y:-27, x-self.wall_width:x+self.wall_width] = self.OCCUPIED
+        elif n == 4:
+            self.field[y-self.wall_width:y+self.wall_width, x:self.size[1]-self.border] = self.OCCUPIED
+
 
     def remove_heap(self, n):
         x,y = self.heaps[n]
         self.field[y-9:y+9, x-9:x+9][self.cube] = self.FREE
         rospy.loginfo("Removed heap number " + str(n) + " from the map.")
+
+        # rm walls to prevent paths in narrow corridors between cubes and walls
+        if n == 1:
+            self.field[y-self.wall_width:y+self.wall_width, self.border:x] = self.FREE
+        elif n == 2 or n == 3:
+            self.field[y:-27, x-self.wall_width:x+self.wall_width] = self.FREE
+        elif n == 4:
+            self.field[y-self.wall_width:y+self.wall_width, x:self.size[1]-self.border] = self.FREE
 
 
     def pub(self):
