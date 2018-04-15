@@ -10,8 +10,8 @@ from std_msgs.msg import Int32
 print(os.getcwd())
 
 # MAIN STRATEGY FOR EUROBOT MOSCOW
-side = rospy.get_param("/field/color")
-if side == "orange":
+SIDE = rospy.get_param("/field/color")
+if SIDE == "orange":
     MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
 else:
     MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (5, None)), ("alt_disposal", 0)]
@@ -52,7 +52,7 @@ class MainRobotBrain(object):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
                                       self.res_sub, self.res_sub, move_type='standard')
             btb.add_strategy(MAIN_ROBOT_STRATEGY)
-            if side == "orange":
+            if SIDE == "orange":
                 btb.add_cubes_sequence_new(heap_strats[i]['012'])
             else:
                 btb.add_cubes_sequence_new(heap_strats[i]['543'])
@@ -195,7 +195,7 @@ def calculate_points():
             if child.name.find("cleanwater_tower") != -1:
                 for child1 in child.children_list:
 
-                    if child1.name.find("sort_and_shoot"):
+                    if child1.name.find("sort_and_shoot") != -1:
                         print(child1.name)
                         print(child1.status)
                         if child1.status == "finished":
