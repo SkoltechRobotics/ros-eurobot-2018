@@ -969,6 +969,24 @@ class BehaviorTreeBuilder:
         else:
             self.add_command_action(main_seq_name, 162, 0.1, 0.2, 0, 0.3, 0.57, 0)
 
+    def add_sort_and_shoot(self, parent_name):
+        main_seq_name = self.construct_string("sort_and_shoot", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        # self.add_sleep_time(main_seq_name, .1)
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
+        self.add_command_action(main_seq_name, 162, -0.004, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, .15)
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
+        self.add_command_action(main_seq_name, 162, 0.008, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, .15)
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
+        self.add_command_action(main_seq_name, 162, -0.004, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, .15)
+        self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
+        self.add_sleep_time(main_seq_name, .5)
+        # self.add_shoot_sort_action(main_seq_name, to, .8)
 
     def add_cleanwater_tower(self, parent_name, to="left", with_4_balls=False, only_4_balls=False):
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
@@ -987,23 +1005,8 @@ class BehaviorTreeBuilder:
         if not only_4_balls:
             self.add_shoot_sort_action(main_seq_name, "release " + to)
             for _ in range(8):
-                #self.add_first_sort_action(main_seq_name, "clean", .5)
-                # self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
-                # self.add_sleep_time(main_seq_name, .1)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
-                self.add_command_action(main_seq_name, 162, -0.004, 0, 0, 0.57, 0, 0)
-                self.add_sleep_time(main_seq_name, .15)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm waste"])
-                self.add_command_action(main_seq_name, 162, 0.008, 0, 0, 0.57, 0, 0)
-                self.add_sleep_time(main_seq_name, .15)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm clean"])
-                self.add_command_action(main_seq_name, 162, -0.004, 0, 0, 0.57, 0, 0)
-                self.add_sleep_time(main_seq_name, .15)
-                self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["clean"])
-                self.add_sleep_time(main_seq_name, .5)
-
-                # self.add_shoot_sort_action(main_seq_name, to, .8)
-
+                # self.add_first_sort_action(main_seq_name, "clean", .5)
+                self.add_sort_and_shoot(main_seq_name)
         self.add_sleep_time(main_seq_name, .5)
 
         self.add_shooting_motor_action(main_seq_name, to, "off")

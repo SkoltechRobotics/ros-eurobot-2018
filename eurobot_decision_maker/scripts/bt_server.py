@@ -159,13 +159,12 @@ def calculate_points():
     is_bee = False
     is_button = False
     is_wastewater_tower = False
-    is_cleanwater_tower = False
     is_wastewater_reservoir = False
-    is_wastewater_clean_disposal = False
     is_move_wastewater_tower = False
     is_move_cleanwater_tower = False
 
     heap_points = 0
+    balls = 0
     for bt1 in bts:
         for child in bt1.root_node.child.children_list:
             print(child.name)
@@ -181,13 +180,6 @@ def calculate_points():
                     ind = child.name.find("strategy")
                     p = int(child.name[ind:].split("_")[1])
                     heap_points = max(heap_points, p)
-                elif child.name.find("cleanwater_tower_before_waste") != -1:
-                    is_cleanwater_tower = True
-                elif child.name.find("cleanwater_tower_after_waste") != -1:
-                    is_cleanwater_tower = True
-                    is_wastewater_clean_disposal = True
-                elif child.name.find("cleanwater_tower_only_shoot") != -1:
-                    is_wastewater_clean_disposal = True
                 elif child.name.find("wastewater_tower") != -1:
                     is_wastewater_tower = True
                 elif child.name.find("wastewater_reservoir") != -1:
@@ -196,12 +188,16 @@ def calculate_points():
                 for child1 in child.children_list:
                     if child1.name.find("move_tower") != -1 and child1.status == "finished":
                         is_move_wastewater_tower = True
-
+            if child.name.find("cleanwater_tower") != -1:
+                for child1 in child.children_list:
+                    if child1.name.find("sort_and_shoot") and child1.status == "finished":
+                        balls += 1
+                    if child1.name.find("move_tower") != -1 and child1.status == "finished":
+                        is_move_cleanwater_tower = True
     points = 20 + \
         is_disposal * heap_points + \
-        is_cleanwater_tower * 40 + \
+        balls * 5 + \
         is_wastewater_tower * is_wastewater_reservoir * 40 + \
-        is_wastewater_tower * is_wastewater_clean_disposal * 20 + \
         is_bee * 50 + \
         is_button * 25 +\
         is_move_wastewater_tower * 10 +\
