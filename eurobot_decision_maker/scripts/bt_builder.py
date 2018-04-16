@@ -264,8 +264,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 2) # manipulator
-            self.add_command_action(main_seq_name, 162, -0.1, 0.3, 0, 0.07, 0.2, 0)
-            self.add_command_action(main_seq_name, 162, 0.1, 0.025, 0, 0.57, 0.15, 0)
+            self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.3, 0.3, 0)
+            self.add_command_action(main_seq_name, 162, 0.25, 0.025, 0, 0.57, 0.08, 0)
             self.add_command_action(main_seq_name, 162, 0, 0, -0.8, 0, 0, 6)
             self.add_command_action(main_seq_name, 162, 0.2, -0.2, 0, 0.57, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
@@ -275,16 +275,14 @@ class BehaviorTreeBuilder:
         else:
             if not self.ok:
                 self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.2, 1, -0.6)
+            self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75, 1.75, -0.6)
-            self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
-            self.add_command_action(main_seq_name, 162, 0, 0.22, 0, 0, 0.2, 0)
-            self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
-            self.add_command_action(main_seq_name, 162, 0, 0, -0.1, 0, 0, 1)
-            self.add_command_action(main_seq_name, 162, -0.2, -0.16, 0, 0.57, 0.5, 0)
-            self.add_command_action(main_seq_name, 162, 0.05, 0.04, 0, 0.57, 0.45, 0)
-            self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
-            self.add_command_action(main_seq_name, 162, 0, 0, 0.4, 0, 0, 1)
+            self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.2, 0)
+            # self.add_command_action(main_seq_name, 162, 0, 0, -0.1, 0, 0, 1)
+            self.add_command_action(main_seq_name, 162, -0.4, -0.4, 0, 0.57, 0.57, 0)
+            # self.add_command_action(main_seq_name, 162, 0.05, 0.04, 0, 0.57, 0.45, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, 0.8, 0, 0, 1)
             self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
             self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0, 0.57, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
@@ -1035,8 +1033,8 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
-        if not with_4_balls:
-            self.add_shoot_sort_action(main_seq_name, "release " + to)
+        #if not with_4_balls:
+        #    self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
         self.add_shooting_motor_action(main_seq_name, to, "on")
         self.add_command_action(main_seq_name, 224, 0) # collision avoidance

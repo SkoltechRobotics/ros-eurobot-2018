@@ -18,9 +18,9 @@ else:
     MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
 if SIDE == "orange":
     # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("switch_secondary", 0), ("wastewater_tower", 0), ("wastewater_reservoir", 0), ('bee_secondary', 0)]
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ("wastewater_tower", 0), ("wastewater_reservoir", 0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
 else:
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ("wastewater_tower",0), ("wastewater_reservoir",0), ('switch_secondary',0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0)]
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 if SIDE == "orange":
@@ -41,8 +41,6 @@ POSSIBLE_PLANS = [
     ['black', 'blue', 'green'],
     ['orange', 'blue', 'yellow']
 ]
-
-POSSIBLE_PLANS_INV = [x[::-1] for x in POSSIBLE_PLANS]
 N_STR = 10
 
 
@@ -86,9 +84,6 @@ class MainRobotBrain(object):
         if plan in POSSIBLE_PLANS:
             print("USED PLAN ", plan)
             self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
-        if plan in POSSIBLE_PLANS_INV:
-            print("USED PLAN ", plan)
-            self.current_bt = self.bts[POSSIBLE_PLANS_INV.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
         # btb.add_strategy(MAIN_ROBOT_STRATEGY)
@@ -154,7 +149,7 @@ class SecondaryRobotBrain(object):
         if not self.is_active:
             return 0
         else:
-            if self.current_bt.root_node.status == "failed" and not self.is_emerge:
+            if self.current_bt.root_node.status in ["failed", "error"] and not self.is_emerge:
                 self.done_bts.append(self.current_bt)
                 self.current_bt = self.emerge_bt
                 self.current_bt.root_node.start()
@@ -219,7 +214,7 @@ def calculate_points():
                         print(child1.status)
                         if child1.status == "finished":
                             is_move_cleanwater_tower = True
-    points = 20 + \
+    points = 10 + \
         is_disposal * heap_points + \
         balls * 5 + \
         is_wastewater_tower * is_wastewater_reservoir * 40 + \

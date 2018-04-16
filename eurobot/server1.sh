@@ -1,1 +1,0 @@
-roslaunch eurobot_decision_maker server.launch arg:="true"
