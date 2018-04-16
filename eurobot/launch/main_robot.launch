@@ -17,6 +17,5 @@
 
     <node pkg="eurobot" name="barrier_move_node" type="barrier_move_to_heap.py" respawn="true" output="screen"/>
   </group>
-  <node pkg="eurbot_gui" name="display_node" type="display_node.py" respawn="true" output="screen"/>
 
 </launch>
