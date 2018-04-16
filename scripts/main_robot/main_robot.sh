@@ -2,7 +2,7 @@
 
 source /opt/ros/kinetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
-export ROS_MASTER_URI=http://192.168.88.252:11311
+export ROS_MASTER_URI=http://192.168.88.251:11311
 export ROS_IP=192.168.88.250
 dt=`date -Iseconds`
 echo "Start main robot script"
