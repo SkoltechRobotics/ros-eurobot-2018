@@ -236,7 +236,7 @@ class LocalPlanner:
             rospy.loginfo('Rate: ' + str(1. / dt))
         self.mutex.release()
 
-    def terminate_following(self, success):
+    def terminate_following(self, success, pub_failed=True):
         if self.move_timer is not None:
             self.move_timer.shutdown()
             self.move_timer = None
@@ -246,7 +246,8 @@ class LocalPlanner:
         if success:
             self.pub_response.publish(self.goal_id + " finished")
         else:
-            self.pub_response.publish(self.goal_id + " failed")
+            if pub_failed:
+                self.pub_response.publish(self.goal_id + " failed")
         self.goal_id = ''
 
     def set_plan(self, plan, goal_id):
@@ -317,7 +318,8 @@ class LocalPlanner:
             if self.plan_length == 0:
                 self.set_speed(np.zeros(3))
             else:
-                self.terminate_following(False)
+                self.set_speed(np.zeros(3))
+                self.terminate_following(False, False)
 
         self.mutex.release()
 
