@@ -6,5 +6,5 @@ export ROS_MASTER_URI=http://192.168.88.251:11311
 export ROS_IP=192.168.88.250
 
 while true; do
-    roslaunch eurobot main_robot.launch
+    roslaunch eurobot main_robot.launch > /home/pi/log/main_robot.log
 done
