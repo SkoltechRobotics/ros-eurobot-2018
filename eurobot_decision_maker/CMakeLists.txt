@@ -9,8 +9,8 @@ project(eurobot_decision_maker)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     #  behavior_tree
-  behavior_tree_core
-  behavior_tree_leaves
+    #behavior_tree_core
+    #behavior_tree_leaves
   roscpp
   rospy
   std_msgs
@@ -108,7 +108,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES eurobot_decision_maker
-  CATKIN_DEPENDS  behavior_tree_core behavior_tree_leaves roscpp rospy std_msgs
+  CATKIN_DEPENDS  roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -200,15 +200,15 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-MESSAGE(STATUS "CATKIN LIBRARIES : " ${behavior_tree_core_LIBRARY_DIRS})
+# MESSAGE(STATUS "CATKIN LIBRARIES : " ${behavior_tree_core_LIBRARY_DIRS})
 
-add_executable(make_tree src/cpp/make_tree.cpp)
-add_dependencies(make_tree ${catkin_EXPORTED_TARGETS})
-target_link_libraries(make_tree  ${catkin_LIBRARIES} )
+#add_executable(make_tree src/cpp/make_tree.cpp)
+#add_dependencies(make_tree ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(make_tree  ${catkin_LIBRARIES} )
 
-add_executable(action_moving src/cpp/action_example.cpp)
-add_dependencies(action_moving ${catkin_EXPORTED_TARGETS})
-target_link_libraries(action_moving  ${catkin_LIBRARIES} )
+#add_executable(action_moving src/cpp/action_example.cpp)
+#add_dependencies(action_moving ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(action_moving  ${catkin_LIBRARIES} )
 
 
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
