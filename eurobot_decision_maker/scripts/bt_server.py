@@ -10,14 +10,24 @@ from std_msgs.msg import Int32
 print(os.getcwd())
 
 # MAIN STRATEGY FOR EUROBOT MOSCOW
-side = rospy.get_param("/field/color")
-if side == "orange":
-    MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
+SIDE = rospy.get_param("/field/color")
+if SIDE == "orange":
+    # MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("heaps", (0, None)), ("switch_main",0), ("alt_disposal", 0)]
 else:
-    MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (5, None)), ("alt_disposal", 0)]
-SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("switch_secondary",0), ("wastewater_tower",0), ("wastewater_reservoir",0), ("bee_secondary", 0)]
-EMERGENCY_MAIN_ROBOT_STRATEGY = [("disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
+if SIDE == "orange":
+    # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("switch_secondary", 0), ("wastewater_tower", 0), ("wastewater_reservoir", 0), ('bee_secondary', 0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+else:
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0)]
+EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
+if SIDE == "orange":
+    # EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("switch_secondary", 0)]
+    EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("bee_secondary", 0)]
+else:
+    EMERGENCY_SECONDARY_ROBOT_STRATEGY = [("bee_secondary", 0)]
 
 POSSIBLE_PLANS = [
     ['orange', 'black', 'green'],
@@ -45,13 +55,16 @@ class MainRobotBrain(object):
         self.rospack = rospkg.RosPack()
 
         self.bts = {}
-        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_1.bin", "rb") as f:
+        with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/cubes_paths_beta_3.bin", "rb") as f:
             heap_strats = pickle.load(f)
         for i in range(N_STR):
             btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
                                       self.res_sub, self.res_sub, move_type='standard')
             btb.add_strategy(MAIN_ROBOT_STRATEGY)
-            btb.add_cubes_sequence_new(heap_strats[i]['012'])
+            if SIDE == "orange":
+                btb.add_cubes_sequence_new(heap_strats[i]['012'])
+            else:
+                btb.add_cubes_sequence_new(heap_strats[i]['543'])
             btb.create_tree_from_strategy(wire_start=False)
             self.bts[i] = btb.bt
         self.current_bt = self.bts[0]
@@ -69,6 +82,7 @@ class MainRobotBrain(object):
 
     def init_strategy(self, plan):
         if plan in POSSIBLE_PLANS:
+            print("USED PLAN ", plan)
             self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
@@ -115,6 +129,14 @@ class SecondaryRobotBrain(object):
         self.is_active = False
         self.done_bts = []
 
+        btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
+                                  self.res_sub, self.res_sub, move_type='standard')
+        btb.add_strategy(EMERGENCY_SECONDARY_ROBOT_STRATEGY)
+        btb.create_tree_from_strategy(wire_start=False)
+        self.emerge_bt = btb.bt
+
+        self.is_emerge = False
+
     def init_strategy(self):
         return 0
 
@@ -122,6 +144,17 @@ class SecondaryRobotBrain(object):
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
+
+    def emergency_strategy(self):
+        if not self.is_active:
+            return 0
+        else:
+            if self.current_bt.root_node.status in ["failed", "error"] and not self.is_emerge:
+                self.done_bts.append(self.current_bt)
+                self.current_bt = self.emerge_bt
+                self.current_bt.root_node.start()
+                self.is_emerge = True
+        return 1
 
     def stop_strategy(self):
         self.is_active = False
@@ -139,13 +172,12 @@ def calculate_points():
     is_bee = False
     is_button = False
     is_wastewater_tower = False
-    is_cleanwater_tower = False
     is_wastewater_reservoir = False
-    is_wastewater_clean_disposal = False
     is_move_wastewater_tower = False
     is_move_cleanwater_tower = False
 
     heap_points = 0
+    balls = 0
     for bt1 in bts:
         for child in bt1.root_node.child.children_list:
             print(child.name)
@@ -161,13 +193,6 @@ def calculate_points():
                     ind = child.name.find("strategy")
                     p = int(child.name[ind:].split("_")[1])
                     heap_points = max(heap_points, p)
-                elif child.name.find("cleanwater_tower_before_waste") != -1:
-                    is_cleanwater_tower = True
-                elif child.name.find("cleanwater_tower_after_waste") != -1:
-                    is_cleanwater_tower = True
-                    is_wastewater_clean_disposal = True
-                elif child.name.find("cleanwater_tower_only_shoot") != -1:
-                    is_wastewater_clean_disposal = True
                 elif child.name.find("wastewater_tower") != -1:
                     is_wastewater_tower = True
                 elif child.name.find("wastewater_reservoir") != -1:
@@ -176,12 +201,23 @@ def calculate_points():
                 for child1 in child.children_list:
                     if child1.name.find("move_tower") != -1 and child1.status == "finished":
                         is_move_wastewater_tower = True
+            if child.name.find("cleanwater_tower") != -1:
+                for child1 in child.children_list:
 
-    points = 20 + \
+                    if child1.name.find("sort_and_shoot") != -1:
+                        print(child1.name)
+                        print(child1.status)
+                        if child1.status == "finished":
+                            balls += 1
+                    if child1.name.find("move_tower") != -1:
+                        print(child1.name)
+                        print(child1.status)
+                        if child1.status == "finished":
+                            is_move_cleanwater_tower = True
+    points = 10 + \
         is_disposal * heap_points + \
-        is_cleanwater_tower * 40 + \
+        balls * 5 + \
         is_wastewater_tower * is_wastewater_reservoir * 40 + \
-        is_wastewater_tower * is_wastewater_clean_disposal * 20 + \
         is_bee * 50 + \
         is_button * 25 +\
         is_move_wastewater_tower * 10 +\
@@ -262,6 +298,7 @@ if __name__ == "__main__":
 
     bt.add_node(TimeoutNode("100_sec_wait", 100), "wait_and_stop")
     bt.add_node(ActionFunctionNode("recover_main_robot", brain_main.emergency_strategy), "active_work")
+    bt.add_node(ActionFunctionNode("recover_secondary_robot", brain_secondary.emergency_strategy), "active_work")
     bt.add_node(ActionFunctionNode("stop_main", brain_main.stop_strategy), "wait_and_stop")
     bt.add_node(ActionFunctionNode("stop_secondary", brain_secondary.stop_strategy), "wait_and_stop")
     bt.add_node(ActionFunctionNode("calculate_points", calculate_points), "general")

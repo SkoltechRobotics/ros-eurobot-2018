@@ -236,7 +236,7 @@ class LocalPlanner:
             rospy.loginfo('Rate: ' + str(1. / dt))
         self.mutex.release()
 
-    def terminate_following(self, success):
+    def terminate_following(self, success, pub_failed=True):
         if self.move_timer is not None:
             self.move_timer.shutdown()
             self.move_timer = None
@@ -246,7 +246,8 @@ class LocalPlanner:
         if success:
             self.pub_response.publish(self.goal_id + " finished")
         else:
-            self.pub_response.publish(self.goal_id + " failed")
+            if pub_failed:
+                self.pub_response.publish(self.goal_id + " failed")
         self.goal_id = ''
 
     def set_plan(self, plan, goal_id):
@@ -317,7 +318,8 @@ class LocalPlanner:
             if self.plan_length == 0:
                 self.set_speed(np.zeros(3))
             else:
-                self.terminate_following(False)
+                self.set_speed(np.zeros(3))
+                self.terminate_following(False, False)
 
         self.mutex.release()
 
@@ -333,11 +335,13 @@ class LocalPlanner:
 
         def move_timer(event):
             stop_length = self.REPLANNING_STOP_PLAN_LENGTH
+            turn_off_collision_avoidance = False
             if self.robot_name == "main_robot":
                 # check if the goal pose is close to any cube heap
                 is_close, heap = self.close_to_heap(goal_coords)
                 if is_close:
                     stop_length = self.REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH
+                    turn_off_collision_avoidance = True
                     success, plan = self.approaching_plan(heap, goal_coords)
                     if success:
                         self.set_plan(plan, cmd_id)
@@ -350,6 +354,8 @@ class LocalPlanner:
                 if success:
                     self.set_plan(plan, cmd_id)
             if self.plan_length <= stop_length:
+                if turn_off_collision_avoidance:
+                    self.pub_cmd.publish("collision_off 224 0")
                 self.move_timer.shutdown()
                 self.move_timer = None
                 rospy.loginfo("Replanning stopped at plan length = " + str(self.plan_length))

@@ -36,8 +36,8 @@ if __name__ == "__main__":
     # so = StrategyOperator(file='first_bank.txt')
 
     # btb.add_cubes_sequence(so.get_cubes_strategy(['orange','black','green'])[0])
-    with open("very_important_bt_paths2.bin","rb") as f:
-        heap_strats = pickle.load(f)
+    # with open("very_important_bt_paths2.bin","rb") as f:
+    #    heap_strats = pickle.load(f)
     # btb.add_cubes_sequence([[[], [0], []],
     #                         [[3], [2], [1]],
     #                         [[4], [], []],
@@ -49,8 +49,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[1]['001'])
-    btb.add_cubes_sequence_new(heap_strats[1]['001'])
+    # rospy.loginfo(heap_strats[1]['001'])
+    # btb.add_cubes_sequence_new(heap_strats[1]['001'])
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
