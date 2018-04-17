@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ `lsusb | grep Kingmax` -ge 1 ]
+    if [ `lsusb | grep Kingmax` -ge 1 ]
 then
     orange
 fi
