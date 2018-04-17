@@ -28,7 +28,13 @@ LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
 LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 class ParticleFilter:
     def __init__(self, particles=500, sense_noise=50, distance_noise=5, angle_noise=0.02, in_x=293, in_y=425,
-                 in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0, reset_factor=10.0):
+                 in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0, reset_factor=3.0):
+
+        self.reset_factor = reset_factor
+        self.reset = False
+
+        self.in_coords = np.array([in_x, in_y, in_angle])
+
         global BEACONS
         if color == 'green':
             BEACONS = np.array([[-(WORLD_BORDER + BEAC_BORDER + BEAC_L / 2.), WORLD_Y / 2.],
@@ -57,9 +63,6 @@ class ParticleFilter:
         self.max_dist = max_dist
 
         self.landmarks = [[], []]
-
-        self.reset_factor = reset_factor
-        self.reset = False
 
     @staticmethod
     def gaus(x, mu=0, sigma=1):
@@ -205,9 +208,10 @@ class ParticleFilter:
 
         if self.reset is True:
             # reset particles from scratch according to reset flag
-            successfully, coords  = self.evaluate_coords(lidar_data)
-            if successfully: # TODO behavior in case of failing to reset
-                self.reset_particles(coords)
+            #successfully, coords  = self.evaluate_coords(lidar_data)
+            #if successfully: # TODO behavior in case of failing to reset
+            #    self.reset_particles(coords)
+            self.reset_particles(self.in_coords)
             self.reset = False
         else:
             # move particles according to odometry
