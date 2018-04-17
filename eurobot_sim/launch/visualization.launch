@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch> 
 
-  <include file="$(find eurobot)/launch/params.launch"/>
+  <!--include file="$(find eurobot)/launch/params.launch"/-->
 
   <group ns="visualization">
     
