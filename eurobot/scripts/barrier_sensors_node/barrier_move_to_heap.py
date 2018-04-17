@@ -397,11 +397,11 @@ class BarrierNavigator():
             if action_type == "MOVETOHEAP":
                 rospy.loginfo("Receive command " + data.data)
 
-                # try:
-                self.angle_calibration()
-                rospy.loginfo("successfully rotated")
-                # except Exception, error:
-                #    rospy.loginfo( str(error) )
+                try:
+                    self.angle_calibration()
+                    rospy.loginfo("successfully rotated")
+                except Exception, error:
+                   rospy.loginfo( str(error) )
 
                 
                 case = int(data_splitted[2])
