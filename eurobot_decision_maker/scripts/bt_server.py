@@ -41,6 +41,8 @@ POSSIBLE_PLANS = [
     ['black', 'blue', 'green'],
     ['orange', 'blue', 'yellow']
 ]
+
+INV_POSSIBLE_PLANS = [x[::-1] for x in POSSIBLE_PLANS]
 N_STR = 10
 
 
@@ -84,6 +86,9 @@ class MainRobotBrain(object):
         if plan in POSSIBLE_PLANS:
             print("USED PLAN ", plan)
             self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
+        if plan in INV_POSSIBLE_PLANS:
+            print("USED PLAN", plan)
+            self.current_bt = self.bts[INV_POSSIBLE_PLANS.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
         # btb.add_strategy(MAIN_ROBOT_STRATEGY)
