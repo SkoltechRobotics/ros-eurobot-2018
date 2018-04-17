@@ -8,8 +8,9 @@ import numpy as np
 from Tkinter import *
 import rosnode
 from nav_msgs.msg import Odometry
-COLORS = np.array([[0, 123, 176], [208, 90, 40], [28, 28, 32], [96, 153, 59], [247, 181, 0]], dtype=np.uint8)
-COLORS_NAME = ["blue", "orange", "black", "green", "yellow"]
+COLORS = np.array([[0, 123, 176], [208, 90, 40], [28, 28, 32], [96, 153, 59], [247, 181, 0], [255, 0, 0]],
+                  dtype=np.uint8)
+COLORS_NAME = ["blue", "orange", "black", "green", "yellow", "red"]
 
 class App:
     def __init__(self, master):
