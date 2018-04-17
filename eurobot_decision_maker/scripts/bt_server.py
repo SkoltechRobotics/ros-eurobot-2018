@@ -14,7 +14,8 @@ print(os.getcwd())
 SIDE = rospy.get_param("/field/color")
 if SIDE == "orange":
     # MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
-    MAIN_ROBOT_STRATEGY = [("heaps",(0,1)), ("heaps",(1,None)), ("switch_main",0), ("alt_disposal", 0)]
+    # MAIN_ROBOT_STRATEGY = [("heaps",(0,1)), ("heaps",(1,None)), ("switch_main",0), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("heaps",(0,1)), ("switch_main",0), ("alt_disposal", 0)]
 else:
     MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
 if SIDE == "orange":
@@ -86,10 +87,10 @@ class MainRobotBrain(object):
 
     def init_strategy(self, plan):
         if plan in POSSIBLE_PLANS:
-            print("USED PLAN ", plan)
+            #print("USED PLAN ", plan)
             self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
         if plan in INV_POSSIBLE_PLANS:
-            print("USED PLAN", plan)
+            #print("USED PLAN", plan)
             self.current_bt = self.bts[INV_POSSIBLE_PLANS.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')

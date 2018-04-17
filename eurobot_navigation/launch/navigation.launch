@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <launch>
     <!-- Map server -->
-    <node name="map_server" pkg="eurobot_navigation" type="map_server.py"  output="screen" />
+    <node name="map_server" pkg="eurobot_navigation" type="map_server.py" />
 
     <!-- MAIN ROBOT -->
     <group ns="main_robot"> 
         <!-- Visualization of the path in form of poses -->
-        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"  output="screen"/>
+        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"/>
 
         <!-- Navigation -->
-        <node pkg="global_planner" type="planner" respawn="true" name="global_planner" output="screen">
+        <node pkg="global_planner" type="planner" respawn="true" name="global_planner">
             <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
             <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
             <param name="costmap/robot_base_frame" value="main_robot" />
@@ -17,16 +17,16 @@
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true" output="screen"/>
+        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/>
     </group>
 
     <!-- SECONDARY ROBOT -->
     <group ns="secondary_robot">
         <!-- Visualization of the path in form of poses -->
-        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"  output="screen"/>
+        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"/>
 
         <!-- Navigation -->
-        <node pkg="global_planner" type="planner" respawn="true" name="global_planner" output="screen">
+        <node pkg="global_planner" type="planner" respawn="true" name="global_planner">
             <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
             <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
             <param name="costmap/robot_base_frame" value="secondary_robot" />
@@ -34,7 +34,7 @@
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true" output="screen"/>
+        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/>
     </group>
 
 </launch>

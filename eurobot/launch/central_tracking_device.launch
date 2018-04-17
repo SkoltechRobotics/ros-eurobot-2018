@@ -3,7 +3,7 @@
 
   <arg name="color" default="orange" />
   <param name="/field/color" value="$(arg color)" />
-  <param name="/camera/corner_camera" value="0"/>
+  <param name="/camera/corner_camera" value="1"/>
   <include file="$(find eurobot)/launch/params.launch"/>
   <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
   <!--include file="$(find eurobot_navigation)/launch/spy.launch"/-->
