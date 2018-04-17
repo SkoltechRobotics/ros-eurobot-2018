@@ -87,7 +87,7 @@ if __name__ == '__main__':
     bridge = cv_bridge.CvBridge()
     rate = rospy.Rate(100)
 
-    rospy.loginfo("Start camera node")
+    #rospy.loginfo("Start camera node")
     is_active = False
     while not rospy.is_shutdown():
         try:

@@ -45,12 +45,14 @@ class TreeNode:
         self.status = "not started"
 
     def start(self):
-        rospy.loginfo(self.name + ' started!')
+        if self.name != "wait_wire_1" and self.name != "init_main_robot_from_plan":
+            rospy.loginfo(self.name + ' started!')
         self.time_start = rospy.get_time()
 
     def finish(self):
         self.time_finish = rospy.get_time()
-        rospy.loginfo(self.name + ' finished! time ' + str(self.time_finish - self.time_start) + ' with status ' +
+        if self.name != "wait_wire_1" and self.name != "init_main_robot_from_plan":
+            rospy.loginfo(self.name + ' finished! time ' + str(self.time_finish - self.time_start) + ' with status ' +
                       self.status)
 
     def check_status(self):
