@@ -1037,20 +1037,20 @@ class BehaviorTreeBuilder:
         #    self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
         self.add_shooting_motor_action(main_seq_name, to, "on")
-        self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-        if with_4_balls:
-            for _ in range(4):
-                self.add_shoot_sort_action(main_seq_name, to, .8)
-                self.add_sleep_time(main_seq_name, .8)
-        if not only_4_balls:
-            self.add_shoot_sort_action(main_seq_name, "release " + to)
-            for _ in range(8):
+        #self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+        #if with_4_balls:
+        #    for _ in range(4):
+        #        self.add_shoot_sort_action(main_seq_name, to, .8)
+        #        self.add_sleep_time(main_seq_name, .8)
+        #if not only_4_balls:
+        #    self.add_shoot_sort_action(main_seq_name, "release " + to)
+        #    for _ in range(8):
                 # self.add_first_sort_action(main_seq_name, "clean", .5)
-                self.add_sort_and_shoot(main_seq_name)
-        self.add_sleep_time(main_seq_name, .5)
+        #        self.add_sort_and_shoot(main_seq_name)
+        self.add_sleep_time(main_seq_name, 6)
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
-        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+        #self.add_command_action(main_seq_name, 224, 1) # collision avoidance
         self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.57, 0)
 
     def time_checker(self, parent_name, time):

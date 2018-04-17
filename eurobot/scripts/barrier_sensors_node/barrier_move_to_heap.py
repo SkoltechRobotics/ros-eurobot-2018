@@ -369,6 +369,7 @@ class BarrierNavigator():
             return self.masks[0]
 
     def angle_calibration(self):
+        rospy.loginfo('entered angle calibration')
         (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
         yaw = tf.transformations.euler_from_quaternion(rot)[2]
         yaw = yaw % (np.pi / 2)
@@ -396,11 +397,12 @@ class BarrierNavigator():
             if action_type == "MOVETOHEAP":
                 rospy.loginfo("Receive command " + data.data)
 
-                try:
-                    if len(sys.argv) < 2:
-                        self.angle_calibration()
-                except:
-                    pass
+                # try:
+                self.angle_calibration()
+                rospy.loginfo("successfully rotated")
+                # except Exception, error:
+                #    rospy.loginfo( str(error) )
+
                 
                 case = int(data_splitted[2])
                 n_mans = int((len(data_splitted) - 3)/2)
