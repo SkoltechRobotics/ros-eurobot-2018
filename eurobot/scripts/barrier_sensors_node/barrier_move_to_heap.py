@@ -401,7 +401,7 @@ class BarrierNavigator():
                     self.angle_calibration()
                     rospy.loginfo("successfully rotated")
                 except Exception, error:
-                   rospy.loginfo( str(error) )
+                    rospy.loginfo( str(error) )
 
                 
                 case = int(data_splitted[2])
