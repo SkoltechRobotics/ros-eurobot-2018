@@ -5,6 +5,7 @@ from bt_builder import BehaviorTreeBuilder
 import pickle
 import os
 import rospkg
+import time
 from std_msgs.msg import Int32
 
 print(os.getcwd())
@@ -53,6 +54,7 @@ class MainRobotBrain(object):
         self.cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
         self.res_sub = SubscriberHandler("/main_robot/response")
+        self.pf_cmd_pub = rospy.Publisher("/main_robot/pf_cmd", String, queue_size=10)
 
         self.rospack = rospkg.RosPack()
 
@@ -96,6 +98,7 @@ class MainRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
@@ -128,6 +131,8 @@ class SecondaryRobotBrain(object):
         self.res_sub = SubscriberHandler("/secondary_robot/response")
         self.btb = BehaviorTreeBuilder("secondary_robot", self.move_pub, self.cmd_pub, self.map_pub,
                                        self.res_sub, self.res_sub, move_type='standard')
+        self.pf_cmd_pub = rospy.Publisher("/secondary_robot/pf_cmd", String, queue_size=10)
+
         self.btb.add_strategy(SMALL_ROBOT_STRATEGY)
         self.btb.create_tree_from_strategy(wire_start=False)
         self.current_bt = self.btb.bt
@@ -146,6 +151,10 @@ class SecondaryRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        for i in range(3):
+            self.cmd_pub.publish("start_secondary 164")
+            time.sleep(0.05)
+        self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
