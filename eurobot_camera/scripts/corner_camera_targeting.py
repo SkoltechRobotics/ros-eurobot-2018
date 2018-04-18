@@ -106,12 +106,14 @@ if __name__ == '__main__':
                     pub_plan.publish(color_str)
                     rospy.loginfo("colors " + color_str)
                 rate.sleep()
-        except Exception:
+        except cv2.error as msg:
+            rospy.loginfo(str(type(msg)))
             try:
                 color_str = "red red red"
                 pub_plan.publish(color_str)
                 time.sleep(1)
                 cap.release()
                 devices = np.roll(devices, 1)
-            except Exception:
+            except cv2.error as msg:
+                rospy.loginfo(str(msg))
                 pass

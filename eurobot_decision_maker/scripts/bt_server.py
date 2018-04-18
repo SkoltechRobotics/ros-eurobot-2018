@@ -12,21 +12,28 @@ print(os.getcwd())
 
 # MAIN STRATEGY FOR EUROBOT MOSCOW
 SIDE = rospy.get_param("/field/color")
+
+# MAIN ROBOT STRATEGY
 if SIDE == "orange":
-    # simple strategy
+    # SIMPLE
     MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
 else:
-    # simple strategy
-    MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
+    # SIMPLE
+    #MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+
+# SECOND ROBOT STRATEGY
 if SIDE == "orange":
-    # simple strategy
+    # SIMPLE
     #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
-    # medium strategy
+
+    # MEDIUM
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower',0)]
 else:
-    # simple strategy
+    # SIMPLE
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0)]
-    # madium strategy
+
+    # MEDIUM
     #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
@@ -224,7 +231,7 @@ def calculate_points():
                     is_wastewater_reservoir = True
             if child.name.find("wastewater_tower") != -1:
                 for child1 in child.children_list:
-                    if child1.name.find("move_tower") != -1 and child1.status == "finished":
+                    if child1.name.find("move") != -1 and child1.status == "finished":
                         is_move_wastewater_tower = True
             if child.name.find("cleanwater_tower") != -1:
                 if child.status == "finished":
@@ -235,7 +242,7 @@ def calculate_points():
                         print(child1.status)
                         if child1.status == "finished":
                             balls += 1
-                    if child1.name.find("move_tower") != -1:
+                    if child1.name.find("move") != -1:
                         print(child1.name)
                         print(child1.status)
                         if child1.status == "finished":
