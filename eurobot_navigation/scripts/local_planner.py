@@ -243,9 +243,7 @@ class LocalPlanner:
         self.mutex.release()
 
     def terminate_following(self, success, pub_failed=True):
-        if self.move_timer is not None:
-            self.move_timer.shutdown()
-            self.move_timer = None
+        self.shutdown_timer()
         self.plan_length = 0
         self.plan = np.array([])
         self.set_speed(np.zeros(3))
@@ -331,9 +329,7 @@ class LocalPlanner:
         self.mutex.release()
 
     def set_move_timer(self, goal_coords, goal, cmd_id):
-        if self.move_timer is not None:
-            self.move_timer.shutdown()
-            self.move_timer = None
+        self.shutdown_timer()
         self.move_timer = rospy.Timer(rospy.Duration(1. / self.PLAN_RATE),
                                       self.get_move_timer_callback(goal_coords, goal, cmd_id), oneshot=self.ONESHOT)
 
@@ -363,17 +359,14 @@ class LocalPlanner:
             if self.plan_length <= stop_length:
                 if turn_off_collision_avoidance:
                     self.pub_cmd.publish("collision_off 224 0")
-                self.move_timer.shutdown()
-                self.move_timer = None
+                self.shutdown_timer()
                 rospy.loginfo("Replanning stopped at plan length = " + str(self.plan_length))
                 return
 
         return move_timer
 
     def set_move_timer_towers(self, n, cmd_id):
-        if self.move_timer is not None:
-            self.move_timer.shutdown()
-            self.move_timer = None
+        self.shutdown_timer()
         self.move_timer = rospy.Timer(rospy.Duration(1. / self.PLAN_RATE),
                                       self.get_move_timer_towers_callback(n, cmd_id))
 
@@ -407,8 +400,7 @@ class LocalPlanner:
                 # self.set_plan(np.concatenate((plan, extra_path), axis=0), cmd_id)
 
             if self.plan_length <= self.REPLANNING_STOP_PLAN_LENGTH_TOWERS:
-                self.move_timer.shutdown()
-                self.move_timer = None
+                self.shutdown_timer()
                 rospy.loginfo("Replanning stopped at plan length = " + str(self.plan_length))
                 return
 
@@ -566,6 +558,11 @@ class LocalPlanner:
         if self.opponent_robots.shape[0] > 0:
             ans = min(ans, np.min(np.linalg.norm(self.opponent_robots)))
         return ans
+
+    def shutdown_timer(self):
+        if self.move_timer is not None:
+            self.move_timer.shutdown()
+            self.move_timer = None
 
 if __name__ == "__main__":
     planner = LocalPlanner()
