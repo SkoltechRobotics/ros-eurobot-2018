@@ -976,9 +976,17 @@ class BehaviorTreeBuilder:
         #self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_shooting_motor_action(main_seq_name, "left" if self.side == "orange" else "right", "slow")
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
-        self.add_shooting_motor_action
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
-        self.add_sleep_time(main_seq_name, 2)
+        self.add_sleep_time(main_seq_name, 1)
+        self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, 1)
+        self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, 1)
+        self.add_command_action(main_seq_name, 162, 0.04, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, 1)
+        self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+        self.add_sleep_time(main_seq_name, 1)
+
         self.add_shooting_motor_action(main_seq_name, "left" if self.side == "orange" else "right", "off")
         self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
         #self.add_command_action(main_seq_name, self.bottom_sorter, 2)
