@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     rospy.loginfo("Start camera node")
     is_active = False
-    devices = np.array([0, 1, 9])
+    devices = np.array([1, 0, 9])
     while not rospy.is_shutdown():
         try:
             rospy.loginfo("Start capture video from " + str(devices[0]))
