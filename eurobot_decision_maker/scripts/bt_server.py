@@ -224,7 +224,7 @@ def calculate_points():
                     is_wastewater_reservoir = True
             if child.name.find("wastewater_tower") != -1:
                 for child1 in child.children_list:
-                    if child1.name.find("move_tower") != -1 and child1.status == "finished":
+                    if child1.name.find("move") != -1 and child1.status == "finished":
                         is_move_wastewater_tower = True
             if child.name.find("cleanwater_tower") != -1:
                 if child.status == "finished":
@@ -235,7 +235,7 @@ def calculate_points():
                         print(child1.status)
                         if child1.status == "finished":
                             balls += 1
-                    if child1.name.find("move_tower") != -1:
+                    if child1.name.find("move") != -1:
                         print(child1.name)
                         print(child1.status)
                         if child1.status == "finished":
