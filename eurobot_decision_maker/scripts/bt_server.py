@@ -105,6 +105,9 @@ class MainRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        for i in range(3):
+            self.cmd_pub.publish("start_main 164")
+            time.sleep(0.05)
         # self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
