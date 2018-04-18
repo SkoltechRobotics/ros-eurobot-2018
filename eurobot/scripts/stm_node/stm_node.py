@@ -54,11 +54,8 @@ class stm_node(STMprotocol):
         else:
             self.pub_rf = None
 
-        if self.robot_name == "main_robot":
-            rospy.Subscriber("/server/stm_node_command", String, self.stm_node_command_callback)
-            self.pub_wire = rospy.Publisher("/server/wire_status", String, queue_size=100)
-        else:
-            self.pub_wire = None
+        rospy.Subscriber("/server/stm_node_command", String, self.stm_node_command_callback)
+        self.pub_wire = rospy.Publisher("/server/wire_status", String, queue_size=100)
 
         self.ask_rf_every = 2
         self.rf_it = 0
@@ -89,8 +86,7 @@ class stm_node(STMprotocol):
 
         rospy.Timer(rospy.Duration(self.response_period), self.response_timer_callback)
 
-        if self.robot_name == "main_robot":
-            self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
+        self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
 
         # servo
         GPIO.setwarnings(False)
