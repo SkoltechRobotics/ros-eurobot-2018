@@ -124,6 +124,8 @@ class BarrierNavigator():
         self.CMD_NAME = "MOVEODOM"
         self.rf_broken_flag = False
         self.has_moved = {}
+        self.coordinate_started = None
+
 
         def cb(msg):
             data_splitted = msg.data.split()
@@ -238,6 +240,14 @@ class BarrierNavigator():
             # self.command_pub.publish(command)
             self.wait_for_movement(command, "MOVEODOM" + str(self.i))
 
+    def check_coordinate(self):
+       (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+        if np.linalg.norm(trans[:2] - self.coordinate_started[:2] ) > 0.07:
+            return False
+        else:
+            return True
+
+
     def move_cycle_one_new(self, mask, case, color):
         Y_finished = False
         X_finished = False
@@ -251,6 +261,13 @@ class BarrierNavigator():
         rospy.loginfo("started from : x %d y %d"%(started_x, started_y))
         # color = self.colors[0]
         while not rospy.is_shutdown():
+            we_are_not_lost = True
+            try:
+                we_are_not_lost = self.check_coordinate()
+            except:
+                pass
+            if not we_are_not_lost:
+                return "failed"
 
             if self.rf_broken_flag:
                 rospy.sleep(0.05)
@@ -310,7 +327,7 @@ class BarrierNavigator():
             rospy.loginfo(command)
             # self.command_pub.publish(command)
             self.wait_for_movement(command, "MOVEODOM" + str(self.i))
-
+        return "finished"
 
 
 
@@ -392,6 +409,14 @@ class BarrierNavigator():
             time_start = rospy.get_time()
             data_splitted = data.data.split()
 
+            while self.coordinate_started is None:
+                try:
+                    (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+                    self.coordinate_started = trans
+                except:
+                    pass
+            
+
             if len(data_splitted) > 1:
                 action_type = data_splitted[1]
             else:
@@ -422,16 +447,20 @@ class BarrierNavigator():
                     case += 3
 
                 mask = self.get_allowed_mask(case)
+                
                 if case in [0,2,3]:
                     left_right = False
                     for m,c in zip(self.mans, self.colors):
                         if m in [0,2]:
-                            self.move_cycle_one_new(self.get_allowed_mask(m+7),m+7, c)
+                            result_status = self.move_cycle_one_new(self.get_allowed_mask(m+7),m+7, c)
+                            if result_status == "failed":
+                                return self.finish_command("failed")
                             left_right = True
                     if not left_right:
                         m = self.mans[0]
                         c = self.colors[0]
-                        self.move_cycle_one_new(self.get_allowed_mask(m+7),m+7,c)
+                        return self.finish_command(self.move_cycle_one_new(self.get_allowed_mask(m+7),m+7,c))
+                        
                     # self.move_cycle_new(mask)
                 # if case in [0, 2, 3]:
                 #     if np.any(self.sensors[:3]):    #  SOME TRIGGERED
@@ -453,13 +482,17 @@ class BarrierNavigator():
 
 
                 if case in [7, 8, 9]:
-                    self.move_cycle_one_new(mask, case, self.colors[0])
+                    return self.finish_command(self.move_cycle_one_new(mask, case, self.colors[0]))
                 elif case == 1:
-                    self.move_cycle_one_new(self.get_allowed_mask(7),7,self.colors[0])
-                rospy.loginfo("MOVETOHEAP FINNISH %f sec"%(rospy.get_time() - time_start ))
-                self.response_pub.publish(data_splitted[0] + ' finished')
+                    return self.finish_command(self.move_cycle_one_new(self.get_allowed_mask(7),7,self.colors[0])) 
 
-        return cb
+                self.finish_command("finished")
+            return cb
+
+    def finish_command(self, status):
+        rospy.loginfo("MOVETOHEAP FINNISH %f sec"%(rospy.get_time() - time_start ))
+        self.response_pub.publish(data_splitted[0] + ' ' + status)
+        return 
 
     def wait_for_movement(self, cmd, name="MOVEODOM"):
         self.has_moved[name] = "started"
