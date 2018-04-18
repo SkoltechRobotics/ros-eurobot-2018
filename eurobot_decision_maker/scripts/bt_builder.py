@@ -252,7 +252,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.25, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.3, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         else:
@@ -264,7 +264,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, -0.035, -0.05, 0, 0.4, 0.57, 0)
             self.add_command_action(main_seq_name, 162, 0.03, 0.1, 0, 0.2, 0.57, 0)
             self.add_command_action(main_seq_name, 162, -0.05,0.1, 0, 0.2, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, 0.25, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.30, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
 
