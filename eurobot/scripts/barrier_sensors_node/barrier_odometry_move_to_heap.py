@@ -189,7 +189,7 @@ class BarrierNavigator():
 
         return cb
 
-    
+
 
 
     def move_cycle_odom(self, mask = np.array([1,1,1])):

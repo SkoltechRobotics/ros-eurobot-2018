@@ -1,0 +1,4 @@
+#!/bin/bash
+
+ssh -t amazoncv@192.168.88.245 "~/catkin_ws/src/ros-eurobot-2018/eurobot/kill_nodes"
+ssh amazoncv@192.168.88.245 "screen -d -r ~/catkin_ws/src/ros-eurobot-2018/eurobot/green"

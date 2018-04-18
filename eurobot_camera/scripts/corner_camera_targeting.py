@@ -6,6 +6,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from PlanRecognition import find_colors_geom, img_transformation, STEP, rag
 import numpy as np
+import time
 
 side = rospy.get_param("/field/color")
 COLORS = np.array([[0, 124, 176], [208, 93, 40], [14, 14, 16], [97, 153, 59],
@@ -86,19 +87,29 @@ if __name__ == '__main__':
     bridge = cv_bridge.CvBridge()
     rate = rospy.Rate(100)
 
-    rospy.loginfo("Start camera node")
+    #rospy.loginfo("Start camera node")
     is_active = False
-    rospy.loginfo("Start capture video")
-    cap = cv2.VideoCapture(int(rospy.get_param("/camera/corner_camera")))
-    cap.set(cv2.CAP_PROP_FPS, 10)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
-    rospy.loginfo("Capturing started")
     while not rospy.is_shutdown():
-        ret, frame = cap.read()
-        if is_active:
-            colors = img_callback(frame)
-            color_str = COLOR_NAMES[colors[0]] + " " + COLOR_NAMES[colors[1]] + " " + COLOR_NAMES[colors[2]]
-            pub_plan.publish(color_str)
-            rospy.loginfo("colors " + color_str)
-        rate.sleep()
+        try:
+            rospy.loginfo("Start capture video")
+            cap = cv2.VideoCapture(int(rospy.get_param("/camera/corner_camera")))
+            cap.set(cv2.CAP_PROP_FPS, 10)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
+            rospy.loginfo("Capturing started")
+            while not rospy.is_shutdown():
+                ret, frame = cap.read()
+                if is_active:
+                    colors = img_callback(frame)
+                    color_str = COLOR_NAMES[colors[0]] + " " + COLOR_NAMES[colors[1]] + " " + COLOR_NAMES[colors[2]]
+                    pub_plan.publish(color_str)
+                    rospy.loginfo("colors " + color_str)
+                rate.sleep()
+        except Exception:
+            try:
+                color_str = "red red red"
+                pub_plan.publish(color_str)
+                time.sleep(1)
+                cap.release()
+            except Exception:
+                pass

@@ -5,6 +5,7 @@ from bt_builder import BehaviorTreeBuilder
 import pickle
 import os
 import rospkg
+import time
 from std_msgs.msg import Int32
 
 print(os.getcwd())
@@ -13,7 +14,8 @@ print(os.getcwd())
 SIDE = rospy.get_param("/field/color")
 if SIDE == "orange":
     # MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
-    MAIN_ROBOT_STRATEGY = [("heaps", (0, None)), ("switch_main",0), ("alt_disposal", 0)]
+    # MAIN_ROBOT_STRATEGY = [("heaps",(0,1)), ("heaps",(1,None)), ("switch_main",0), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [("heaps",(0,1)), ("switch_main",0), ("alt_disposal", 0)]
 else:
     MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
 if SIDE == "orange":
@@ -41,6 +43,8 @@ POSSIBLE_PLANS = [
     ['black', 'blue', 'green'],
     ['orange', 'blue', 'yellow']
 ]
+
+INV_POSSIBLE_PLANS = [x[::-1] for x in POSSIBLE_PLANS]
 N_STR = 10
 
 
@@ -51,6 +55,7 @@ class MainRobotBrain(object):
         self.cmd_pub = rospy.Publisher("/main_robot/stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
         self.res_sub = SubscriberHandler("/main_robot/response")
+        self.pf_cmd_pub = rospy.Publisher("/main_robot/pf_cmd", String, queue_size=10)
 
         self.rospack = rospkg.RosPack()
 
@@ -82,8 +87,11 @@ class MainRobotBrain(object):
 
     def init_strategy(self, plan):
         if plan in POSSIBLE_PLANS:
-            print("USED PLAN ", plan)
+            #print("USED PLAN ", plan)
             self.current_bt = self.bts[POSSIBLE_PLANS.index(plan)]
+        if plan in INV_POSSIBLE_PLANS:
+            #print("USED PLAN", plan)
+            self.current_bt = self.bts[INV_POSSIBLE_PLANS.index(plan)]
         # btb = BehaviorTreeBuilder("main_robot", self.move_pub, self.cmd_pub, self.map_pub,
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
         # btb.add_strategy(MAIN_ROBOT_STRATEGY)
@@ -91,6 +99,7 @@ class MainRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        # self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
@@ -123,6 +132,8 @@ class SecondaryRobotBrain(object):
         self.res_sub = SubscriberHandler("/secondary_robot/response")
         self.btb = BehaviorTreeBuilder("secondary_robot", self.move_pub, self.cmd_pub, self.map_pub,
                                        self.res_sub, self.res_sub, move_type='standard')
+        self.pf_cmd_pub = rospy.Publisher("/secondary_robot/pf_cmd", String, queue_size=10)
+
         self.btb.add_strategy(SMALL_ROBOT_STRATEGY)
         self.btb.create_tree_from_strategy(wire_start=False)
         self.current_bt = self.btb.bt
@@ -141,6 +152,10 @@ class SecondaryRobotBrain(object):
         return 0
 
     def start_strategy(self):
+        for i in range(3):
+            self.cmd_pub.publish("start_secondary 164")
+            time.sleep(0.05)
+        # self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
         return 0
@@ -175,6 +190,7 @@ def calculate_points():
     is_wastewater_reservoir = False
     is_move_wastewater_tower = False
     is_move_cleanwater_tower = False
+    is_cleanwater_tower = False
 
     heap_points = 0
     balls = 0
@@ -202,8 +218,9 @@ def calculate_points():
                     if child1.name.find("move_tower") != -1 and child1.status == "finished":
                         is_move_wastewater_tower = True
             if child.name.find("cleanwater_tower") != -1:
+                if child.status == "finished":
+                    is_cleanwater_tower = True
                 for child1 in child.children_list:
-
                     if child1.name.find("sort_and_shoot") != -1:
                         print(child1.name)
                         print(child1.status)
@@ -216,7 +233,7 @@ def calculate_points():
                             is_move_cleanwater_tower = True
     points = 10 + \
         is_disposal * heap_points + \
-        balls * 5 + \
+        is_cleanwater_tower * 40 + \
         is_wastewater_tower * is_wastewater_reservoir * 40 + \
         is_bee * 50 + \
         is_button * 25 +\

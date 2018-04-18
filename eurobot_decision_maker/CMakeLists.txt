@@ -9,8 +9,8 @@ project(eurobot_decision_maker)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     #  behavior_tree
-    #behavior_tree_core
-    #behavior_tree_leaves
+  # behavior_tree_core
+  # behavior_tree_leaves
   roscpp
   rospy
   std_msgs
@@ -108,8 +108,9 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES eurobot_decision_maker
-  CATKIN_DEPENDS  roscpp rospy std_msgs
 #  DEPENDS system_lib
+#  CATKIN_DEPENDS  behavior_tree_core behavior_tree_leaves roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs
 )
 
 ###########

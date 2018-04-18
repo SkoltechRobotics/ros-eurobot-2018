@@ -60,7 +60,7 @@ class LocalPlanner:
             # acceleration of the robot until V_MAX
             self.ACCELERATION = 1
             # length of acceleration/deceleration tracks
-            self.D_DECELERATION = 0.35
+            self.D_DECELERATION = 0.15
         else: # if robot_name == "secondary_robot"
             # maximum linear and rotational speed
             self.V_MAX = 0.5
