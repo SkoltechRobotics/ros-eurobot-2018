@@ -1,4 +1,9 @@
 #!/bin/bash
 
-ssh -t amazoncv@192.168.88.245 "~/catkin_ws/src/ros-eurobot-2018/eurobot/kill_nodes"
-ssh amazoncv@192.168.88.245 "screen -d -r ~/catkin_ws/src/ros-eurobot-2018/eurobot/green"
+ssh -t amazoncv@192.168.88.245 "/home/amazoncv/catkin_ws/src/ros-eurobot-2018/eurobot/kill_nodes"
+ssh -f amazoncv@192.168.88.245 "screen -d -m /home/amazoncv/catkin_ws/src/ros-eurobot-2018/eurobot/green"
+sleep 3s
+
+export ROS_MASTER_URI=http://192.168.88.245:11311
+export ROS_IP=192.168.88.252
+roslaunch eurobot_sim visualization.launch
