@@ -1177,14 +1177,14 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[0]['543'])
-    btb.add_cubes_sequence_new(heap_strats[0]['543'])
+    rospy.loginfo(heap_strats[3]['543'])
+    btb.add_cubes_sequence_new(heap_strats[3]['543'])
     btb.pick_one_by_one = True
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
 
-    btb.bt.root_node.start()
+    #btb.bt.root_node.start()
     # btb.man_load[0] = 3
     # btb.man_load[1] = 4
     # btb.man_load[2] = 3

@@ -201,7 +201,7 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-#MESSAGE(STATUS "CATKIN LIBRARIES : " ${behavior_tree_core_LIBRARY_DIRS})
+# MESSAGE(STATUS "CATKIN LIBRARIES : " ${behavior_tree_core_LIBRARY_DIRS})
 
 #add_executable(make_tree src/cpp/make_tree.cpp)
 #add_dependencies(make_tree ${catkin_EXPORTED_TARGETS})
