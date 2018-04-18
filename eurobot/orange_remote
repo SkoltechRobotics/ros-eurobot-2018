@@ -1,6 +1,8 @@
 #!/bin/bash
 
 ssh -t amazoncv@192.168.88.245 "/home/amazoncv/catkin_ws/src/ros-eurobot-2018/eurobot/kill_nodes"
+ssh -t amazoncv@192.168.88.245 "fuser -k /dev/video0"
+ssh -t amazoncv@192.168.88.245 "fuser -k /dev/video1"
 ssh -f amazoncv@192.168.88.245 "screen -d -m /home/amazoncv/catkin_ws/src/ros-eurobot-2018/eurobot/orange"
 sleep 10s
 
