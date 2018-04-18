@@ -5,5 +5,4 @@ ssh -f amazoncv@192.168.88.245 "screen -d -m /home/amazoncv/catkin_ws/src/ros-eu
 sleep 3s
 
 export ROS_MASTER_URI=http://192.168.88.245:11311
-export ROS_IP=192.168.88.252
 roslaunch eurobot_sim visualization.launch
