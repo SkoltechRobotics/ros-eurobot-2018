@@ -25,6 +25,10 @@ class LocalPlanner:
     # goal tolerance
     XY_GOAL_TOLERANCE = 0.005
     YAW_GOAL_TOLERANCE = 0.05
+    # slow and fast modes
+    mode = 'slow'
+    XY_GOAL_TOLERANCE_FAST = 0.015
+    YAW_GOAL_TOLERANCE_FAST = 0.1
     # goal tolerance for global planner (when goal of requested plan is obstructed)
     GLOBAL_PLAN_TOLERANCE = 0
     # number of cube heaps
@@ -60,7 +64,8 @@ class LocalPlanner:
             # acceleration of the robot until V_MAX
             self.ACCELERATION = 1
             # length of acceleration/deceleration tracks
-            self.D_DECELERATION = 0.35
+            self.D_DECELERATION = 0.25
+            self.D_DECELERATION_FAST = 0.05
         else: # if robot_name == "secondary_robot"
             # maximum linear and rotational speed
             self.V_MAX = 0.5
@@ -69,6 +74,7 @@ class LocalPlanner:
             self.ACCELERATION = 1
             # length of acceleration/deceleration tracks
             self.D_DECELERATION = 0.7
+            self.D_DECELERATION_FAST = 0.1
 
         # a Lock is used to prevent mixing bytes of diff commands to STM
         self.mutex = Lock()
@@ -159,7 +165,7 @@ class LocalPlanner:
             rospy.loginfo('path_deviation: ' + str(path_deviation))
 
         # stop and publish response if we have reached the goal with the given tolerance
-        if goal_distance < self.XY_GOAL_TOLERANCE and goal_yaw_distance < self.YAW_GOAL_TOLERANCE:
+        if (self.mode == 'slow' and goal_distance < self.XY_GOAL_TOLERANCE and goal_yaw_distance < self.YAW_GOAL_TOLERANCE) or (self.mode == 'fast' and goal_distance < self.XY_GOAL_TOLERANCE_FAST and goal_yaw_distance < self.YAW_GOAL_TOLERANCE_FAST):
             # stop the robot
             rospy.loginfo(self.goal_id + " finished, reached the goal")
             self.terminate_following(True)
@@ -250,11 +256,12 @@ class LocalPlanner:
                 self.pub_response.publish(self.goal_id + " failed")
         self.goal_id = ''
 
-    def set_plan(self, plan, goal_id):
+    def set_plan(self, plan, goal_id, mode='slow'):
         self.mutex.acquire()
 
         if self.LOGINFO:
             rospy.loginfo("Setting a new global plan.")
+        self.mode = mode
         self.plan = np.array(plan)
         self.plan_length = self.plan.shape[0]
         self.goal_id = goal_id
@@ -348,11 +355,11 @@ class LocalPlanner:
                 else:
                     success, plan = self.request_plan(self.pose, goal)
                     if success:
-                        self.set_plan(plan, cmd_id)
+                        self.set_plan(plan, cmd_id, 'fast')
             else:
                 success, plan = self.request_plan(self.pose, goal)
                 if success:
-                    self.set_plan(plan, cmd_id)
+                    self.set_plan(plan, cmd_id, 'fast')
             if self.plan_length <= stop_length:
                 if turn_off_collision_avoidance:
                     self.pub_cmd.publish("collision_off 224 0")
