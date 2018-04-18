@@ -388,8 +388,6 @@ class BarrierNavigator():
 
     def start_command_callback(self):
         def cb(data):
-
-            time_start = rospy.get_time()
             data_splitted = data.data.split()
 
             if len(data_splitted) > 1:
@@ -456,7 +454,7 @@ class BarrierNavigator():
                     self.move_cycle_one_new(mask, case, self.colors[0])
                 elif case == 1:
                     self.move_cycle_one_new(self.get_allowed_mask(7),7,self.colors[0])
-                rospy.loginfo("MOVETOHEAP FINNISH %f sec"%(rospy.get_time() - time_start ))
+                rospy.loginfo("MOVETOHEAP FINNISH")
                 self.response_pub.publish(data_splitted[0] + ' finished')
 
         return cb
