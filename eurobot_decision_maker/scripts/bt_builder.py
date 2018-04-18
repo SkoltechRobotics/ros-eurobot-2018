@@ -229,6 +229,18 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
             self.add_command_action(main_seq_name, 182, 0) # manipulator
 
+
+    def add_start_switch_main(self, parent_name):
+        main_seq_name = self.construct_string("switch", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+        
+        if self.side == "orange":
+            self.add_sleep_time(main_seq_name, 1.5)
+            self.add_command_action(main_seq_name, 0.07, 0, 0, 0.2, 0, 0)
+            self.add_action_node(main_seq_name, self.move_publisher_name, self.move_response, "move", 0.4, 0.2, 1.57)
+            self.add_move_action(main_seq_name, self.move_publisher_name, self.move_response, "move", 0.4, 0.2, 1.57)
+    
+
     def add_switch_main(self, parent_name):
         main_seq_name = self.construct_string("switch", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
