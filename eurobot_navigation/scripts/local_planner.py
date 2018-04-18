@@ -27,7 +27,7 @@ class LocalPlanner:
     YAW_GOAL_TOLERANCE = 0.05
     # slow and fast modes
     mode = 'slow'
-    XY_GOAL_TOLERANCE_FAST = 0.015
+    XY_GOAL_TOLERANCE_FAST = 0.03
     YAW_GOAL_TOLERANCE_FAST = 0.1
     # goal tolerance for global planner (when goal of requested plan is obstructed)
     GLOBAL_PLAN_TOLERANCE = 0
@@ -59,7 +59,7 @@ class LocalPlanner:
         # robot-specific params
         if self.robot_name == "main_robot":
             # maximum linear and rotational speed
-            self.V_MAX = 0.35
+            self.V_MAX = 0.2
             self.W_MAX = 1
             # acceleration of the robot until V_MAX
             self.ACCELERATION = 1

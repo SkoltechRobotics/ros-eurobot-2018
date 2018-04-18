@@ -129,8 +129,8 @@ if __name__ == '__main__':
                     color_str = COLOR_NAMES[colors[0]] + " " + COLOR_NAMES[colors[1]] + " " + COLOR_NAMES[colors[2]]
                     pub_plan.publish(color_str)
                     rospy.loginfo("colors " + color_str)
-                rate.sleep ()
-        except Exception as msg:
+                rate.sleep()
+        except cv2.error as msg:
             rospy.loginfo(str(type(msg)))
             try:
                 color_str = "red red red"

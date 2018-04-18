@@ -49,12 +49,12 @@ class BehaviorTreeBuilder:
         }
     }
     heap_sides = {
-        0: (1, 0, 2),
+        0: (0, 0, 1),
         1: (1, 0, 2),
         2: (0, 0, 1),
         3: (0, 0, 3),
         4: (3, 2, 2),
-        5: (3, 2, 2)
+        5: (0, 0, 3)
     }
     shifts = [(-1, 0), (0, -1), (1, 0), (0, 1)]
     def rotate(self, shift, a):
@@ -241,7 +241,23 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.4, 0.2, -np.pi) 
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.1, 0.2, -np.pi)
             self.add_switch_main(main_seq_name)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.25, 0.2, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.84, 0.2, 0)
+
             self.add_command_action(main_seq_name, 224, 1)
+        else:
+            self.add_sleep_time(main_seq_name, 1.5)
+            self.add_command_action(main_seq_name, 162,  0.07, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 224, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 0.4, 0.2, -np.pi) 
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 1.1, 0.2, -np.pi)
+            self.add_switch_main(main_seq_name)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 1.25, 0.2, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 0.84, 0.2, 0)
+
+
+            self.add_command_action(main_seq_name, 224, 1)
+
 
     def add_switch_main(self, parent_name):
         main_seq_name = self.construct_string("switch", self.get_next_id())
@@ -252,25 +268,28 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.25, 0, 0, 0.2, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.02, -0.05, 0, 0.25, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, -0.035, -0.05, 0, 0.4, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, 0.03, 0.1, 0, 0.2, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, -0.05,0.1, 0, 0.2, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, 0.3, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.02, -0.05, 0, 0.25, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, -0.035, -0.05, 0, 0.4, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, 0.03, 0.1, 0, 0.2, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, -0.05,0.1, 0, 0.2, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, 0.35, -0.05, 0, 0.28, 0.04, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         else:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.96, 0.4, 1.57)
             self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-            self.add_command_action(main_seq_name, 162, -0.25, 0, 0, 0.3, 0, 0)
-            self.add_command_action(main_seq_name, 162, 0.02, -0.05, 0, 0.25, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, -0.035, -0.05, 0, 0.4, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, 0.03, 0.1, 0, 0.2, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, -0.05,0.1, 0, 0.2, 0.57, 0)
-            self.add_command_action(main_seq_name, 162, 0.3, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.25, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.02, -0.05, 0, 0.1, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, -0.035, -0.05, 0, 0.4, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, 0.03, 0.1, 0, 0.2, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, -0.05,0.1, 0, 0.2, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, 0.35, 0.05, 0, 0.28, 0.04, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
+
+            self.add_command_action(main_seq_name, 162, 0, 0.15, 0, 0, 0.25, 0)
+            self.add_command_action(main_seq_name, 162, 0, 0, np.pi, 0, 0, np.pi/2)
 
     def add_bee_secondary(self, parent_name):
         main_seq_name = self.construct_string("bee", self.get_next_id())
@@ -283,9 +302,9 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.15, 0.15, 0)
-            self.add_command_action(main_seq_name, 162, 0.2, 0.02, 0, 0.57, 0.08, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0.02, 0, 0.3, 0.04, 0)
             self.add_command_action(main_seq_name, 162, 0, 0, -0.8, 0, 0, 6)
-            self.add_command_action(main_seq_name, 162, 0.15, -0.15, 0, 0.57, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0.15, -0.15, 0, 0.35, 0.35, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
             #self.add_command_action(main_seq_name, 162, 0, 0.2, 0, 0, 0.57, 0)
@@ -296,13 +315,14 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75, 1.75, -0.6)
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
-            self.add_command_action(main_seq_name, 162, 0, 0.3, 0, 0, 0.2, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0.2, 0, 0.15, 0.15, 0)
+            self.add_command_action(main_seq_name, 162, -0.2, 0.2, 0, 0.15, 0.15, 0)
             # self.add_command_action(main_seq_name, 162, 0, 0, -0.1, 0, 0, 1)
-            self.add_command_action(main_seq_name, 162, -0.4, -0.4, 0, 0.57, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, -0.12, -0.1, 0, 0.18, 0.15, 0)
             # self.add_command_action(main_seq_name, 162, 0.05, 0.04, 0, 0.57, 0.45, 0)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.8, 0, 0, 1)
             self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
-            self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0, 0.3, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
 
 
@@ -975,32 +995,53 @@ class BehaviorTreeBuilder:
                 self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1.2, 3.14)
                 self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.4, 1.7, 3.14)
 
-        self.add_command_action(main_seq_name, 195, 2)
+        self.add_shoot_sort_action(main_seq_name, "interm")
         #self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
+        
         if self.side == "orange":
-            self.add_command_action(main_seq_name, 162, 0.02, 0, 0, 0.15, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+            self.add_sleep_time(main_seq_name, 1)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
         else:
-            self.add_command_action(main_seq_name, 162, -0.02, 0, 0, 0.15, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+            self.add_sleep_time(main_seq_name, 1)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
 
+        self.add_sleep_time(main_seq_name, 1)
+        
         self.add_shooting_motor_action(main_seq_name, to, "slow")
         
         for i in range(4):
-            self.add_command_action(main_seq_name, 195, to_sorter)
+            self.add_shoot_sort_action(main_seq_name, to)
             self.add_sleep_time(main_seq_name, .65)
-            self.add_command_action(main_seq_name, 195, 2)
+            self.add_shoot_sort_action(main_seq_name, "interm")
             self.add_sleep_time(main_seq_name, .35)
         
         if self.side == "orange":
-            self.add_command_action(main_seq_name, 162, -0.03, 0, 0, 0.15, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+            self.add_sleep_time(main_seq_name, 1)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
         else:
-            self.add_command_action(main_seq_name, 162, 0.03, 0, 0, 0.15, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+            self.add_sleep_time(main_seq_name, 1)
+            self.add_command_action(main_seq_name, 162, 0.01, 0, 0, 0.57, 0, 0)
+            self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
+        
+        self.add_sleep_time(main_seq_name, 1)
 
         for i in range(4):
-            self.add_command_action(main_seq_name, 195, to_sorter)
+            self.add_shoot_sort_action(main_seq_name, to)
             self.add_sleep_time(main_seq_name, .65)
-            self.add_command_action(main_seq_name, 195, 2)
+            self.add_shoot_sort_action(main_seq_name, "interm")
             self.add_sleep_time(main_seq_name, .35)
 
         self.add_sleep_time(main_seq_name, 2)

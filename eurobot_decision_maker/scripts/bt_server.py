@@ -12,21 +12,28 @@ print(os.getcwd())
 
 # MAIN STRATEGY FOR EUROBOT MOSCOW
 SIDE = rospy.get_param("/field/color")
+
+# MAIN ROBOT STRATEGY
 if SIDE == "orange":
-    # simple strategy
+    # SIMPLE
     MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
 else:
-    # simple strategy
-    MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
+    # SIMPLE
+    #MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+
+# SECOND ROBOT STRATEGY
 if SIDE == "orange":
-    # simple strategy
+    # SIMPLE
     #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
-    # medium strategy
+
+    # MEDIUM
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower',0)]
 else:
-    # simple strategy
+    # SIMPLE
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0)]
-    # madium strategy
+
+    # MEDIUM
     #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
