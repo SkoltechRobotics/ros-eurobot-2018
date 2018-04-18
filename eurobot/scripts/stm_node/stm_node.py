@@ -275,7 +275,9 @@ class stm_node(STMprotocol):
             self.wire_timer.shutdown()
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
         elif splitted_data[1] == "stop_wire":
-            self.wire_timer.shutdown()
+            # self.wire_timer.shutdown()
+            pass
+
 
     def wire_timer_callback(self, event):
         successfully, args_response = self.send('GET_STARTUP_STATUS', GET_STARTUP_STATUS, [])
