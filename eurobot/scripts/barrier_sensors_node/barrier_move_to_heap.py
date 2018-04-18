@@ -241,11 +241,12 @@ class BarrierNavigator():
             self.wait_for_movement(command, "MOVEODOM" + str(self.i))
 
     def check_coordinate(self):
-       (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
-        if np.linalg.norm(trans[:2] - self.coordinate_started[:2] ) > 0.07:
-            return False
-        else:
-            return True
+        #(trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+        return rospy.get_time() - self.time_started < 11
+        #if np.linalg.norm(trans[:2] - self.coordinate_started[:2] ) > 0.07:
+        #    return False
+        #else:
+        #    return True
 
 
     def move_cycle_one_new(self, mask, case, color):
@@ -406,15 +407,17 @@ class BarrierNavigator():
     def start_command_callback(self):
         def cb(data):
 
+            
             time_start = rospy.get_time()
+            self.time_start = time_start
             data_splitted = data.data.split()
 
-            while self.coordinate_started is None:
-                try:
-                    (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
-                    self.coordinate_started = trans
-                except:
-                    pass
+            #while self.coordinate_started is None:
+            #    try:
+            #        (trans, rot) = self.listener.lookupTransform('/map', '/main_robot', rospy.Time(0))
+            #        self.coordinate_started = trans
+            #    except:
+            #        pass
             
 
             if len(data_splitted) > 1:
