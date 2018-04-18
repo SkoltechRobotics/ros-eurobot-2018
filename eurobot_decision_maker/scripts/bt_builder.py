@@ -236,10 +236,12 @@ class BehaviorTreeBuilder:
         
         if self.side == "orange":
             self.add_sleep_time(main_seq_name, 1.5)
-            self.add_command_action(main_seq_name, 0.07, 0, 0, 0.2, 0, 0)
-            self.add_action_node(main_seq_name, self.move_publisher_name, self.move_response, "move", 0.4, 0.2, 1.57)
-            self.add_move_action(main_seq_name, self.move_publisher_name, self.move_response, "move", 0.4, 0.2, 1.57)
-    
+            self.add_command_action(main_seq_name, 162,  -0.07, 0, 0, 0.2, 0, 0)
+            self.add_command_action(main_seq_name, 224, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.4, 0.2, -np.pi) 
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.1, 0.2, -np.pi)
+            self.add_switch_main(main_seq_name)
+            self.add_command_action(main_seq_name, 224, 1)
 
     def add_switch_main(self, parent_name):
         main_seq_name = self.construct_string("switch", self.get_next_id())
@@ -1104,6 +1106,8 @@ class BehaviorTreeBuilder:
                 self.add_switch_secondary(self.root_seq_name)
             elif name in ['bee_secondary']:
                 self.add_bee_secondary(self.root_seq_name)
+            elif name == "start_switch_main":
+                self.add_start_switch_main(self.root_seq_name)
             elif name in ['switch_main']:
                 self.add_switch_main(self.root_seq_name)
             elif name in ['bee_main']:
@@ -1152,7 +1156,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    btb.add_strategy([("switch_main", 0)])
+    btb.add_strategy([("start_switch_main", 0), ("heaps",(0,None))])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
     # btb.add_strategy([("bee_main", 0), ("switch_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
