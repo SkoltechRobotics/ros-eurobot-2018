@@ -13,16 +13,22 @@ print(os.getcwd())
 # MAIN STRATEGY FOR EUROBOT MOSCOW
 SIDE = rospy.get_param("/field/color")
 if SIDE == "orange":
-    # MAIN_ROBOT_STRATEGY = [("bee_main",0), ("heaps", (0, None)), ("alt_disposal", 0)]
-    # MAIN_ROBOT_STRATEGY = [("heaps",(0,1)), ("heaps",(1,None)), ("switch_main",0), ("alt_disposal", 0)]
+    # simple strategy
     MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
 else:
+    # simple strategy
     MAIN_ROBOT_STRATEGY = [("heaps", (5, None)), ('switch_main', 0), ("alt_disposal", 0)]
 if SIDE == "orange":
-    # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("switch_secondary", 0), ("wastewater_tower", 0), ("wastewater_reservoir", 0), ('bee_secondary', 0)]
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower',0)]
+    # simple strategy
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+    # medium strategy
+    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower',0)]
 else:
+    # simple strategy
     SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0)]
+    # madium strategy
+    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
+
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
 if SIDE == "orange":
