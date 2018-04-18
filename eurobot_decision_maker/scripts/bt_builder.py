@@ -278,11 +278,11 @@ class BehaviorTreeBuilder:
 
         if self.side == "orange":
             if not self.ok:
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.8, 1, 0)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.8, 1.2, 0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 2) # manipulator
-            self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.3, 0.3, 0)
+            self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.15, 0.15, 0)
             self.add_command_action(main_seq_name, 162, 0.2, 0.02, 0, 0.57, 0.08, 0)
             self.add_command_action(main_seq_name, 162, 0, 0, -0.8, 0, 0, 6)
             self.add_command_action(main_seq_name, 162, 0.15, -0.15, 0, 0.57, 0.57, 0)
@@ -292,7 +292,7 @@ class BehaviorTreeBuilder:
 
         else:
             if not self.ok:
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.2, 1, -0.6)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.2, 1.2, -0.6)
             self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75, 1.75, -0.6)
             self.add_command_action(main_seq_name, 182, 2)  # manipulator
@@ -959,36 +959,55 @@ class BehaviorTreeBuilder:
             self.add_move_action(main_seq_name, *wt_coords.tolist(), move_type="move_odometry", shift_multiplier=0)
 
     def add_wastewater_tower(self, parent_name, delay=1):
+        to = "left" if self.side == "orange" else "right"
+        to_sorter = 0 if to == "left" else 1
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
         #self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
         if not self.ok:
             if self.side == "orange":
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.7, 1.7, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1.2, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1.2, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.6, 1.7, 3.14)
             else:
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1, 3.14)
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1, 3.14)
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.3, 1.7, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1.2, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1.2, 3.14)
+                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.4, 1.7, 3.14)
 
+        self.add_command_action(main_seq_name, 195, 2)
         #self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
-        self.add_shooting_motor_action(main_seq_name, "left" if self.side == "orange" else "right", "slow")
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
-        self.add_sleep_time(main_seq_name, 1)
-        self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
-        self.add_sleep_time(main_seq_name, 1)
-        self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
-        self.add_sleep_time(main_seq_name, 1)
-        self.add_command_action(main_seq_name, 162, 0.04, 0, 0, 0.57, 0, 0)
-        self.add_sleep_time(main_seq_name, 1)
-        self.add_command_action(main_seq_name, 162, -0.01, 0, 0, 0.57, 0, 0)
-        self.add_sleep_time(main_seq_name, 1)
+        if self.side == "orange":
+            self.add_command_action(main_seq_name, 162, 0.02, 0, 0, 0.15, 0, 0)
+        else:
+            self.add_command_action(main_seq_name, 162, -0.02, 0, 0, 0.15, 0, 0)
 
-        self.add_shooting_motor_action(main_seq_name, "left" if self.side == "orange" else "right", "off")
+        self.add_shooting_motor_action(main_seq_name, to, "slow")
+        
+        for i in range(4):
+            self.add_command_action(main_seq_name, 195, to_sorter)
+            self.add_sleep_time(main_seq_name, .65)
+            self.add_command_action(main_seq_name, 195, 2)
+            self.add_sleep_time(main_seq_name, .35)
+        
+        if self.side == "orange":
+            self.add_command_action(main_seq_name, 162, -0.03, 0, 0, 0.15, 0, 0)
+        else:
+            self.add_command_action(main_seq_name, 162, 0.03, 0, 0, 0.15, 0, 0)
+
+        for i in range(4):
+            self.add_command_action(main_seq_name, 195, to_sorter)
+            self.add_sleep_time(main_seq_name, .65)
+            self.add_command_action(main_seq_name, 195, 2)
+            self.add_sleep_time(main_seq_name, .35)
+
+        self.add_sleep_time(main_seq_name, 2)
+        self.add_shooting_motor_action(main_seq_name, to, "off")
+
         self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
+        
         #self.add_command_action(main_seq_name, self.bottom_sorter, 2)
         #self.add_command_action(main_seq_name, self.wastewater_door, 0)
         #delay = 2

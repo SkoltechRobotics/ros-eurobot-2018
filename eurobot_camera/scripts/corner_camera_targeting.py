@@ -87,12 +87,13 @@ if __name__ == '__main__':
     bridge = cv_bridge.CvBridge()
     rate = rospy.Rate(100)
 
-    #rospy.loginfo("Start camera node")
+    rospy.loginfo("Start camera node")
     is_active = False
+    devices = np.array([0, 1, 9])
     while not rospy.is_shutdown():
         try:
-            rospy.loginfo("Start capture video")
-            cap = cv2.VideoCapture(int(rospy.get_param("/camera/corner_camera")))
+            rospy.loginfo("Start capture video from " + str(devices[0]))
+            cap = cv2.VideoCapture(devices[0])
             cap.set(cv2.CAP_PROP_FPS, 10)
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
@@ -111,5 +112,6 @@ if __name__ == '__main__':
                 pub_plan.publish(color_str)
                 time.sleep(1)
                 cap.release()
+                devices = np.roll(devices, 1)
             except Exception:
                 pass
