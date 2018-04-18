@@ -320,6 +320,7 @@ class LocalPlanner:
             self.pub_cmd.publish(cmd)
 
         elif cmd_type == "stop":
+            self.shutdown_timer()
             if self.plan_length == 0:
                 self.set_speed(np.zeros(3))
             else:
