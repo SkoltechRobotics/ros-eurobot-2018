@@ -190,6 +190,7 @@ def calculate_points():
     is_wastewater_reservoir = False
     is_move_wastewater_tower = False
     is_move_cleanwater_tower = False
+    is_cleanwater_tower = False
 
     heap_points = 0
     balls = 0
@@ -217,8 +218,9 @@ def calculate_points():
                     if child1.name.find("move_tower") != -1 and child1.status == "finished":
                         is_move_wastewater_tower = True
             if child.name.find("cleanwater_tower") != -1:
+                if child.status == "finished":
+                    is_cleanwater_tower = True
                 for child1 in child.children_list:
-
                     if child1.name.find("sort_and_shoot") != -1:
                         print(child1.name)
                         print(child1.status)
@@ -231,7 +233,7 @@ def calculate_points():
                             is_move_cleanwater_tower = True
     points = 10 + \
         is_disposal * heap_points + \
-        balls * 5 + \
+        is_cleanwater_tower * 40 + \
         is_wastewater_tower * is_wastewater_reservoir * 40 + \
         is_bee * 50 + \
         is_button * 25 +\
