@@ -9,6 +9,7 @@ import rospkg
 
 # from cube_picking_optimizer import *
 
+
 def rot_matrix(rot_angle):
     return np.matrix([[np.cos(rot_angle), -np.sin(rot_angle), 0],
                       [np.sin(rot_angle), np.cos(rot_angle), 0],
