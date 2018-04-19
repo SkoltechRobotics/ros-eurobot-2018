@@ -15,7 +15,7 @@
     </node>
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" respawn="true" output="screen"/>
 
-    <node pkg="eurobot" name="barrier_move_node" type="barrier_move_to_heap.py" respawn="true" output="screen"/>
+    <node pkg="eurobot" name="barrier_move_node" type="test_barrier_move_to_heap.py" respawn="true" output="screen"/>
   </group>
 
 </launch>
