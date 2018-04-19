@@ -50,12 +50,12 @@ class BehaviorTreeBuilder:
         }
     }
     heap_sides = {
-        0: (0, 0, 1),
-        1: (1, 0, 2),
-        2: (0, 0, 1),
-        3: (0, 0, 3),
-        4: (3, 2, 2),
-        5: (0, 0, 3)
+        0: (0, 1, 2),
+        1: (0, 1, 2),
+        2: (0, 1, 2),
+        3: (0, 3, 2),
+        4: (0, 3, 2),
+        5: (0, 3, 2)
     }
     shifts = [(-1, 0), (0, -1), (1, 0), (0, 1)]
     def rotate(self, shift, a):
@@ -243,7 +243,7 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.1, 0.2, -np.pi)
             self.add_switch_main(main_seq_name)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.25, 0.2, 0)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.84, 0.2, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.85, 0.44, 0)
 
             self.add_command_action(main_seq_name, 224, 1)
         else:
@@ -254,7 +254,7 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 1.1, 0.2, -np.pi)
             self.add_switch_main(main_seq_name)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 1.25, 0.2, 0)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 0.84, 0.2, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 3 - 0.85, 0.44, 0)
 
 
             self.add_command_action(main_seq_name, 224, 1)
