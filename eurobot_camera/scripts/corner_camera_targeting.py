@@ -138,6 +138,6 @@ if __name__ == '__main__':
                 time.sleep(1)
                 devices = np.roll(devices, 1)
                 cap.release()
-            except Exception as msg:
+            except cv2.error as msg:
                 rospy.loginfo(str(msg))
                 pass
