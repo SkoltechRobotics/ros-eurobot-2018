@@ -16,11 +16,13 @@ SIDE = rospy.get_param("/field/color")
 # MAIN ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
-    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
+    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]#, ("heaps",(0,1)), ("alt_disposal", 0)]
 else:
     # SIMPLE
     #MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
-    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]#, ("heaps",(5,4)), ("alt_disposal", 0)]
 
 # SECOND ROBOT STRATEGY
 if SIDE == "orange":
