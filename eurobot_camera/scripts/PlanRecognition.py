@@ -158,7 +158,6 @@ def find_colors_geom(img, k1=1, k2=1, kr=0.95, k3=1.25, **kwargs):
 
     ind = np.unravel_index(np.argmin(cost_function), (n, n, n))
 
-    min_cost = np.min(cost_function)
     best_plan = [0, 0, 0]
     colors = np.zeros((3, 3), dtype=np.uint8)
     for j, i in enumerate(ind):
@@ -166,4 +165,4 @@ def find_colors_geom(img, k1=1, k2=1, kr=0.95, k3=1.25, **kwargs):
         colors[j] = np.sum(np.sum(img.astype(np.float32) * (labels == i)[:, :, np.newaxis], axis=0), axis=0) / m
         best_plan[j] = determ_color(colors[j], **kwargs)
     # print(xr[list(ind)].round(2), yr[list(ind)].round(2), xc[list(ind)].round(2), yc[list(ind)].round(2), cost_function[ind])
-    return best_plan, colors, [xc[list(ind)], yc[list(ind)]], min_cost
+    return best_plan, colors, [xc[list(ind)], yc[list(ind)]]
