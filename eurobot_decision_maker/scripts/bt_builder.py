@@ -996,7 +996,7 @@ class BehaviorTreeBuilder:
                 self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1.2, 3.14)
                 self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.4, 1.7, 3.14)
 
-        self.add_shoot_sort_action(main_seq_name, "interm")
+        self.add_sgit hoot_sort_action(main_seq_name, "interm")
         #self.add_command_action(main_seq_name, self.bottom_sorter, self.shoot_poses["interm"])
         self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_move_to_tower_action(main_seq_name, "wastewater_tower")
