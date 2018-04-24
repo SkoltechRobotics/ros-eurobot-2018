@@ -173,8 +173,8 @@ class SequenceNode(ControlMultiChildrenNode):
         except StopIteration:
             # empty list!
             print ("Empty children list in " + self.name + " !")
-            self.finish()
             self.status = "error"
+            self.finish()
             raise
         except:
             print ("Unexpected error in " + self.name)
@@ -185,8 +185,8 @@ class SequenceNode(ControlMultiChildrenNode):
                 child = child_iter.next()
             except StopIteration:
                 # all children finished
-                self.finish()
                 self.status = "finished"
+                self.finish()
                 return self.status
             except:
                 print ("Unexpected error in " + self.name)
@@ -270,8 +270,8 @@ class TimeoutNode(TreeNode):
             self.status = "active"
 
         if self.status == "active" and self.time_worked() >= self.sleep_time:
-            self.finish()
             self.status = "finished"
+            self.finish()
 
         return self.status
 

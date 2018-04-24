@@ -12,16 +12,14 @@ from threading import Lock
 from sensor_msgs.msg import PointCloud
 
 class LocalPlanner:
-
-    # parameters not specific to the robot
-    # minimum speed (when approaching the goal and decelerating)
-    V_MIN = 0.01
+    V_MIN = 0.005
+    # parameters noit specific to the robot
     # plan resolution
     RESOLUTION = 0.005
     # distance for placing a carrot
     D = 0.1
     # on which distance to consider that robot lost it's path
-    FOLLOW_TOLERANCE = 0.15
+    FOLLOW_TOLERANCE = 1.0
     # goal tolerance
     XY_GOAL_TOLERANCE = 0.005
     YAW_GOAL_TOLERANCE = 0.05
@@ -46,7 +44,7 @@ class LocalPlanner:
     # speed for odometry movements
     V_MAX_ODOMETRY_MOVEMENT = 0.4
     # loginfo flag
-    LOGINFO = False
+    LOGINFO = True
     # whether to request a global plan only ones
     ONESHOT = False
     # coefficient for speed limit to avoid collisions
@@ -59,13 +57,15 @@ class LocalPlanner:
         # robot-specific params
         if self.robot_name == "main_robot":
             # maximum linear and rotational speed
-            self.V_MAX = 0.2
+            self.V_MAX = 0.3
             self.W_MAX = 1
             # acceleration of the robot until V_MAX
             self.ACCELERATION = 1
             # length of acceleration/deceleration tracks
             self.D_DECELERATION = 0.25
             self.D_DECELERATION_FAST = 0.05
+            # minimum speed (when approaching the goal and decelerating)
+            V_MIN = 0.001
         else: # if robot_name == "secondary_robot"
             # maximum linear and rotational speed
             self.V_MAX = 0.35
@@ -73,8 +73,10 @@ class LocalPlanner:
             # acceleration of the robot until V_MAX
             self.ACCELERATION = 1
             # length of acceleration/deceleration tracks
-            self.D_DECELERATION = 0.7
+            self.D_DECELERATION = 0.4
             self.D_DECELERATION_FAST = 0.1
+            # minimum speed (when approaching the goal and decelerating)
+            V_MIN = 0.03
 
         # a Lock is used to prevent mixing bytes of diff commands to STM
         self.mutex = Lock()
@@ -137,7 +139,7 @@ class LocalPlanner:
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
             self.another_robot_coords = self.pose2coords(Pose(Point(*trans), Quaternion(*rot)))
         except (LookupException, ConnectivityException, ExtrapolationException):
-            # rospy.loginfo("LocalPlanner failed to lookup tf.")
+            rospy.loginfo("LocalPlanner failed to lookup tf.")
             self.mutex.release()
             return
 
@@ -264,6 +266,9 @@ class LocalPlanner:
         self.plan_length = self.plan.shape[0]
         self.goal_id = goal_id
         self.t_prev = rospy.get_time()
+
+        if self.LOGINFO == True:
+            rospy.loginfo("PLAN: " + str(self.plan))
 
         self.mutex.release()
 

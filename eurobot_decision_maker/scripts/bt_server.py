@@ -12,17 +12,17 @@ print(os.getcwd())
 
 # MAIN STRATEGY FOR EUROBOT MOSCOW
 SIDE = rospy.get_param("/field/color")
-
+IS_WASTEWATER_SHOOT = True
 # MAIN ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
-    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
-    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]#, ("heaps",(0,1)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(0,1)), ("alt_disposal", 0)]
+    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 else:
     # SIMPLE
     #MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
-    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
-    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]#, ("heaps",(5,4)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 
 # SECOND ROBOT STRATEGY
 if SIDE == "orange":
@@ -249,10 +249,11 @@ def calculate_points():
                         print(child1.status)
                         if child1.status == "finished":
                             is_move_cleanwater_tower = True
+    is_wastewater_reservoir = IS_WASTEWATER_SHOOT
     points = 10 + \
         is_disposal * heap_points + \
         is_cleanwater_tower * 40 + \
-        is_wastewater_tower * is_wastewater_reservoir * 40 + \
+        is_wastewater_tower * is_wastewater_reservoir * 30 + \
         is_bee * 50 + \
         is_button * 25 +\
         is_move_wastewater_tower * 10 +\
@@ -331,7 +332,7 @@ if __name__ == "__main__":
     wait_and_stop = SequenceNode("wait_and_stop")
     bt.add_node(wait_and_stop, "active_work")
 
-    bt.add_node(TimeoutNode("100_sec_wait", 100), "wait_and_stop")
+    bt.add_node(TimeoutNode("100_sec_wait", 98.5), "wait_and_stop")
     bt.add_node(ActionFunctionNode("recover_main_robot", brain_main.emergency_strategy), "active_work")
     bt.add_node(ActionFunctionNode("recover_secondary_robot", brain_secondary.emergency_strategy), "active_work")
     bt.add_node(ActionFunctionNode("stop_main", brain_main.stop_strategy), "wait_and_stop")

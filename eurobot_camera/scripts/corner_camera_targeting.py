@@ -43,23 +43,6 @@ params = {"kl": 2,
           "v_gain": 30,
           "c": -0.45}
 
-params1 = {"kl": 2,
-          "kp": 1,
-          "k1": 10,
-          "k2": 1,
-          "k3": 1.1,
-          "kr": 0.93,
-          "gaus_sigma": 2,
-          "r_disk": 4,
-          "thresh": 20,
-          "compactness": 20,
-          "s_cutoff": 0.27,
-          "s_gain": 30,
-          "v_cutoff": 0.25,
-          "v_gain": 30,
-          "c": -0.45}
-
-MIN_COST = 500
 
 def img_callback(img):
     global bridge
@@ -72,14 +55,7 @@ def img_callback(img):
     img2 = rag(img1, **params)[0]
     pub_add_img.publish(bridge.cv2_to_imgmsg(cv2.cvtColor(img1, cv2.COLOR_RGB2BGR), "bgr8"))
 
-    colors, _, centers, min_cost = find_colors_geom(img, **params)
-    if min_cost < MIN_COST:
-        colors_1, _, centers_1, min_cost_1 = find_colors_geom(img, **params1)
-        if min_cost > min_cost_1:
-            min_cost = min_cost_1
-            colors = colors_1
-            centers = centers_1
-    rospy.loginfo("colors " + str(colors) + " centers " + str(centers) + " min_cost " + str(min_cost))
+    colors, _, centers = find_colors_geom(img, **params)
     centers = np.array(centers).T.astype(np.uint8)
     img = img2
     for i, color in enumerate(colors):
@@ -113,7 +89,7 @@ if __name__ == '__main__':
 
     rospy.loginfo("Start camera node")
     is_active = False
-    devices = np.array([1, 0, 9])
+    devices = np.array([0, 1, 2, 3, 4, 5, 6])
     while not rospy.is_shutdown():
         try:
             rospy.loginfo("Start capture video from " + str(devices[0]))
@@ -136,8 +112,8 @@ if __name__ == '__main__':
                 color_str = "red red red"
                 pub_plan.publish(color_str)
                 time.sleep(1)
-                devices = np.roll(devices, 1)
                 cap.release()
+                devices = np.roll(devices, 1)
             except cv2.error as msg:
                 rospy.loginfo(str(msg))
                 pass
