@@ -302,7 +302,7 @@ class BarrierNavigator():
                 rospy.loginfo("FINISHED by dx dy")
                 last_x = self.final_shifts['x'][case][color]
                 last_y = self.final_shifts['y'][case][color]
-                rospy.loginfo("FINISHED by dx dy %f %"%(last_x, last_y))
+                rospy.loginfo("FINISHED by dx dy %f %f"%(last_x, last_y))
                 if last_x:
                     self.wait_for_movement(self.get_command_dx_dy(last_x, 0)[0], "MOVEODOM" + str(self.i))
                 if last_y:
