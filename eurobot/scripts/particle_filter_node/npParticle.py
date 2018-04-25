@@ -5,7 +5,6 @@ import logging
 from sklearn.cluster import DBSCAN
 from scipy.optimize import least_squares, basinhopping
 
-
 # Dimensions of the playing field
 WORLD_X = 3000
 WORLD_Y = 2000
@@ -26,6 +25,8 @@ BEACONS = np.array([[WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., WORLD_Y
 BEAC_DIST_THRES = 200
 LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
 LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
+
+
 class ParticleFilter:
     def __init__(self, particles=500, sense_noise=50, distance_noise=5, angle_noise=0.02, in_x=293, in_y=425,
                  in_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0, reset_factor=3.0):
@@ -42,7 +43,7 @@ class ParticleFilter:
                                 [WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., BEAC_L / 2.]])
         global beacons
         beacons = BEACONS
-        #stamp = time.time()
+        # stamp = time.time()
         self.particles_num = particles
         self.sense_noise = sense_noise
         self.distance_noise = distance_noise
@@ -54,7 +55,7 @@ class ParticleFilter:
         y = np.random.normal(in_y, distance_noise, particles)
         orient = np.random.normal(in_angle, angle_noise, particles) % (2 * np.pi)
         self.particles = np.array([x, y, orient]).T
-        #logging.info('initialize time: ' + str(time.time() - stamp))
+        # logging.info('initialize time: ' + str(time.time() - stamp))
         # Added Andrei for debug
         self.debug_info = []
         self.start_time = time.time()
@@ -93,7 +94,7 @@ class ParticleFilter:
         return indices
 
     def calculate_main(self):
-        #stamp = time.time()
+        # stamp = time.time()
         x = np.mean(self.particles[:, 0])
         y = np.mean(self.particles[:, 1])
         zero_elem = self.particles[0, 2]
@@ -101,12 +102,12 @@ class ParticleFilter:
         temporary = ((self.particles[:, 2] - zero_elem + np.pi) % (2.0 * np.pi)) + zero_elem - np.pi
         orient = np.mean(temporary)
         answer = (x, y, orient)
-        #logging.info('main_calculation time' + str(time.time() - stamp))
-        #logging.info("Particle Filter coordinates: " + str(answer))
+        # logging.info('main_calculation time' + str(time.time() - stamp))
+        # logging.info("Particle Filter coordinates: " + str(answer))
         return answer
 
     def particle_sense(self, scan, particles):
-        #stamp = time.time()
+        # stamp = time.time()
         angle, distance = self.get_landmarks(scan)
         x_coords, y_coords = self.p_trans(angle, distance)
         self.landmarks = np.array([x_coords, y_coords])
@@ -122,7 +123,7 @@ class ParticleFilter:
             # logging.info('particle_sense time :' + str(time.time() - stamp) + " points: " + str(len(x_coords)))
             # return self.particles
         particles = particles[self.resample(weights), :]
-        #logging.info('particle_sense time :' + str(time.time() - stamp) + " points: " + str(len(x_coords)))
+        # logging.info('particle_sense time :' + str(time.time() - stamp) + " points: " + str(len(x_coords)))
         global beacon_storage
         global beacon_storage
         return particles
@@ -183,9 +184,9 @@ class ParticleFilter:
         # mean version
         weights = self.gaus(np.mean(beacon_error_sum, axis=1), mu=0, sigma=self.sense_noise)
         # check weights
-        #if self.warning is False and np.sum(weights) < self.gaus(self.sense_noise * 15.0, mu=0, sigma=self.sense_noise) * particles.shape[0]:
-            #logging.info("Dangerous Situation")
-            # self.warning = True
+        # if self.warning is False and np.sum(weights) < self.gaus(self.sense_noise * 15.0, mu=0, sigma=self.sense_noise) * particles.shape[0]:
+        # logging.info("Dangerous Situation")
+        # self.warning = True
 
         if np.sum(weights) > 0:
             weights /= np.sum(weights)
@@ -208,14 +209,14 @@ class ParticleFilter:
 
         if self.reset is True:
             # reset particles from scratch according to reset flag
-            #successfully, coords  = self.evaluate_coords(lidar_data)
-            #if successfully: # TODO behavior in case of failing to reset
+            # successfully, coords  = self.evaluate_coords(lidar_data)
+            # if successfully: # TODO behavior in case of failing to reset
             #    self.reset_particles(coords)
             self.reset_particles(self.in_coords)
             self.reset = False
         else:
             # move particles according to odometry
-            #print("delta", delta_coords)
+            # print("delta", delta_coords)
             self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
         # add approximation
         self.particles = self.particle_sense(lidar_data, self.particles)
@@ -241,14 +242,15 @@ class ParticleFilter:
         y_beac = d * np.sin(a)
         return x_beac, y_beac
 
-#### Below is the code for reset function and calibration
+    #### Below is the code for reset function and calibration
 
     def start_over(self):
         self.reset = True
 
     def get_center(self, landmarks):
         def fun(point, landmarks):
-                return np.sum((landmarks - point) ** 2, axis=1) ** .5 - BEAC_R
+            return np.sum((landmarks - point) ** 2, axis=1) ** .5 - BEAC_R
+
         med = np.median(landmarks, axis=0)
         dist = np.sum(med ** 2) ** .5
         center_by_med = med + BEAC_R * np.array([med[0] / dist, med[1] / dist])
@@ -311,7 +313,7 @@ class ParticleFilter:
             a = np.arccos(cosa)
             if (B - A)[0] < 0:
                 a = 2 * np.pi - a
-            
+
             return True, np.array([x, y, a])
 
     def reset_particles(self, coords):
@@ -319,7 +321,7 @@ class ParticleFilter:
         x = np.random.normal(inp_x, self.reset_factor * self.distance_noise, self.particles.shape[0])
         y = np.random.normal(inp_y, self.reset_factor * self.distance_noise, self.particles.shape[0])
         orient = np.random.normal(inp_a, self.reset_factor * self.angle_noise, self.particles.shape[0]) % (2 * np.pi)
-        self.particles = np.array([x, y, orient]).T 
+        self.particles = np.array([x, y, orient]).T
 
     def find_beacons(self, scan):
         """ Determine beacon coords from scan. """
@@ -333,7 +335,7 @@ class ParticleFilter:
             return False
 
         beac = []
-        
+
         # landmarks
         angles, distances = self.get_landmarks(scan)
         angles = (angles) % (2 * np.pi)
@@ -357,12 +359,12 @@ class ParticleFilter:
             center = self.get_center(landmarks[class_member_mask])
             centers.append(center.x)
 
-        #print 'beacons in LIDAR frame:', centers
-        
+        # print 'beacons in LIDAR frame:', centers
+
         # beacon centers in world frame
         centers = self.cvt_local2global(centers, pose)
-       
-        #print 'beacons in world frame:',  centers
+
+        # print 'beacons in world frame:',  centers
 
         for beacon in BEACONS:
             distances = np.linalg.norm(centers - beacon, axis=1)
@@ -371,17 +373,15 @@ class ParticleFilter:
                 beac.append(centers[closest])
             else:
                 beac.append([np.nan, np.nan])
-        #print 'beac:', beac
+        # print 'beac:', beac
         return beac
-
 
     def cvt_local2global(self, points, pose):
         """ Transformation of list of points from local to global frame by given robot pose in global frame."""
         angle = pose[2]
         M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-        ans = [np.matmul(M, point.reshape((2,1))).reshape(2) + pose[:2] for point in points]
+        ans = [np.matmul(M, point.reshape((2, 1))).reshape(2) + pose[:2] for point in points]
         return ans
-
 
     def clean_storage(self):
         global beacon_storage

@@ -36,4 +36,8 @@
 
 `To start move to heap using rangefinder node:`<br/>
 `1. Put robot on heap` <br/>
-`2. See topic /distances`
+`2. See topic /distances` <br/>
+
+`Install Computer Vision libraries` <br/>
+`1. Install pip2` <br/>
+`2. Run sudo pip2 install scikit-image`
