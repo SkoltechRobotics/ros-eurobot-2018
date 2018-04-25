@@ -25,6 +25,7 @@ IMMEDIATE_FINISHED = [0xc4, 0xb6, 0xe0]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA = 0xd0
+REQUEST_RF_DATA_SECONDARY = 0xd1
 BAUD_RATE = {"main_robot": 250000,
              "secondary_robot": 250000}
 DEBUG_COMMANDS = [0x0c]
@@ -49,10 +50,8 @@ class stm_node(STMprotocol):
 
         self.time_started = {}
 
-        if self.robot_name == "main_robot":
-            self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10)
-        else:
-            self.pub_rf = None
+
+        self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10)
 
         rospy.Subscriber("/server/stm_node_command", String, self.stm_node_command_callback)
         self.pub_wire = rospy.Publisher("/server/wire_status", String, queue_size=100)
@@ -237,6 +236,14 @@ class stm_node(STMprotocol):
             else:
                 rospy.loginfo(successfully3)
 
+        if self.robot_name == "secondary_robot":
+            successfully3, rf_data = self.send('request_rf_data_secondary_robot', REQUEST_RF_DATA_SECONDARY, [])
+            if successfully3:
+                # rospy.loginfo(rf_data)
+                self.pub_rf.publish(Int32MultiArray(data=rf_data))
+            else:
+                rospy.loginfo(successfully3)
+
         # rospy.loginfo(self.rf_it)
         # rospy.loginfo(self.ask_rf_every)
         self.rf_it += 1
@@ -275,7 +282,9 @@ class stm_node(STMprotocol):
             self.wire_timer.shutdown()
             self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
         elif splitted_data[1] == "stop_wire":
-            self.wire_timer.shutdown()
+            # self.wire_timer.shutdown()
+            pass
+
 
     def wire_timer_callback(self, event):
         successfully, args_response = self.send('GET_STARTUP_STATUS', GET_STARTUP_STATUS, [])
