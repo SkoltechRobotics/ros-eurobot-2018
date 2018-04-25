@@ -95,20 +95,24 @@ class StmNode(STMprotocol):
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status="finished"):
+        rospy.loginfo("FINISHED STM COMMAND: " + action_name + " with status " + action_status)
         self.pub_response.publish(action_name + " " + action_status)
 
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
         successfully, responses = self.send(action_name, action_type, args)
         if action_type in IMMEDIATE_FINISHED:
+            rospy.loginfo("start immediate finished " + action_name + " " + str(action_type) + " " + str(args))
             self.finish_command(action_name, "finished")
         if action_type in DEBUG_COMMANDS:
             rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' + "successfully? :" +
                           str(successfully) + ' ' + str(responses))
         if action_type in ODOMETRY_MOVEMENT:
+            rospy.loginfo("start odometry movement " + action_name + " " + str(action_type) + " " + str(args))
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / STATUS_RATE), self.odometry_movement_timer)
         if action_type in MANIPULATOR_JOBS:
+            rospy.loginfo("start manipulator jobs " + action_name + " " + str(action_type) + " " + str(args))
             if self.robot_name == "main_robot":
                 n = args[0]
             else:
