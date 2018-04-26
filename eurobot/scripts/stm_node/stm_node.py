@@ -13,7 +13,7 @@ import numpy as np
 import RPi.GPIO as GPIO
 import time
 
-RATE = 50
+RATE = 40
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
 GET_MANIPULATOR_STATUS = 0xa1
