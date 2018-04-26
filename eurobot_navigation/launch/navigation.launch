@@ -17,7 +17,7 @@
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/>
+        <!--node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true" output="screen"/-->
     </group>
 
     <!-- SECONDARY ROBOT -->
@@ -34,7 +34,7 @@
             <remap from="/people" to="people"/>
         </node>
         <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/>
+        <!--node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/-->
     </group>
 
 </launch>
