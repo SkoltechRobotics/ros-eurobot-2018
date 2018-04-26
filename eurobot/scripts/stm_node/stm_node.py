@@ -13,7 +13,7 @@ import numpy as np
 import RPi.GPIO as GPIO
 import time
 
-RATE = 20
+RATE = 50
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
 GET_MANIPULATOR_STATUS = 0xa1
@@ -224,9 +224,9 @@ class stm_node(STMprotocol):
 
     def pub_timer_callback(self, event):
         successfully1, coords = self.send('request_stm_coords', 15, [])
-        successfully2, vel = self.send('request_stm_vel', 9, [])
-        if successfully1 and successfully2:
-            self.publish_odom(coords, vel)
+        #successfully2, vel = self.send('request_stm_vel', 9, [])
+        if successfully1:# and successfully2:
+            self.publish_odom(coords, [0,0,0])
 
         if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
             successfully3, rf_data = self.send('request_rf_data', REQUEST_RF_DATA, [])

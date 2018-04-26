@@ -34,7 +34,7 @@ class LocalPlanner:
     # max rate of the planner
     RATE = 25
     # max rate of replanning
-    PLAN_RATE = 15
+    PLAN_RATE = 10
     # maximum length of plan when replanning should stop
     REPLANNING_STOP_PLAN_LENGTH = 10
     REPLANNING_STOP_PLAN_LENGTH_HEAP_APPROACH = 50  # empirically determined
@@ -44,7 +44,8 @@ class LocalPlanner:
     # speed for odometry movements
     V_MAX_ODOMETRY_MOVEMENT = 0.4
     # loginfo flag
-    LOGINFO = True
+    LOGINFO = False
+    PROFILE_LOGINFO = False
     # whether to request a global plan only ones
     ONESHOT = False
     # coefficient for speed limit to avoid collisions
@@ -130,8 +131,12 @@ class LocalPlanner:
         rospy.Timer(rospy.Duration(1.0 / self.RATE), self.next)
 
     def next(self, event):
+        pr0 = rospy.get_time()
+        
         self.mutex.acquire()
         
+        pr1 = rospy.get_time()
+        rospy.loginfo("'next' waited for mutex: " + str(pr1 - pr0))
         try:
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
             self.pose = Pose(Point(*trans), Quaternion(*rot))
@@ -142,6 +147,7 @@ class LocalPlanner:
             rospy.loginfo("LocalPlanner failed to lookup tf.")
             self.mutex.release()
             return
+        pr2 = rospy.get_time()
 
         if self.plan_length == 0:
             self.mutex.release()
@@ -157,6 +163,8 @@ class LocalPlanner:
         goal_yaw_distance = goal_yaw_distance if goal_yaw_distance < np.pi else np.abs(2 * np.pi - goal_yaw_distance)
         if self.LOGINFO:
             rospy.loginfo('goal_distance: ' + str(goal_distance) + ' ; ' + str(goal_yaw_distance))
+        
+        pr3 = rospy.get_time()
 
         # find index of the closest path point by solving an optimization problem
         closest = int(fminbound(self.distance, 0., self.plan_length - 0.1))
@@ -165,6 +173,8 @@ class LocalPlanner:
             rospy.loginfo('closest: ' + str(closest))
             rospy.loginfo("closest coords: " + str(self.plan[closest]))
             rospy.loginfo('path_deviation: ' + str(path_deviation))
+
+        pr4 = rospy.get_time()
 
         # stop and publish response if we have reached the goal with the given tolerance
         if (self.mode == 'slow' and goal_distance < self.XY_GOAL_TOLERANCE and goal_yaw_distance < self.YAW_GOAL_TOLERANCE) or (self.mode == 'fast' and goal_distance < self.XY_GOAL_TOLERANCE_FAST and goal_yaw_distance < self.YAW_GOAL_TOLERANCE_FAST):
@@ -179,6 +189,8 @@ class LocalPlanner:
             self.terminate_following(False)
             self.mutex.release()
             return
+        
+        pr5 = rospy.get_time()
 
         # place a carrot on the path for the robot to follow (it is D steps ahead of the robot)
         carrot = min(closest + self.D_steps, self.plan_length - 1)
@@ -232,9 +244,7 @@ class LocalPlanner:
         # send speed cmd to the robot
         self.set_speed(vel_robot_frame)
 
-        # sleep to keep the rate
-        if dt < 1. / self.RATE:
-            rospy.sleep(1. / self.RATE - dt)
+        pr6 = rospy.get_time()
 
         # cut the part of the path passed
         self.plan = self.plan[closest:]
@@ -242,7 +252,19 @@ class LocalPlanner:
         if self.LOGINFO:
             rospy.loginfo("new plan length " + str(self.plan_length))
             rospy.loginfo('Rate: ' + str(1. / dt))
+        pr7 = rospy.get_time()
+        if self.PROFILE_LOGINFO:
+            rospy.loginfo("pr0: " + str(pr0))
+            rospy.loginfo("Time slot before pr1: " + str(pr1-pr0))
+            rospy.loginfo("Time slot before pr2: " + str(pr2-pr1))
+            rospy.loginfo("Time slot before pr3: " + str(pr3-pr2))
+            rospy.loginfo("Time slot before pr4: " + str(pr4-pr3))
+            rospy.loginfo("Time slot before pr5: " + str(pr5-pr4))
+            rospy.loginfo("Time slot before pr6: " + str(pr6-pr5))
+            rospy.loginfo("Time slot before pr7: " + str(pr7-pr6))
         self.mutex.release()
+
+        rospy.loginfo("'next' time in totlal: " + str(rospy.get_time() - pr0))
 
     def terminate_following(self, success, pub_failed=True):
         self.shutdown_timer()
@@ -257,7 +279,9 @@ class LocalPlanner:
         self.goal_id = ''
 
     def set_plan(self, plan, goal_id, mode='slow'):
+        pr0 = rospy.get_time()
         self.mutex.acquire()
+        rospy.loginfo("'set_plan' waited for mutex: " + str(rospy.get_time() - pr0))
 
         if self.LOGINFO:
             rospy.loginfo("Setting a new global plan.")
@@ -271,6 +295,7 @@ class LocalPlanner:
             rospy.loginfo("PLAN: " + str(self.plan))
 
         self.mutex.release()
+        rospy.loginfo("'set_plan' time in total: " + str(rospy.get_time() - pr0))
 
     def distance(self, x):
         """A function for minimization problem (for finding the closest path point index).
@@ -287,7 +312,9 @@ class LocalPlanner:
         self.vel = vel
 
     def cmd_callback(self, data):
+        pr0 = rospy.get_time()
         self.mutex.acquire()
+        rospy.loginfo("'cmd_callback' waited for mutex: " + str(rospy.get_time() - pr0))
 
         # parse name,type
         data_splitted = data.data.split()
@@ -333,6 +360,7 @@ class LocalPlanner:
                 self.terminate_following(False, False)
 
         self.mutex.release()
+        rospy.loginfo("'cmd_callback' time in total: " + str(rospy.get_time() - pr0))
 
     def set_move_timer(self, goal_coords, goal, cmd_id):
         self.shutdown_timer()
