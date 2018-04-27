@@ -4,41 +4,41 @@ from std_msgs.msg import String, Header
 from sensor_msgs.msg import LaserScan, PointCloud
 from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
 import numpy as np
-from npParticle import ParticleFilter
+from npParticle import ParticleFilter, cvt_global2local, cvt_local2global
 import datetime
 import tf
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler
 
+PARTICLES = 500
+SENSE_NOISE = 50
+DISTANCE_NOISE = 5
+ANGLE_NOISE = 0.5
 
-def pf_cmd_callback(data):
-    data_splitted = data.data.split()
-    cmd = data_splitted[0]
-    cmd_args = data_splitted[1:]
-    if cmd == 'reset':
-        particle_filter.start_over()
-    elif cmd == 'clean':
-        # clean calibration storage
-        particle_filter.clean_storage()
-        rospy.loginfo('PF calibration storage cleaned.')
-    elif cmd == 'calibrate':
-        rospy.loginfo('PF is collecting calibration data.')
-        particle_filter.calibrate_beacons(int(cmd_args[0]))
-        rospy.loginfo('PF finished collecting calibration data.')
-    elif cmd == 'set':
-        success, beacons = particle_filter.set_beacons()
-        if success:
-            rospy.loginfo('PF has calibrated beacon coords:' + str(beacons))
-        else:
-            rospy.loginfo('Pf failed to calibrate beacon coords.')
+class PFNode(object):
+    def __init__(self):
+        # Init params
+        self.color = rospy.get_param("/field/color")
+        self.robot_name = rospy.get_param("robot_name")
+        lidar_pf_point = np.array(rospy.get_param('start_' + self.color))
+        lidar_pf_point[:2] /= 1000.0
 
 
-def odom_callback(odom):
-    quat = odom.pose.pose.orientation
-    yaw = tf.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
-    global stm_coords
-    stm_coords = np.array([odom.pose.pose.position.x * 1000, odom.pose.pose.position.y * 1000, yaw])
+        self.scan = None
 
+        self.listener = tf.TransformListener()
+
+    def scan_callback(self, scan):
+        self.scan = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
+
+    def localisation(self):
+        odom_robot_point = self.get_odom()
+        delta = cvt_global2local()
+
+    def get_odom(self):
+        (trans, rot) = self.listener.lookupTransform('/%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
+        yaw = tf.transformations.euler_from_quaternion(rot)[2]
+        return np.array([trans[0], trans[1], yaw])
 
 def delta_coords(used_stm_coords, prev_used_stm_coords, pf_coords):
     """ Calculates delta coords for PF, that is used for moving particles """
@@ -56,13 +56,6 @@ def rotation_transform(vec, angle):
 
 
 def scan_callback(scan):
-    # determine time of 1 iteration of PF
-    now = datetime.datetime.now()
-    global last
-    dt = (now - last).total_seconds()
-    #print 'PF iteration time in sec:', round(dt, 3), '\t(', round(1 / dt, 1), 'Hz )'
-    last = now
-
     global coords, stm_coords, prev_used_stm_coords, pf_coords
     # copy stm_coords as they may change during calculations
     used_stm_coords = stm_coords.copy()
@@ -85,13 +78,6 @@ def scan_callback(scan):
     global lidar_coords, in_x, in_y, in_angle, br, robot_name
     pf_coords = lidar2robot_coords(coords)
 
-    #br.sendTransform((pf_coords[0] / 1000, pf_coords[1] / 1000, 0),
-    #                                tf.transformations.quaternion_from_euler(0, 0, pf_coords[2]),
-    #                                rospy.Time.now(),
-    #                                "%s_pf" % robot_name,
-    #                                "map")
-
-    # publish tf map -> odom for navigation
     angle = pf_coords[2] - stm_coords[2]
     stm_coords_rotated = rotation_transform(stm_coords, angle)
     br.sendTransform(((pf_coords[0] - stm_coords_rotated[0]) / 1000, (pf_coords[1] - stm_coords_rotated[1]) / 1000, 0),
@@ -99,24 +85,6 @@ def scan_callback(scan):
                 rospy.Time.now(),
                 "%s_odom" % robot_name,
                 "map")
-
-    # create and pub PointArray with particles    
-    #poses = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
-    #Quaternion(*quaternion_from_euler(0, 0, particle_filter.particles[i, 2]))) for i in range(len(particle_filter.particles))]
-    #particles = PoseArray(header=Header(frame_id="map"), poses=poses)
-    #pub_particles.publish(particles)
-
-    # create and pub PointArray with landmarks
-    #points = [Point(x=particle_filter.landmarks[0, i] / 1000, y=particle_filter.landmarks[1, i] / 1000, z=.0) for i in range(len(particle_filter.landmarks[0]))]
-    #landmarks = PointCloud(header=Header(frame_id="%s_laser" % robot_name), points=points)
-    #pub_landmarks.publish(landmarks)
-
-    # DEBUG: pring coordinates of the beacons
-    #angle, distance = particle_filter.get_landmarks(lidar_data)
-    #x_coords, y_coords = particle_filter.p_trans(angle,distance)
-    #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
-    #print np.array([x_coords, y_coords]).T * 1000
-    #print "------------------------------------------"
 
 
 def robot2lidar_coords(coords_of_robot):
@@ -134,11 +102,7 @@ def lidar2robot_coords(coords_of_lidar):
 if __name__ == '__main__':
     try:
         # create a PF object with params from ROS
-        color = rospy.get_param("/field/color")
-        particles = rospy.get_param("particle_filter/particles")
-        sense_noise = rospy.get_param("particle_filter/sense_noise")
-        distance_noise = rospy.get_param("particle_filter/distance_noise")
-        angle_noise = rospy.get_param("particle_filter/angle_noise")
+
 
         pf_coords = np.array(rospy.get_param('start_' + color))
         pf_coords[:2] /= 1000.0
@@ -149,8 +113,8 @@ if __name__ == '__main__':
 
         in_x, in_y, in_angle = robot2lidar_coords(pf_coords)
 
-        particle_filter = ParticleFilter(particles=particles, sense_noise=sense_noise, distance_noise=distance_noise,
-                                         angle_noise=angle_noise, in_x=in_x, in_y=in_y, in_angle=in_angle, color=color,
+        particle_filter = ParticleFilter(particles_num=particles, sense_noise=sense_noise, distance_noise=distance_noise,
+                                         angle_noise=angle_noise, start_x=in_x, start_y=in_y, start_angle=in_angle, color=color,
                                          max_itens=max_itens, max_dist=max_dist)
 
         # ROS entities
@@ -174,14 +138,6 @@ if __name__ == '__main__':
         pub_particles = rospy.Publisher("particle_filter/particles", PoseArray, queue_size=1)
         pub_landmarks = rospy.Publisher("particle_filter/landmarks", PointCloud, queue_size=1)
 
-        ## Simulate
-        # start_point = np.array([0.,0.,0.])
-        # integrator = EncoderIntegrator(start_point)
-        ## usage: 
-        ## integrator.integrate(dpoint)
-        ## print integrator.last_point
-
-        # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
