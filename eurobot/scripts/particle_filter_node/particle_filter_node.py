@@ -47,7 +47,8 @@ class PFNode(object):
     def scan_callback(self, scan):
         self.scan = np.array([np.array(scan.ranges) * 1000, scan.intensities]).T
 
-    def localisation(self):
+    # noinspection PyUnusedLocal
+    def localisation(self, event):
         robot_odom_point = self.get_odom()
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         delta = cvt_global2local(lidar_odom_point, self.prev_lidar_odom_point)
