@@ -52,12 +52,15 @@ class PFNode(object):
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         delta = cvt_global2local(lidar_odom_point, self.prev_lidar_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point.copy()
+
         lidar_pf_point = self.pf.localisation(delta, self.scan)
+        rospy.loginfo("cost_function " + str(self.pf.min_cost_function))
+
         robot_pf_point = find_src(lidar_pf_point, self.lidar_point)
         self.pub_pf(find_src(robot_pf_point, robot_odom_point))
 
     def get_odom(self):
-        (trans, rot) = self.buffer.lookup_transform('/%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
+        (trans, rot) = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
         yaw = tf_conversions.transformations.euler_from_quaternion(rot)[2]
         return np.array([trans[0] * 1000, trans[1] * 1000, yaw])
 

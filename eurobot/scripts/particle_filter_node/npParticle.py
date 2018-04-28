@@ -142,7 +142,7 @@ class ParticleFilter:
         return np.array((x, y, angle))
 
     def weights(self, x_beac, y_beac, particles):
-        """Calculate particle weights based on their pose and landmards"""
+        """Calculate particle weights based on their pose and landmarks"""
         # BEACONS: from global BEACONS to particles local: (X, Y) - Nx3x2 matrices, N - number of particles
         # determines 3 beacon positions (x,y) for every particle in it's local coords
         res = self.beacons[np.newaxis, :, :] - particles[:, np.newaxis, :2]
