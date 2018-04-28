@@ -23,9 +23,7 @@ class PFNode(object):
         lidar_pf_point = np.array(rospy.get_param('start_' + self.color))
         lidar_pf_point[:2] /= 1000.0
 
-
         self.scan = None
-
         self.listener = tf.TransformListener()
 
     def scan_callback(self, scan):
