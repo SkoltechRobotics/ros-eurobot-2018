@@ -2,14 +2,14 @@
 import rospy
 from std_msgs.msg import String, Header
 from sensor_msgs.msg import LaserScan, PointCloud
-from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
+from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion, TransformStamped
 import numpy as np
 from npParticle import ParticleFilter
 import datetime
+import tf2_ros
+import tf_conversions
 import tf
 from nav_msgs.msg import Odometry
-from tf.transformations import quaternion_from_euler
-
 
 def pf_cmd_callback(data):
     data_splitted = data.data.split()
@@ -35,7 +35,7 @@ def pf_cmd_callback(data):
 
 def odom_callback(odom):
     quat = odom.pose.pose.orientation
-    yaw = tf.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
+    yaw = tf_conversions.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
     global stm_coords
     stm_coords = np.array([odom.pose.pose.position.x * 1000, odom.pose.pose.position.y * 1000, yaw])
 
@@ -94,11 +94,20 @@ def scan_callback(scan):
     # publish tf map -> odom for navigation
     angle = pf_coords[2] - stm_coords[2]
     stm_coords_rotated = rotation_transform(stm_coords, angle)
-    br.sendTransform(((pf_coords[0] - stm_coords_rotated[0]) / 1000, (pf_coords[1] - stm_coords_rotated[1]) / 1000, 0),
-                tf.transformations.quaternion_from_euler(0, 0, angle),
-                rospy.Time.now(),
-                "%s_odom" % robot_name,
-                "map")
+    t = TransformStamped()
+    t.header.stamp = rospy.Time.now()
+    t.header.frame_id = "map"
+    t.child_frame_id = "%s_odom" % robot_name
+    t.transform.translation.x = (pf_coords[0] - stm_coords_rotated[0]) / 1000
+    t.transform.translation.y = (pf_coords[1] - stm_coords_rotated[1]) / 1000
+    t.transform.translation.z = 0.0
+    q = tf_conversions.transformations.quaternion_from_euler(0, 0, angle)
+    t.transform.rotation.x = q[0]
+    t.transform.rotation.y = q[1]
+    t.transform.rotation.z = q[2]
+    t.transform.rotation.w = q[3]
+
+    br.sendTransform(t)
 
     # create and pub PointArray with particles    
     #poses = [Pose(Point(x=particle_filter.particles[i, 0] / 1000, y=particle_filter.particles[i, 1] / 1000, z=.4),
@@ -161,8 +170,7 @@ if __name__ == '__main__':
 
         rospy.init_node('particle_filter_node', anonymous=True)
         robot_name = rospy.get_param("robot_name") 
-        br = tf.TransformBroadcaster()
-
+        br = tf2_ros.TransformBroadcaster()
         # for determining time of PF iterations:
         last = datetime.datetime.now()
 
