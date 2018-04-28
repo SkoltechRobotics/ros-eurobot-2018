@@ -6,7 +6,8 @@ from threading import Lock
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int32MultiArray
-import tf
+import tf2_ros
+import tf_conversions
 import numpy as np
 
 # libs for servo-motor (home automation panel switch manipulator)
@@ -58,7 +59,7 @@ class stm_node(STMprotocol):
 
         self.ask_rf_every = 2
         self.rf_it = 0
-        self.br = tf.TransformBroadcaster()
+        self.br = tf2_ros.TransformBroadcaster()
 
         # high-level command IDs
         self.odometry_movement_id = ''
@@ -188,7 +189,7 @@ class stm_node(STMprotocol):
         odom.child_frame_id = self.robot_name
         odom.pose.pose.position.x = coords[0]
         odom.pose.pose.position.y = coords[1]
-        quat = tf.transformations.quaternion_from_euler(0, 0, coords[2])
+        quat = tf_conversions.transformations.quaternion_from_euler(0, 0, coords[2])
         odom.pose.pose.orientation.z = quat[2]
         odom.pose.pose.orientation.w = quat[3]
         odom.twist.twist.linear.x = vel[0]
@@ -197,13 +198,13 @@ class stm_node(STMprotocol):
         self.pub_odom.publish(odom)
 
         self.br.sendTransform((coords[0], coords[1], 0),
-                              tf.transformations.quaternion_from_euler(0, 0, coords[2]),
+                              tf_conversions.transformations.quaternion_from_euler(0, 0, coords[2]),
                               rospy.Time.now(),
                               self.robot_name,
                               "%s_odom" % self.robot_name)
 
         self.br.sendTransform(self.laser_coords,
-                              tf.transformations.quaternion_from_euler(0, 0, self.laser_angle),
+                              tf_conversions.transformations.quaternion_from_euler(0, 0, self.laser_angle),
                               rospy.Time.now(),
                               '%s_laser' % self.robot_name,
                               self.robot_name)

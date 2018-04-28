@@ -6,10 +6,9 @@ from geometry_msgs.msg import PoseArray, Pose, Point, Quaternion
 import numpy as np
 from npParticle import ParticleFilter
 import datetime
-import tf
+import tf2_ros
+import tf_conversions
 from nav_msgs.msg import Odometry
-from tf.transformations import quaternion_from_euler
-
 
 def pf_cmd_callback(data):
     data_splitted = data.data.split()
@@ -35,7 +34,7 @@ def pf_cmd_callback(data):
 
 def odom_callback(odom):
     quat = odom.pose.pose.orientation
-    yaw = tf.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
+    yaw = tf_conversions.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])[2]
     global stm_coords
     stm_coords = np.array([odom.pose.pose.position.x * 1000, odom.pose.pose.position.y * 1000, yaw])
 
@@ -95,7 +94,7 @@ def scan_callback(scan):
     angle = pf_coords[2] - stm_coords[2]
     stm_coords_rotated = rotation_transform(stm_coords, angle)
     br.sendTransform(((pf_coords[0] - stm_coords_rotated[0]) / 1000, (pf_coords[1] - stm_coords_rotated[1]) / 1000, 0),
-                tf.transformations.quaternion_from_euler(0, 0, angle),
+                tf_conversions.transformations.quaternion_from_euler(0, 0, angle),
                 rospy.Time.now(),
                 "%s_odom" % robot_name,
                 "map")
@@ -161,7 +160,7 @@ if __name__ == '__main__':
 
         rospy.init_node('particle_filter_node', anonymous=True)
         robot_name = rospy.get_param("robot_name") 
-        br = tf.TransformBroadcaster()
+        br = tf2_ros.TransformBroadcaster()
 
         # for determining time of PF iterations:
         last = datetime.datetime.now()
