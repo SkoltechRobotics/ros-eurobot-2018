@@ -28,6 +28,7 @@ def find_src(global_point, local_point):
     Y = y1 - x * np.sin(A) - y * np.cos(A)
     return np.array([X, Y, A]).T
 
+
 # Dimensions of the playing field
 WORLD_X = 3000
 WORLD_Y = 2000
@@ -51,11 +52,12 @@ LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 
 
 class ParticleFilter:
-    def __init__(self, particles_num=500, sense_noise=50, distance_noise=5, angle_noise=0.02, start_x=293, start_y=425,
-                 start_angle=3 * np.pi / 2, color='orange', max_itens=3500.0, max_dist=3700.0):
+    def __init__(self, particles_num=500, sense_noise=50, distance_noise=5, angle_noise=0.02, back_side_cost=10,
+                 start_x=293, start_y=425, start_angle=3 * np.pi / 2, color='orange', min_intens=3500.0,
+                 max_dist=3700.0, beac_dist_thresh=200):
 
         self.start_coords = np.array([start_x, start_y, start_angle])
-
+        self.color = color
         if color == 'orange':
             self.beacons = ORANGE_BEACONS
         else:
@@ -65,9 +67,11 @@ class ParticleFilter:
         self.sense_noise = sense_noise
         self.distance_noise = distance_noise
         self.angle_noise = angle_noise
-        self.max_itens = max_itens
+        self.min_intens = min_intens
         self.max_dist = max_dist
         self.last = (start_x, start_y, start_angle)
+        self.back_side_cost = back_side_cost
+        self.beac_dist_thresh = beac_dist_thresh
 
         # Create Particles
         x = np.random.normal(start_x, distance_noise, particles_num)
@@ -75,6 +79,9 @@ class ParticleFilter:
         angle = np.random.normal(start_angle, angle_noise, particles_num) % (2 * np.pi)
         self.particles = np.array([x, y, angle]).T
         self.landmarks = [[], []]
+        self.cost_function = []
+
+        self.min_cost_function = 0
 
     @staticmethod
     def gaus(x, mu=0, sigma=1):
@@ -91,7 +98,6 @@ class ParticleFilter:
         self.move_particles([delta_coords[0], delta_coords[1], delta_coords[2]])
         self.particles = self.particle_sense(lidar_data, self.particles)
         main_robot = self.calculate_main()
-        self.last = main_robot
         return main_robot
 
     def particle_sense(self, scan, particles):
@@ -99,16 +105,18 @@ class ParticleFilter:
         x_coords, y_coords = self.p_trans(angle, distance)
         self.landmarks = np.array([x_coords, y_coords])
         weights = self.weights(x_coords, y_coords, particles)
-        particles = particles[self.resample(weights), :]
+        inds = self.resample(weights)
+        self.min_cost_function = np.mean(self.cost_function)
+        particles = particles[inds, :]
         return particles
 
     def move_particles(self, delta):  # delta = [dx,dy,d_rot]
         x_noise = np.random.normal(0, self.distance_noise, self.particles_num)
         y_noise = np.random.normal(0, self.distance_noise, self.particles_num)
         angle_noise = np.random.normal(0, self.angle_noise, self.particles_num)
-        self.particles[:, 0] = self.particles[:, 0] + delta[0] + x_noise
-        self.particles[:, 1] = self.particles[:, 1] + delta[1] + y_noise
-        self.particles[:, 2] = (self.particles[:, 2] + delta[2] + angle_noise) % (2 * np.pi)
+        noise = np.array([x_noise, y_noise, angle_noise]).T
+        move_point = delta + noise
+        self.particles = cvt_local2global(move_point, self.particles)
 
     def resample(self, weights):
         """ according to weights """
@@ -144,46 +152,37 @@ class ParticleFilter:
              + res[:, :, 1] * np.cos(particles[:, 2])[:, np.newaxis])
         beacon = np.concatenate((X[:, :, np.newaxis], Y[:, :, np.newaxis]), axis=2)
 
-        # beacon = beacons are in local coordinates of particles. 
-        # distance from theoretical beacons to detected beacons from scan (x_beac, y_beac)
-        # ln1, ln2, ln3: NxM (M - number of detected beacons from scan)
-        ln1 = np.abs(np.sqrt((beacon[:, np.newaxis, 0, 0] - x_beac[np.newaxis, :]) ** 2
-                             + (beacon[:, np.newaxis, 0, 1] - y_beac[np.newaxis, :]) ** 2) - BEAC_R)
-        ln2 = np.abs(np.sqrt((beacon[:, np.newaxis, 1, 0] - x_beac[np.newaxis, :]) ** 2
-                             + (beacon[:, np.newaxis, 1, 1] - y_beac[np.newaxis, :]) ** 2) - BEAC_R)
-        ln3 = np.abs(np.sqrt((beacon[:, np.newaxis, 2, 0] - x_beac[np.newaxis, :]) ** 2
-                             + (beacon[:, np.newaxis, 2, 1] - y_beac[np.newaxis, :]) ** 2) - BEAC_R)
+        # beacon = beacons are in local coordinates of particles.
+        # distance from theoretical beacons to detected landmarks from scan (x_beac, y_beac)
+        # ln1, ln2, ln3: NxM (M - number of detected landmarks from scan)
+        ln1 = (np.sqrt((beacon[:, np.newaxis, 0, 0] - x_beac[np.newaxis, :]) ** 2
+                       + (beacon[:, np.newaxis, 0, 1] - y_beac[np.newaxis, :]) ** 2) - BEAC_R) ** 2
+        ln2 = (np.sqrt((beacon[:, np.newaxis, 1, 0] - x_beac[np.newaxis, :]) ** 2
+                       + (beacon[:, np.newaxis, 1, 1] - y_beac[np.newaxis, :]) ** 2) - BEAC_R) ** 2
+        ln3 = (np.sqrt((beacon[:, np.newaxis, 2, 0] - x_beac[np.newaxis, :]) ** 2
+                       + (beacon[:, np.newaxis, 2, 1] - y_beac[np.newaxis, :]) ** 2) - BEAC_R) ** 2
 
         # lns are differences in theoretical and detected beacon data from lidar
         # ln1,ln2,ln3 are correct computed OK)
 
         # get minimal distance for each particle, its detected beacons to theoretical beacons
         errors = np.minimum(ln1, np.minimum(ln2, ln3))
+        if self.color == "orange":
+            conds = (x_beac < self.beacons[0, 0]) * (x_beac > self.beacons[1, 0]) * \
+                    (x_beac > self.beacons[2, 0]) * (y_beac < self.beacons[1, 1]) * \
+                    (y_beac > self.beacons[2, 1])
+        else:
+            conds = (x_beac > self.beacons[0, 0]) * (x_beac < self.beacons[1, 0]) * \
+                    (x_beac < self.beacons[2, 0]) * (y_beac < self.beacons[1, 1]) * \
+                    (y_beac > self.beacons[2, 1])
+        conds1 = errors < self.beac_dist_thresh ** 2
+        errors = conds * errors + self.back_side_cost ** 2 * (~ conds) * errors
         # too far real beacons go away: non valid
-        limit_err = errors > BEAC_DIST_THRES
-
-        # find map from detected beacon to closest real (valid distance need)
-        error_l1 = np.logical_and(np.equal(errors, ln1), ~limit_err)
-        error_l2 = np.logical_and(np.equal(errors, ln2), ~limit_err)
-        error_l3 = np.logical_and(np.equal(errors, ln3), ~limit_err)
-        # bool error_li: sum to get number of particles for each of 3 beacons
-        err_l1 = np.sum(error_l1, axis=-1)
-        err_l2 = np.sum(error_l2, axis=-1)
-        err_l3 = np.sum(error_l3, axis=-1)
-
-        # find sum of errors near 3 beacons for each particle: beacon_error_sum Nx3
-        beacon_error_sum = np.ones([particles.shape[0], 3], dtype=np.float) * 1000
-        ind = np.where(err_l1)[0]
-        if ind.size:
-            beacon_error_sum[ind, 0] = np.sum(np.where(error_l1, errors, 0), axis=-1)[ind] / err_l1[ind]
-        ind = np.where(err_l2)[0]
-        if ind.size:
-            beacon_error_sum[ind, 1] = np.sum(np.where(error_l2, errors, 0), axis=-1)[ind] / err_l2[ind]
-        ind = np.where(err_l3)[0]
-        if ind.size:
-            beacon_error_sum[ind, 2] = np.sum(np.where(error_l3, errors, 0), axis=-1)[ind] / err_l3[ind]
-        weights = self.gaus(np.mean(beacon_error_sum, axis=1), mu=0, sigma=self.sense_noise)
-
+        num_errors = np.sum(conds1, axis=1)
+        errors = errors * conds1
+        sum_errors = np.sum(errors, axis=1)
+        self.cost_function = np.sqrt(np.where(sum_errors, sum_errors, 1000000)) / np.where(num_errors, num_errors, 1)
+        weights = self.gaus(self.cost_function, mu=0, sigma=self.sense_noise)
         if np.sum(weights) > 0:
             weights /= np.sum(weights)
         else:
@@ -192,7 +191,7 @@ class ParticleFilter:
 
     def get_landmarks(self, scan):
         """Returns filtrated lidar data"""
-        ind = np.where(np.logical_and(scan[:, 1] > self.max_itens, scan[:, 0] < self.max_dist))[0]
+        ind = np.where(np.logical_and(scan[:, 1] > self.min_intens, scan[:, 0] < self.max_dist))[0]
         angles = (LIDAR_DELTA_ANGLE * ind + LIDAR_START_ANGLE) % (2 * np.pi)
         distances = scan[ind, 0]
         return angles, distances

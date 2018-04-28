@@ -12,10 +12,11 @@ PARTICLES = 500
 SENSE_NOISE = 10
 DISTANCE_NOISE = 1
 ANGLE_NOISE = 0.15
+BACK_SIDE_COST = 10
 
 MIN_INTENS = 3500
 MAX_DIST = 3000
-BEAC_DIST_THRES = 200
+BEAC_DIST_THRESH = 200
 
 
 class PFNode(object):
@@ -38,7 +39,8 @@ class PFNode(object):
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point
         x, y, a = lidar_odom_point
-        self.pf = ParticleFilter(PARTICLES, SENSE_NOISE, DISTANCE_NOISE, ANGLE_NOISE, x, y, a, self.color)
+        self.pf = ParticleFilter(PARTICLES, SENSE_NOISE, DISTANCE_NOISE, ANGLE_NOISE, x, y, a, self.color,
+                                 MIN_INTENS, MAX_DIST, BEAC_DIST_THRESH)
 
         rospy.Timer(rospy.Duration(1. / PF_RATE), self.localisation)
 
@@ -57,15 +59,15 @@ class PFNode(object):
     def get_odom(self):
         (trans, rot) = self.buffer.lookup_transform('/%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
         yaw = tf_conversions.transformations.euler_from_quaternion(rot)[2]
-        return np.array([trans[0], trans[1], yaw])
+        return np.array([trans[0] * 1000, trans[1] * 1000, yaw])
 
     def pub_pf(self, point):
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "map"
         t.child_frame_id = "%s_odom" % self.robot_name
-        t.transform.translation.x = point[0]
-        t.transform.translation.y = point[1]
+        t.transform.translation.x = point[0] / 1000
+        t.transform.translation.y = point[1] / 1000
         t.transform.translation.z = 0.0
         q = tf_conversions.transformations.quaternion_from_euler(0, 0, point[2])
         t.transform.rotation.x = q[0]

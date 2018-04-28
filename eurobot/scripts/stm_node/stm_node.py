@@ -138,8 +138,8 @@ class StmNode(STMprotocol):
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "%s_odom" % self.robot_name
         t.child_frame_id = self.robot_name
-        t.transform.translation.x = coords[0] / 1000
-        t.transform.translation.y = coords[1] / 1000
+        t.transform.translation.x = coords[0]
+        t.transform.translation.y = coords[1]
         t.transform.translation.z = 0.0
         q = tf_conversions.transformations.quaternion_from_euler(0, 0, coords[2])
         t.transform.rotation.x = q[0]
