@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs.msg import TransformStamped
+from sensor_msgs.msg import LaserScan
 import numpy as np
 from npParticle import ParticleFilter, cvt_global2local, cvt_local2global, find_src
 import tf2_ros
@@ -23,6 +24,7 @@ class PFNode(object):
     # noinspection PyTypeChecker
     def __init__(self):
         # Init params
+        rospy.Subscriber("scan", LaserScan, self.scan_callback, queue_size=1)
         self.color = rospy.get_param("/field/color")
         self.robot_name = rospy.get_param("robot_name")
         self.lidar_point = np.array([rospy.get_param("lidar_x"), rospy.get_param("lidar_y"),
