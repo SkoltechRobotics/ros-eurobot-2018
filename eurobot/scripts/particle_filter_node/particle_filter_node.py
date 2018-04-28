@@ -39,8 +39,8 @@ class PFNode(object):
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point
         x, y, a = lidar_odom_point
-        self.pf = ParticleFilter(PARTICLES, SENSE_NOISE, DISTANCE_NOISE, ANGLE_NOISE, x, y, a, self.color,
-                                 MIN_INTENS, MAX_DIST, BEAC_DIST_THRESH)
+        self.pf = ParticleFilter(PARTICLES, SENSE_NOISE, DISTANCE_NOISE, ANGLE_NOISE, BACK_SIDE_COST, x, y, a,
+                                 self.color, MIN_INTENS, MAX_DIST, BEAC_DIST_THRESH)
 
         rospy.Timer(rospy.Duration(1. / PF_RATE), self.localisation)
 
