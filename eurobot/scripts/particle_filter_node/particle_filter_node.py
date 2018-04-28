@@ -60,9 +60,10 @@ class PFNode(object):
         self.pub_pf(find_src(robot_pf_point, robot_odom_point))
 
     def get_odom(self):
-        (trans, rot) = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
-        yaw = tf_conversions.transformations.euler_from_quaternion(rot)[2]
-        return np.array([trans[0] * 1000, trans[1] * 1000, yaw])
+        t = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
+        q = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
+        yaw = tf_conversions.transformations.euler_from_quaternion(q)[2]
+        return np.array([t.transform.translation.x * 1000, t.transform.translation.y * 1000, yaw])
 
     def pub_pf(self, point):
         t = TransformStamped()
