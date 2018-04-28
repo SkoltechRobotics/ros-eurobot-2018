@@ -2,22 +2,31 @@
 import numpy as np
 
 
-def cvt_local2global(local_point, sc_point):
+def cvt_local2global(local_point, src_point):
     x, y, a = local_point.T
-    X, Y, A = sc_point.T
+    X, Y, A = src_point.T
     x1 = x * np.cos(A) - y * np.sin(A) + X
     y1 = x * np.sin(A) + y * np.cos(A) + Y
     a1 = (a + A) % (2 * np.pi)
     return np.array([x1, y1, a1]).T
 
 
-def cvt_global2local(global_point, sc_point):
-    x, y, a = global_point.T
-    X, Y, A = sc_point.T
-    x1 = x * np.cos(A) + y * np.sin(A) - X * np.cos(A) - Y * np.sin(A)
-    y1 = -x * np.sin(A) + y * np.cos(A) + X * np.sin(A) - Y * np.cos(A)
-    a1 = (a - A) % (2 * np.pi)
-    return np.array([x1, y1, a1]).T
+def cvt_global2local(global_point, src_point):
+    x1, y1, a1 = global_point.T
+    X, Y, A = src_point.T
+    x = x1 * np.cos(A) + y1 * np.sin(A) - X * np.cos(A) - Y * np.sin(A)
+    y = -x1 * np.sin(A) + y1 * np.cos(A) + X * np.sin(A) - Y * np.cos(A)
+    a = (a1 - A) % (2 * np.pi)
+    return np.array([x, y, a]).T
+
+
+def find_src(global_point, local_point):
+    x, y, a = local_point.T
+    x1, y1, a1 = global_point.T
+    A = (a1 - a) % (2 * np.pi)
+    X = x1 - x * np.cos(A) + y * np.sin(A)
+    Y = y1 - x * np.sin(A) - y * np.cos(A)
+    return np.array([X, Y, A]).T
 
 # Dimensions of the playing field
 WORLD_X = 3000
@@ -36,7 +45,7 @@ GREEN_BEACONS = np.array([[-(WORLD_BORDER + BEAC_BORDER + BEAC_L / 2.), WORLD_Y 
                           [WORLD_X + WORLD_BORDER + BEAC_BORDER + BEAC_L / 2., BEAC_L / 2.]])
 
 # parameters of lidar
-BEAC_DIST_THRES = 200
+
 LIDAR_DELTA_ANGLE = (np.pi / 180) / 4
 LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 

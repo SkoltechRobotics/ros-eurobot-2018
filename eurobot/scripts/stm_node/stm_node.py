@@ -3,9 +3,10 @@ import rospy
 from std_msgs.msg import String
 from STMprotocol import STMprotocol
 from threading import Lock
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TransformStamped
 from std_msgs.msg import Int32MultiArray
-import tf
+import tf2_ros
+import tf_conversions
 import numpy as np
 
 STATUS_RATE = 20
@@ -58,7 +59,7 @@ class StmNode(STMprotocol):
         self.send("set_inverse_kinematics_ON", 13, [1])
 
         # TF transform broadcaster
-        self.br = tf.TransformBroadcaster()
+        self.br = tf2_ros.TransformBroadcaster()
 
         # high-level command IDs
         self.odometry_movement_id = ''
@@ -133,17 +134,33 @@ class StmNode(STMprotocol):
         if np.any(coords != coords):
             return
 
-        self.br.sendTransform((coords[0], coords[1], 0),
-                              tf.transformations.quaternion_from_euler(0, 0, coords[2]),
-                              rospy.Time.now(),
-                              self.robot_name,
-                              "%s_odom" % self.robot_name)
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = "%s_odom" % self.robot_name
+        t.child_frame_id = self.robot_name
+        t.transform.translation.x = coords[0] / 1000
+        t.transform.translation.y = coords[1] / 1000
+        t.transform.translation.z = 0.0
+        q = tf_conversions.transformations.quaternion_from_euler(0, 0, coords[2])
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
+        self.br.sendTransform(t)
 
-        self.br.sendTransform(self.laser_coords,
-                              tf.transformations.quaternion_from_euler(0, 0, self.laser_angle),
-                              rospy.Time.now(),
-                              '%s_laser' % self.robot_name,
-                              self.robot_name)
+        t = TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = self.robot_name
+        t.child_frame_id = "%s_laser" % self.robot_name
+        t.transform.translation.x = self.laser_coords[0]
+        t.transform.translation.y = self.laser_coords[1]
+        t.transform.translation.z = 0.0
+        q = tf_conversions.transformations.quaternion_from_euler(0, 0, self.laser_angle)
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
+        self.br.sendTransform(t)
 
     def pub_odom_coords_timer_callback(self, event):
         successfully, coords = self.send('request_stm_coords', 15, [])
