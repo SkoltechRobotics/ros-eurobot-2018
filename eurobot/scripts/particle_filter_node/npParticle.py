@@ -105,7 +105,7 @@ class ParticleFilter:
     def particle_sense(self, scan, particles):
         angle, distance = self.get_landmarks(scan)
         x_coords, y_coords = self.p_trans(angle, distance)
-        self.landmarks = np.array([x_coords, y_coords])
+        self.landmarks = np.array([x_coords, y_coords]).T
         weights = self.weights(self.landmarks, particles)
         inds = self.resample(weights)
         self.min_cost_function = np.mean(self.cost_function)
