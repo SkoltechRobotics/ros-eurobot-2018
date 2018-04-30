@@ -8,16 +8,15 @@ import tf2_ros
 import tf_conversions
 
 PF_RATE = 10
-
-PARTICLES = 500
-SENSE_NOISE = 10
-DISTANCE_NOISE = 5
-ANGLE_NOISE = 0.15
-BACK_SIDE_COST = 10
-
-MIN_INTENS = 3500
-MAX_DIST = 3000
-BEAC_DIST_THRESH = 200
+PF_PARAMS = {"sense_noise": 10,
+             "distance_noise": 5,
+             "angle_noise": 0.15,
+             "min_intens": 3000,
+             "max_dist": 3700,
+             "back_side_cost": 10,
+             "k_angle": 10,
+             "particles_num": 200,
+             "beac_dist_thresh": 200}
 
 
 class PFNode(object):
@@ -41,8 +40,7 @@ class PFNode(object):
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point
         x, y, a = lidar_odom_point
-        self.pf = ParticleFilter(PARTICLES, SENSE_NOISE, DISTANCE_NOISE, ANGLE_NOISE, BACK_SIDE_COST, x, y, a,
-                                 self.color, MIN_INTENS, MAX_DIST, BEAC_DIST_THRESH)
+        self.pf = ParticleFilter(color=self.color, start_x=x, start_y=y, start_angle=a, **PF_PARAMS)
 
         rospy.Timer(rospy.Duration(1. / PF_RATE), self.localisation)
 
@@ -57,7 +55,7 @@ class PFNode(object):
         self.prev_lidar_odom_point = lidar_odom_point.copy()
 
         lidar_pf_point = self.pf.localisation(delta, self.scan)
-        rospy.loginfo("cost_function " + str(self.pf.min_cost_function))
+        # rospy.loginfo("cost_function " + str(self.pf.min_cost_function))
 
         robot_pf_point = find_src(lidar_pf_point, self.lidar_point)
         self.pub_pf(find_src(robot_pf_point, robot_odom_point))
