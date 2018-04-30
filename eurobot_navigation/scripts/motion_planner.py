@@ -198,9 +198,13 @@ class MotionPlanner:
             tower_n = int(cmd_args[0])
             # TODO
 
-        elif cmd_type == "move_odometry":  # simple liner movement by odometry (if rotation is requested, it will be ignored)
+        elif cmd_type == "move_odometry":  # simple movement by odometry
             inp = np.array(cmd_args).astype('float')
-            self.move_odometry(cmd_id, inp[:2], inp[2])
+            self.move_odometry(cmd_id, inp[:3], inp[3], inp[4])
+        
+        elif cmd_type == "translate_odometry":  # simple liner movement by odometry
+            inp = np.array(cmd_args).astype('float')
+            self.translate_odometry(cmd_id, inp[:2], inp[2])
 
         elif cmd_type == "rotate_odometry":  # simple rotation by odometry
             inp = np.array(cmd_args).astype('float')
@@ -211,7 +215,44 @@ class MotionPlanner:
 
         self.mutex.release()
 
-    def move_odometry(self, cmd_id, goal, vel):
+    def move_odometry(self, cmd_id, goal, vel=0.3, w=1.5):
+        rospy.loginfo("-------NEW ODOMETRY MOVEMENT-------")
+        rospy.loginfo("Goal:\t" + str(goal))
+        try:
+            (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
+            angle = euler_from_quaternion(rot)[2] % (2 * np.pi)
+            self.coords = np.array([trans[0], trans[1], angle])
+            rospy.loginfo("Robot coords:\t" + str(self.coords))
+        except (LookupException, ConnectivityException, ExtrapolationException):
+            rospy.loginfo("MotionPlanner failed to lookup tf.")
+            return
+
+        d_map_frame = self.distance(self.coords, goal)
+        rospy.loginfo("Distance in map frame:\t" + str(d_map_frame))
+        d_robot_frame = self.rotation_transform(d_map_frame, -self.coords[2])
+        rospy.loginfo("Distance in robot frame:\t" + str(d_robot_frame))
+        d = np.linalg.norm(d_robot_frame[:2])
+        rospy.loginfo("Distance:\t" + str(d))
+
+        beta = np.arctan2(d_robot_frame[1], d_robot_frame[0])
+        rospy.loginfo("beta:\t" + str(beta))
+        da = d_robot_frame[2]
+        dx = d * np.cos(beta - da / 2)
+        dy = d * np.sin(beta - da / 2)
+        d_cmd = np.array([dx, dy, da])
+        if da != 0:
+            d_cmd[:2] *= da / (2 * np.sin(da / 2))
+        rospy.loginfo("d_cmd:\t" + str(d_cmd))
+
+        v_cmd = np.abs(d_cmd) / np.linalg.norm(d_cmd[:2]) * vel
+        if abs(v_cmd[2]) > w:
+            v_cmd *= w / abs(v_cmd[2])
+        rospy.loginfo("v_cmd:\t" + str(v_cmd))
+        cmd = cmd_id + " 162 " + str(d_cmd[0]) + " " + str(d_cmd[1]) + " " + str(d_cmd[2]) + " " + str(v_cmd[0]) + " " + str(v_cmd[1]) + " " + str(v_cmd[2])
+        rospy.loginfo("Sending cmd:\t" + cmd)
+        self.pub_cmd.publish(cmd)
+
+    def translate_odometry(self, cmd_id, goal, vel=0.2):
         rospy.loginfo("-------NEW LINEAR ODOMETRY MOVEMENT-------")
         rospy.loginfo("Goal:\t" + str(goal))
         try:
@@ -232,7 +273,7 @@ class MotionPlanner:
         rospy.loginfo("Sending cmd:\t" + cmd)
         self.pub_cmd.publish(cmd)
 
-    def rotate_odometry(self, cmd_id, goal_angle, w):
+    def rotate_odometry(self, cmd_id, goal_angle, w=1.0):
         rospy.loginfo("-------NEW ROTATIONAL ODOMETRY MOVEMENT-------")
         rospy.loginfo("Goal angle:\t" + str(goal_angle))
         try:
