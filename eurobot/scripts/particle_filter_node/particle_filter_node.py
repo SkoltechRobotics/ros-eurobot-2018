@@ -9,15 +9,15 @@ import tf_conversions
 
 PF_RATE = 10
 
-PF_PARAMS = {"sense_noise": 10,
+PF_PARAMS = {"sense_noise": 5,
              "distance_noise": 5,
              "angle_noise": 0.15,
              "min_intens": 3000,
              "max_dist": 3700,
              "back_side_cost": 10,
-             "k_angle": 10,
-             "particles_num": 200,
-             "beac_dist_thresh": 200}
+             "k_angle": 10000,
+             "particles_num": 300,
+             "beac_dist_thresh": 700}
 
 
 class PFNode(object):
