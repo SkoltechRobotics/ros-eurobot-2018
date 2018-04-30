@@ -3,75 +3,71 @@ import rospy
 from std_msgs.msg import String
 from STMprotocol import STMprotocol
 from threading import Lock
-from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, TransformStamped
 from std_msgs.msg import Int32MultiArray
 import tf2_ros
 import tf_conversions
 import numpy as np
 
-# libs for servo-motor (home automation panel switch manipulator)
-# import RPi.GPIO as GPIO
-import time
-
-RATE = 20
+STATUS_RATE = 20
+RF_RATE = 20
+STM_COORDS_RATE = 40
 
 GET_ODOMETRY_MOVEMENT_STATUS = 0xa0
 GET_MANIPULATOR_STATUS = 0xa1
 GET_STARTUP_STATUS = 0xa3
 GET_SEC_ROBOT_MANIPULATOR_STATUS = 0xc0
-# TAKE_CUBE = 0xb0
+
 MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
 IMMEDIATE_FINISHED = [0xc4, 0xb6, 0xe0]
+ODOMETRY_MOVEMENT = [0xa2]
+DEBUG_COMMANDS = [0x0c]
+
 UNLOAD_TOWER = 0xb1
-ODOMETRY_MOVEMENT = 0xa2
 REQUEST_RF_DATA = 0xd0
 REQUEST_RF_DATA_SECONDARY = 0xd1
 BAUD_RATE = {"main_robot": 250000,
              "secondary_robot": 250000}
-DEBUG_COMMANDS = [0x0c]
 
 
-class stm_node(STMprotocol):
-    min_time_for_response = 0.25
-    response_time = 0.5
-    response_period = 0.1
-
+# noinspection PyTypeChecker,PyUnusedLocal
+class StmNode(STMprotocol):
+    # noinspection PyTypeChecker
     def __init__(self, serial_port):
-        # ROS
+        # Init ROS
         rospy.init_node('stm_node', anonymous=True)
-        self.pub_response = rospy.Publisher("response", String, queue_size=10)
-        self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=1)
+
+        # Get ROS parameters
         self.robot_name = rospy.get_param("robot_name")
-        rospy.Subscriber("stm_command", String, self.stm_command_callback)
-        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
+        self.color = rospy.get_param("/field/color")
 
-        super(stm_node, self).__init__(serial_port, BAUD_RATE[self.robot_name])
-        self.mutex = Lock()
-
-        self.time_started = {}
-
-
+        # ROS publishers
+        self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_rf = rospy.Publisher("barrier_rangefinders_data", Int32MultiArray, queue_size=10)
-
-        rospy.Subscriber("/server/stm_node_command", String, self.stm_node_command_callback)
         self.pub_wire = rospy.Publisher("/server/wire_status", String, queue_size=100)
 
-        self.ask_rf_every = 2
-        self.rf_it = 0
-        self.br = tf2_ros.TransformBroadcaster()
+        # ROS subscribers
+        rospy.Subscriber("stm_command", String, self.stm_command_callback)
+        rospy.Subscriber("cmd_vel", Twist, self.set_twist)
+        rospy.Subscriber("/server/stm_node_command", String, self.stm_node_command_callback)
 
-        # high-level command IDs
-        self.odometry_movement_id = ''
-
-        # storage for timer objects and cmd_names (for 3 manipulators)
-        self.timer_m = [None] * 3
-        self.take_cube = [''] * 3
+        # Init STM protocol class
+        super(StmNode, self).__init__(serial_port, BAUD_RATE[self.robot_name])
+        self.mutex = Lock()
 
         # turn stm inverse kinematics handler ON
         self.send("set_inverse_kinematics_ON", 13, [1])
 
-        self.color = rospy.get_param("/field/color")
+        # TF transform broadcaster
+        self.br = tf2_ros.TransformBroadcaster()
+
+        # high-level command IDs
+        self.odometry_movement_id = ''
+        self.timer_odom_move = None
+
+        # storage for timer objects and cmd_names (for 3 manipulators)
+        self.timer_m = [None] * 3
+        self.take_cube = [''] * 3
 
         # set initial coords in STM
         self.initial_coords = np.array(rospy.get_param('start_' + self.color))
@@ -82,17 +78,10 @@ class stm_node(STMprotocol):
         self.laser_coords = (rospy.get_param('lidar_x') / 1000.0, rospy.get_param('lidar_y') / 1000.0, 0.41)
         self.laser_angle = rospy.get_param('lidar_a')
 
-        rospy.Timer(rospy.Duration(1. / 40), self.pub_timer_callback)
-
-        rospy.Timer(rospy.Duration(self.response_period), self.response_timer_callback)
-
-        self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
-
-        # servo
-        #GPIO.setwarnings(False)
-        #GPIO.setmode(GPIO.BCM)
-        #GPIO.setup(18, GPIO.OUT)
-        #self.pwm = GPIO.PWM(18, 100)
+        # start routine jobs
+        rospy.Timer(rospy.Duration(1. / STM_COORDS_RATE), self.pub_odom_coords_timer_callback)
+        rospy.Timer(rospy.Duration(1. / RF_RATE), self.pub_rf_data_timer_callback)
+        self.wire_timer = rospy.Timer(rospy.Duration(1. / STATUS_RATE), self.wire_timer_callback)
 
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
@@ -102,100 +91,49 @@ class stm_node(STMprotocol):
         action_name = data_splitted[0]
         action_type = int(data_splitted[1])
         args_str = data_splitted[2:]
-        # TODO: split any chars in Strings like 'ECHO'->['E','C','H','O']
         action_args_dict = {'B': int, 'H': int, 'f': float}
         args = [action_args_dict[t](s) for t, s in zip(self.pack_format[action_type][1:], args_str)]
         return action_name, action_type, args
 
     def finish_command(self, action_name, action_status="finished"):
-        if action_name in self.time_started:
-            time_action = self.time_started[action_name][0]
-            self.time_started[action_name] = (rospy.get_time(), True, action_status)
-
-        #if action_name in self.time_started and rospy.get_time() - self.time_started[
-        #     action_name] < self.min_time_for_response:
-        #    rospy.Timer(rospy.Duration(self.min_time_for_response),
-        #                lambda e: self.pub_response.publish(action_name + " " + action_status),
-        #                oneshot=True)
-        #else:
-        #    self.pub_response.publish(action_name + " " + action_status)
+        rospy.loginfo("FINISHED STM COMMAND: " + action_name + " with status " + action_status)
+        self.pub_response.publish(action_name + " " + action_status)
 
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
-
-        # servo
-        # if action_type == 256:
-        #    self.pwm.start(10) # servo manipulator-ON angle
-        #    self.pwm.ChangeDutyCycle(5)
-	#
-        #    def servo_response_wait_stop(event):
-        #        self.pub_response.publish(action_name + str(" finished"))
-        #        rospy.sleep(2)
-        #        self.pwm.ChangeDutyCycle(10)
-        #        rospy.sleep(1)
-        #        self.pwm.stop()
-	#
-        #    rospy.Timer(rospy.Duration(.2), servo_response_wait_stop, oneshot=True)
-        #    return
-        
-        self.time_started[action_name] = (rospy.get_time(), False)
-        rospy.loginfo(self.time_started)
-
-
         successfully, responses = self.send(action_name, action_type, args)
-
         if action_type in IMMEDIATE_FINISHED:
+            rospy.loginfo("start immediate finished " + action_name + " " + str(action_type) + " " + str(args))
             self.finish_command(action_name, "finished")
         if action_type in DEBUG_COMMANDS:
-            rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' + "successfully? :" + \
+            rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' + "successfully? :" +
                           str(successfully) + ' ' + str(responses))
-
-    def send(self, action_name, action_type, args):
-
-        # rospy.loginfo("RECIEVED ODOM " + str(action_name) + ' ' + str(action_type))
-        
-        # Lock() is used to prevent mixing bytes of diff commands to STM
-        self.mutex.acquire()
-        # send command to STM32
-        # rospy.loginfo('Sendid to STM: ' + str(action_type) + '|with args: ' + str(args))
-        successfully, args_response = self.send_command(action_type, args)
-        # rospy.loginfo("RECIEVED ODOM 2" + str(action_name) + ' ' + str(action_type))
-        self.mutex.release()
-
-        # high-level commands handling
-        if action_type == ODOMETRY_MOVEMENT:
+        if action_type in ODOMETRY_MOVEMENT:
+            rospy.loginfo("start odometry movement " + action_name + " " + str(action_type) + " " + str(args))
             self.odometry_movement_id = action_name
-            self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
-
+            self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / STATUS_RATE), self.odometry_movement_timer)
         if action_type in MANIPULATOR_JOBS:
+            rospy.loginfo("start manipulator jobs " + action_name + " " + str(action_type) + " " + str(args))
             if self.robot_name == "main_robot":
                 n = args[0]
             else:
                 n = action_type - 0xc1  # first dynamixel
             self.take_cube[n] = action_name
-            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / RATE), self.manipulator_timer(n,
-                                                                                             GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type in range(
-                                                                                                 0xc1,
-                                                                                                 0xc4) else GET_MANIPULATOR_STATUS))
+            self.timer_m[n] = rospy.Timer(rospy.Duration(1.0 / STATUS_RATE),
+                                          self.manipulator_timer(n, GET_SEC_ROBOT_MANIPULATOR_STATUS if action_type
+                                          in range(0xc1, 0xc4) else GET_MANIPULATOR_STATUS))
 
+    def send(self, action_name, action_type, args):
+        self.mutex.acquire()
+        successfully, args_response = self.send_command(action_type, args)
+        self.mutex.release()
         return successfully, args_response
 
-    def publish_odom(self, coords, vel):
+    def publish_odom(self, coords):
         # check if no nan values
-        if np.any(coords != coords) or np.any(vel != vel):
+        if np.any(coords != coords):
             return
-        odom = Odometry()
-        odom.header.frame_id = '%s_odom' % self.robot_name
-        odom.child_frame_id = self.robot_name
-        odom.pose.pose.position.x = coords[0]
-        odom.pose.pose.position.y = coords[1]
-        quat = tf_conversions.transformations.quaternion_from_euler(0, 0, coords[2])
-        odom.pose.pose.orientation.z = quat[2]
-        odom.pose.pose.orientation.w = quat[3]
-        odom.twist.twist.linear.x = vel[0]
-        odom.twist.twist.linear.y = vel[1]
-        odom.twist.twist.angular.z = vel[2]
-        self.pub_odom.publish(odom)
+
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "%s_odom" % self.robot_name
@@ -208,13 +146,12 @@ class stm_node(STMprotocol):
         t.transform.rotation.y = q[1]
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]
-
         self.br.sendTransform(t)
 
         t = TransformStamped()
         t.header.stamp = rospy.Time.now()
-        t.header.frame_id = "%s_odom" % self.robot_name
-        t.child_frame_id = self.robot_name
+        t.header.frame_id = self.robot_name
+        t.child_frame_id = "%s_laser" % self.robot_name
         t.transform.translation.x = self.laser_coords[0]
         t.transform.translation.y = self.laser_coords[1]
         t.transform.translation.z = 0.0
@@ -225,45 +162,25 @@ class stm_node(STMprotocol):
         t.transform.rotation.w = q[3]
         self.br.sendTransform(t)
 
-    def response_timer_callback(self, event):
-        current_time = rospy.get_time()
-        delete_list = []
-        for k, v in self.time_started.items():
-            # rospy.loginfo(k + ' ' + str(v[-1]) + ' ' + str(current_time))
-            if v[1] and current_time - v[0] < self.response_time:
-                # rospy.loginfo(k + ' ' + str(v[-1]))
-                self.pub_response.publish(k + ' ' + v[-1])
-            elif v[1] and current_time - v[0] > self.response_time:
-                delete_list.append(k)
-        for k in delete_list:
-            self.time_started.pop(k)
+    def pub_odom_coords_timer_callback(self, event):
+        successfully, coords = self.send('request_stm_coords', 15, [])
+        if successfully:
+            self.publish_odom(coords)
 
-
-    def pub_timer_callback(self, event):
-        successfully1, coords = self.send('request_stm_coords', 15, [])
-        successfully2, vel = self.send('request_stm_vel', 9, [])
-        if successfully1 and successfully2:
-            self.publish_odom(coords, vel)
-
-        if self.robot_name == "main_robot" and self.rf_it % self.ask_rf_every == 0:
-            successfully3, rf_data = self.send('request_rf_data', REQUEST_RF_DATA, [])
-            if successfully3:
-                # rospy.loginfo(rf_data)
+    def pub_rf_data_timer_callback(self, event):
+        if self.robot_name == "main_robot":
+            successfully, rf_data = self.send('request_rf_data', REQUEST_RF_DATA, [])
+            if successfully:
                 self.pub_rf.publish(Int32MultiArray(data=rf_data))
             else:
-                rospy.loginfo(successfully3)
+                rospy.loginfo("RF response " + str(successfully))
 
         if self.robot_name == "secondary_robot":
-            successfully3, rf_data = self.send('request_rf_data_secondary_robot', REQUEST_RF_DATA_SECONDARY, [])
-            if successfully3:
-                # rospy.loginfo(rf_data)
+            successfully, rf_data = self.send('request_rf_data_secondary_robot', REQUEST_RF_DATA_SECONDARY, [])
+            if successfully:
                 self.pub_rf.publish(Int32MultiArray(data=rf_data))
             else:
-                rospy.loginfo(successfully3)
-
-        # rospy.loginfo(self.rf_it)
-        # rospy.loginfo(self.ask_rf_every)
-        self.rf_it += 1
+                rospy.loginfo("RF response " + str(successfully))
 
     def odometry_movement_timer(self, event):
         successfully, args_response = self.send('GET_ODOMETRY_MOVEMENT_STATUS', GET_ODOMETRY_MOVEMENT_STATUS, [])
@@ -273,10 +190,10 @@ class stm_node(STMprotocol):
                 self.finish_command(self.odometry_movement_id)
                 self.timer_odom_move.shutdown()
 
-    def manipulator_timer(self, n, GET_COMMAND_NAME=GET_MANIPULATOR_STATUS):
+    def manipulator_timer(self, n, command_name=GET_MANIPULATOR_STATUS):
         def m_timer(event):
-            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', GET_COMMAND_NAME,
-                                                    [n] if GET_COMMAND_NAME == GET_MANIPULATOR_STATUS else [])
+            successfully, args_response = self.send('GET_MANIPULATOR_' + str(n) + '_STATUS', command_name,
+                                                    [n] if command_name == GET_MANIPULATOR_STATUS else [])
             if successfully:
                 # status code: 0 - done; 1 - in progress; >1 - error
                 status = args_response[0]
@@ -302,7 +219,6 @@ class stm_node(STMprotocol):
             # self.wire_timer.shutdown()
             pass
 
-
     def wire_timer_callback(self, event):
         successfully, args_response = self.send('GET_STARTUP_STATUS', GET_STARTUP_STATUS, [])
         if successfully:
@@ -310,7 +226,6 @@ class stm_node(STMprotocol):
 
 
 if __name__ == '__main__':
-    serial_port = "/dev/ttyUSB0"
-    stm = stm_node(serial_port)
-
+    stm_serial_port = "/dev/ttyUSB0"
+    stm = StmNode(stm_serial_port)
     rospy.spin()
