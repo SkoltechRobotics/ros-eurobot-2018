@@ -13,7 +13,7 @@ dim_r: 141.0
 # LIDAR scanner coordinates in robot frame
 lidar_x: -25.0
 lidar_y: 36.0
-lidar_a: 1.57
+lidar_a: 1.63
 
 # Manipulators
 bee_manipulator_x: -113.0

@@ -70,7 +70,7 @@ class MotionPlanner:
 
         try:
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
-            angle = euler_from_quaternion(rot)[2]
+            angle = euler_from_quaternion(rot)[2] % (2 * np.pi)
             self.coords = np.array([trans[0], trans[1], angle])
             rospy.loginfo("Robot coords:\t" + str(self.coords))
             rospy.loginfo("Goal coords:\t" + str(self.goal))
@@ -81,8 +81,8 @@ class MotionPlanner:
 
         # current linear and angular goal distance
         goal_distance = np.zeros(3)
-        goal_distance[:2] = self.goal[:2] - self.coords[:2]
-        goal_distance[2] = min(abs(self.goal[2] - self.coords[2]), 2 * np.pi - abs(self.goal[2] - self.coords[2]))
+        goal_distance = self.distance(self.coords, self.goal)
+        #goal_distance[2] = min(abs(self.goal[2] - self.coords[2]), 2 * np.pi - abs(self.goal[2] - self.coords[2]))
         rospy.loginfo('Goal distance:\t' + str(goal_distance))
         goal_d = np.linalg.norm(goal_distance[:2])
         rospy.loginfo('Goal d:\t' + str(goal_d))
@@ -131,6 +131,16 @@ class MotionPlanner:
         self.mutex.release()
 
     @staticmethod
+    def distance(coords1, coords2):
+        ans = coords2 - coords1
+        if abs(coords1[2] - coords2[2]) > np.pi:
+            if coords2[2] > coords1[2]:
+                ans[2] -= 2 * np.pi
+            else:
+                ans[2] += 2 * np.pi
+        return ans
+    
+    @staticmethod
     def rotation_transform(vec, angle):
         M = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
         ans = vec.copy()
@@ -163,6 +173,7 @@ class MotionPlanner:
 
     def cmd_callback(self, data):
         self.mutex.acquire()
+        rospy.loginfo("----------------------------------")
         rospy.loginfo("NEW CMD:\t" + str(data.data))
 
         # parse name,type
@@ -172,8 +183,10 @@ class MotionPlanner:
         cmd_args = data_splitted[2:]
 
         if cmd_type == "move":  # movement with navigation
-            path = np.array(cmd_args).astype('float').reshape((len(cmd_args) / 3,3))
-            self.set_path(path, cmd_id)
+            goal = np.array(cmd_args).astype('float') #.reshape((len(cmd_args) / 3,3))
+            goal[2] %= (2 * np.pi)
+            self.set_goal(goal, cmd_id)
+            #self.set_path(path, cmd_id)
 
         elif cmd_type == "move_heap":  # approach heap with navigation
             heap_n = int(cmd_args[0])
@@ -203,7 +216,7 @@ class MotionPlanner:
         rospy.loginfo("Goal:\t" + str(goal))
         try:
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
-            angle = euler_from_quaternion(rot)[2]
+            angle = euler_from_quaternion(rot)[2] % (2 * np.pi)
             self.coords = np.array([trans[0], trans[1], angle])
             rospy.loginfo("Robot coords:\t" + str(self.coords))
         except (LookupException, ConnectivityException, ExtrapolationException):
@@ -224,7 +237,7 @@ class MotionPlanner:
         rospy.loginfo("Goal angle:\t" + str(goal_angle))
         try:
             (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
-            angle = euler_from_quaternion(rot)[2]
+            angle = euler_from_quaternion(rot)[2] % (2 * np.pi)
             self.coords = np.array([trans[0], trans[1], angle])
             rospy.loginfo("Robot coords:\t" + str(self.coords))
         except (LookupException, ConnectivityException, ExtrapolationException):
@@ -233,7 +246,7 @@ class MotionPlanner:
 
         delta_angle = goal_angle - self.coords[2]
         rospy.loginfo("Delta angle:\t" + str(delta_angle))
-        cmd = cmd_id + " 162 0 0" + str(delta_angle) + ' 0 0 ' + str(w)
+        cmd = cmd_id + " 162 0 0 " + str(delta_angle) + ' 0 0 ' + str(w)
         rospy.loginfo("Sending cmd:\t" + cmd)
         self.pub_cmd.publish(cmd)
 
