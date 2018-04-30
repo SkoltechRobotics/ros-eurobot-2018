@@ -1,40 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- Map server -->
-    <node name="map_server" pkg="eurobot_navigation" type="map_server.py" />
 
-    <!-- MAIN ROBOT -->
-    <group ns="main_robot"> 
-        <!-- Visualization of the path in form of poses -->
-        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"/>
+  <node name="motion_planner" pkg="eurobot_navigation" type="motion_planner.py" ns="main_robot" respawn="true" output="screen">
+    <rosparam file="$(find eurobot_navigation)/config/motion_planner_main_robot_params.yaml" command="load" />
+  </node>
 
-        <!-- Navigation -->
-        <node pkg="global_planner" type="planner" respawn="true" name="global_planner">
-            <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
-            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
-            <param name="costmap/robot_base_frame" value="main_robot" />
-            <param name="costmap/footprint" value="[[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]" />
-            <remap from="/people" to="people"/>
-        </node>
-        <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/>
-    </group>
-
-    <!-- SECONDARY ROBOT -->
-    <group ns="secondary_robot">
-        <!-- Visualization of the path in form of poses -->
-        <node name="path_posearray_posearray" pkg="eurobot_navigation" type="path_posearray.py"/>
-
-        <!-- Navigation -->
-        <node pkg="global_planner" type="planner" respawn="true" name="global_planner">
-            <rosparam file="$(find eurobot_navigation)/config/global_planner_params.yaml" command="load" ns="planner" />
-            <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
-            <param name="costmap/robot_base_frame" value="secondary_robot" />
-            <param name="costmap/robot_radius" value="0.140" />
-            <remap from="/people" to="people"/>
-        </node>
-        <!-- Custom local path planner writen in python -->
-        <node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/>
-    </group>
+  <node name="motion_planner" pkg="eurobot_navigation" type="motion_planner.py" ns="secondary_robot" respawn="true" output="screen">
+    <rosparam file="$(find eurobot_navigation)/config/motion_planner_secondary_robot_params.yaml" command="load" />
+  </node>
 
 </launch>
