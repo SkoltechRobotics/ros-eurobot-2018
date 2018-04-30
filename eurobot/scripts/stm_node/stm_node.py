@@ -10,7 +10,6 @@ import tf
 import numpy as np
 
 # libs for servo-motor (home automation panel switch manipulator)
-import RPi.GPIO as GPIO
 import time
 
 RATE = 20
@@ -87,12 +86,6 @@ class stm_node(STMprotocol):
 
         self.wire_timer = rospy.Timer(rospy.Duration(1. / 30), self.wire_timer_callback)
 
-        # servo
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(18, GPIO.OUT)
-        self.pwm = GPIO.PWM(18, 100)
-
     def set_twist(self, twist):
         self.send("set_speed", 8, [twist.linear.x, twist.linear.y, twist.angular.z])
 
@@ -122,21 +115,6 @@ class stm_node(STMprotocol):
     def stm_command_callback(self, data):
         action_name, action_type, args = self.parse_data(data)
 
-        # servo
-        if action_type == 256:
-            self.pwm.start(10) # servo manipulator-ON angle
-            self.pwm.ChangeDutyCycle(5)
-
-            def servo_response_wait_stop(event):
-                self.pub_response.publish(action_name + str(" finished"))
-                rospy.sleep(2)
-                self.pwm.ChangeDutyCycle(10)
-                rospy.sleep(1)
-                self.pwm.stop()
-
-            rospy.Timer(rospy.Duration(.2), servo_response_wait_stop, oneshot=True)
-            return
-        
         self.time_started[action_name] = (rospy.get_time(), False)
         rospy.loginfo(self.time_started)
 
