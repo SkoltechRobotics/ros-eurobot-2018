@@ -154,6 +154,7 @@ class MapServer():
 
 
     def pub(self):
+        self.grid_main.data[-1] = np.random.randint(2) * 100
         self.pub_main_map.publish(self.grid_main)
         self.pub_secondary_map.publish(self.grid_secondary)
         #rospy.loginfo("Published the field map.")
@@ -201,7 +202,6 @@ class MapServer():
             for robot in self.robots:
                 mask[np.linalg.norm((xy - robot), axis=2) <= self.ROBOT_R] = True
         return mask
-
 
     def our_robot(self, size, coords):
         # 'occupy' all cells

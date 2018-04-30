@@ -14,7 +14,7 @@
             <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
             <param name="costmap/robot_base_frame" value="main_robot" />
             <param name="costmap/footprint" value="[[0.21, 0.095], [0.21, -0.095], [-0.21, -0.095], [-0.21, 0.095]]" />
-            <remap from="/people" to="people"/>
+            <!--remap from="/people" to="people"/-->
         </node>
         <!-- Custom local path planner writen in python -->
         <!--node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true" output="screen"/-->
@@ -31,7 +31,7 @@
             <rosparam file="$(find eurobot_navigation)/config/global_costmap_params.yaml" command="load" ns="costmap" />
             <param name="costmap/robot_base_frame" value="secondary_robot" />
             <param name="costmap/robot_radius" value="0.140" />
-            <remap from="/people" to="people"/>
+            <!--remap from="/people" to="people"/-->
         </node>
         <!-- Custom local path planner writen in python -->
         <!--node name="path_follower" pkg="eurobot_navigation" type="local_planner.py" respawn="true"/-->
