@@ -316,19 +316,16 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            if not self.ok:
-                self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.8, 1.2, -0.7)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.8, 1.1, -0.7)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-            self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.15, 0.15, 0)
+            #self.add_command_action(main_seq_name, 182, 2) # manipulator
             self.add_command_action(main_seq_name, 162, 0.2, 0.02, 0, 0.3, 0.04, 0)
-            #self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+            #self.add_command_action(main_seq_name, 182, 0) # manipulator
 
-            self.add_command_action(main_seq_name, 162, 0, 0, -0.8, 0, 0, 6)
+            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.3, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
-            self.add_command_action(main_seq_name, 162, 0.25, -0.25, 0, 0.3, 0.3, 0)
-            self.add_command_action(main_seq_name, 182, 0) # manipulator
             #self.add_command_action(main_seq_name, 162, 0, 0.2, 0, 0, 0.57, 0)
 
         else:
