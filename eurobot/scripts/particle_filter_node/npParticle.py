@@ -178,11 +178,12 @@ class ParticleFilter:
 
         # too far real beacons go away: non valid
         is_near = dist_from_closest_beacon_to_landmark < self.beac_dist_thresh
-        num_good_landmarks = np.sum(is_near, axis=1)
-        sum_errors = np.sum(errors * is_near, axis=1)
+        is_near_sum = np.sum(is_near, axis=0)
+        is_near_or = (is_near_sum != 0)
+        num_good_landmarks = np.sum(is_near_or)
+        sum_errors = np.sum(errors * is_near_or[np.newaxis, :], axis=1)
 
-        self.cost_function = np.sqrt(sum_errors) / np.where(num_good_landmarks, num_good_landmarks, 1)
-        self.cost_function[num_good_landmarks == 0] = 1000
+        self.cost_function = np.sqrt(sum_errors) / num_good_landmarks
 
         weights = self.gaus(self.cost_function, mu=0, sigma=self.sense_noise)
         if np.sum(weights) > 0:
@@ -194,7 +195,7 @@ class ParticleFilter:
         best_particles_inds = np.argsort(self.cost_function)[:10]
         self.best_particles["particles"] = particles[best_particles_inds]
         self.best_particles["cost_function"] = self.cost_function[best_particles_inds]
-        self.best_particles["num_good_landmarks"] = num_good_landmarks[best_particles_inds]
+        self.best_particles["num_good_landmarks"] = num_good_landmarks
         self.best_particles["weights"] = weights[best_particles_inds]
         return weights
 
