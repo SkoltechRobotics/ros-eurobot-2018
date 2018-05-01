@@ -1127,13 +1127,17 @@ class BehaviorTreeBuilder:
         
         self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .62, -2.2, .3, 1.0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .62, -2, .3, 1.0)
         else:
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .62, 2.2, .3, 1.0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .62, 2, .3, 1.0)
         self.add_shooting_motor_action(main_seq_name, to, "on")
         if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .170, .760, 4.71, .25, 1.0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .823, 4.71, .25, 1.0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .823, 4.71, .25, 1.0)
         else:
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .857, 1.57, .25, 1.0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .857, 1.57, .25, 1.0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .857, 1.57, .25, 1.0)
 
         #self.add_sleep_time(main_seq_name, 2)
@@ -1147,7 +1151,7 @@ class BehaviorTreeBuilder:
         #    self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.5, 0)
         #    self.add_sleep_time(main_seq_name, 1)
         #    self.add_command_action(main_seq_name, 162, 0.015, 0, 0, 0.1, 0, 0)
-        self.add_sleep_time(main_seq_name, 2)
+        self.add_sleep_time(main_seq_name, 3)
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
         self.add_command_action(main_seq_name, 224, 1) # collision avoidance
