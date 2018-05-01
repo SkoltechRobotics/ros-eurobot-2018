@@ -154,10 +154,11 @@ class MotionPlanner:
 
     def terminate_following(self):
         rospy.loginfo("Setting robot speed to zero.")
-        self.set_speed(np.zeros(3))
         self.stop_robot()
         rospy.loginfo("Robot has stopped. Starting correction by odometry movement.")
         self.move_odometry(self.cmd_id, *self.goal)
+        #self.rotate_odometry(self.goal[2])
+        #self.translate_odometry(self.goal)
         #self.pub_response.publish(self.cmd_id + " finished")
         self.cmd_id = None
         self.t_prev = None
@@ -168,12 +169,18 @@ class MotionPlanner:
     def stop_robot(self):
         self.cmd_stop_robot_id = "stop_" + self.robot_name + str(self.stop_id)
         self.stop_id += 1
-        cmd = self.cmd_stop_robot_id + " 8 0 0 0"
         self.robot_stopped = False
+        cmd = self.cmd_stop_robot_id + " 8 0 0 0"
+        rospy.loginfo("Sending cmd: " + cmd)
         self.pub_cmd.publish(cmd)
-        while not self.robot_stopped:
+        for i in range(20):
+            if self.robot_stopped:
+                self.cmd_stop_robot_id = None
+                rospy.loginfo("Robot stopped.")
+                rospy.sleep(0.5)
+                return
             rospy.sleep(1.0 / 40)
-        #rospy.sleep(0.5)
+        rospy.loginfo("Have been waiting for response for .5 sec. Stopped waiting.")
         self.cmd_stop_robot_id = None
 
     def set_goal(self, goal, cmd_id, mode='normal', heap_n=0):
@@ -269,7 +276,6 @@ class MotionPlanner:
         if abs(v_cmd[2]) > w:
             v_cmd *= w / abs(v_cmd[2])
         rospy.loginfo("v_cmd:\t" + str(v_cmd))
-        d_cmd[2] = v_cmd[2] = 0
         cmd = cmd_id + " 162 " + str(d_cmd[0]) + " " + str(d_cmd[1]) + " " + str(d_cmd[2]) + " " + str(v_cmd[0]) + " " + str(v_cmd[1]) + " " + str(v_cmd[2])
         rospy.loginfo("Sending cmd: " + cmd)
         self.pub_cmd.publish(cmd)
@@ -319,6 +325,7 @@ class MotionPlanner:
         data_splitted = data.data.split()
         if data_splitted[0] == self.cmd_stop_robot_id and data_splitted[1] == "finished":
             self.robot_stopped = True
+            rospy.loginfo(data.data)
 
 if __name__ == "__main__":
     planner = MotionPlanner()
