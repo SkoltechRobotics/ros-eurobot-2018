@@ -1126,15 +1126,14 @@ class BehaviorTreeBuilder:
         self.add_shoot_sort_action(main_seq_name, "release " + to)
         
         self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-        if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .62, -2, .3, 1.0)
-        else:
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .62, 2, .3, 1.0)
+        #if self.side == "orange":
+        #    self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .62, -2, .3, 1.0)
+        #else:
+        #    self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .62, 2, .3, 1.0)
         self.add_shooting_motor_action(main_seq_name, to, "on")
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .170, .760, 4.71, .25, 1.0)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .823, 4.71, .25, 1.0)
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .823, 4.71, .25, 1.0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .230, .700, 4.71, .35, 1.0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", .156, .823, 4.71)
         else:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .857, 1.57, .25, 1.0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .857, 1.57, .25, 1.0)
