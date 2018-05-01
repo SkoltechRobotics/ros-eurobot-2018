@@ -45,7 +45,7 @@ class PFNode(object):
         x, y, a = lidar_odom_point
         self.pf = ParticleFilter(color=self.color, start_x=x, start_y=y, start_angle=a, **PF_PARAMS)
         self.last_odom = np.zeros(3)
-        self.alpha = 0.3
+        self.alpha = 0.2
 
         rospy.Timer(rospy.Duration(1. / PF_RATE), self.localisation)
 
@@ -54,7 +54,8 @@ class PFNode(object):
 
     def get_odom_frame(self, robot_pf_point, robot_odom_point):
         odom = find_src(robot_pf_point, robot_odom_point)
-        self.last_odom = (1 - self.alpha) * self.last_odom + self.alpha * odom
+        self.last_odom[:2] = (1 - self.alpha) * self.last_odom[:2] + self.alpha * odom[:2]
+        self.last_odom[2] = odom[2]
         return self.last_odom
 
     # noinspection PyUnusedLocal
