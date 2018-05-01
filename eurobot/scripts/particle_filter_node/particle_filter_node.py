@@ -6,18 +6,20 @@ import numpy as np
 from npParticle import ParticleFilter, cvt_global2local, cvt_local2global, find_src
 import tf2_ros
 import tf_conversions
+import time
 
-PF_RATE = 10
+PF_RATE = 20
 
 PF_PARAMS = {"sense_noise": 5,
-             "distance_noise": 4,
-             "angle_noise": 0.15,
+             "distance_noise": 6,
+             "angle_noise": 0.2,
              "min_intens": 3000,
              "max_dist": 3700,
              "back_side_cost": 10,
              "k_angle": 5000,
              "particles_num": 400,
-             "beac_dist_thresh": 700}
+             "beac_dist_thresh": 700,
+             "k_mult": 0.3}
 
 
 class PFNode(object):
@@ -50,6 +52,7 @@ class PFNode(object):
 
     # noinspection PyUnusedLocal
     def localisation(self, event):
+        time1 = time.time()
         robot_odom_point = self.get_odom()
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         delta = cvt_global2local(lidar_odom_point, self.prev_lidar_odom_point)
@@ -60,6 +63,7 @@ class PFNode(object):
 
         robot_pf_point = find_src(lidar_pf_point, self.lidar_point)
         self.pub_pf(find_src(robot_pf_point, robot_odom_point))
+        rospy.loginfo("PF RATE: " + str(1 / (time.time() - time1)))
 
     def get_odom(self):
         t = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
