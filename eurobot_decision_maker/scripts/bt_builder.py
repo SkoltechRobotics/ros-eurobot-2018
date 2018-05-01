@@ -1123,32 +1123,34 @@ class BehaviorTreeBuilder:
         main_seq_name = self.construct_string("cleanwater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
-        #self.add_command_action(main_seq_name, self.upper_sorter, self.first_poses["interm"])
-        #if not with_4_balls:
-        #    self.add_shoot_sort_action(main_seq_name, "release " + to)
         self.add_shoot_sort_action(main_seq_name, "release " + to)
-        self.add_shooting_motor_action(main_seq_name, to, "on")
+        
         self.add_command_action(main_seq_name, 224, 0) # collision avoidance
-        self.add_move_to_tower_action(main_seq_name, "cleanwater_tower", False) #not with_4balls
-
-        self.add_sleep_time(main_seq_name, 2)
-        self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.1, 0)
-        self.add_sleep_time(main_seq_name, 1)
         if self.side == "orange":
-            self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.1, 0)
-            self.add_sleep_time(main_seq_name, 1)
-            self.add_command_action(main_seq_name, 162, -0.015, 0, 0, 0.1, 0, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .62, -2.2, .3, 1.0)
         else:
-            self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.5, 0)
-            self.add_sleep_time(main_seq_name, 1)
-            self.add_command_action(main_seq_name, 162, 0.015, 0, 0, 0.1, 0, 0)
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .62, 2.2, .3, 1.0)
+        self.add_shooting_motor_action(main_seq_name, to, "on")
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", .156, .823, 4.71, .25, 1.0)
+        else:
+            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .857, 1.57, .25, 1.0)
+
+        #self.add_sleep_time(main_seq_name, 2)
+        #self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.1, 0)
+        #self.add_sleep_time(main_seq_name, 1)
+        #if self.side == "orange":
+        #    self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.1, 0)
+        #    self.add_sleep_time(main_seq_name, 1)
+        #    self.add_command_action(main_seq_name, 162, -0.015, 0, 0, 0.1, 0, 0)
+        #else:
+        #    self.add_command_action(main_seq_name, 162, 0, -0.015, 0, 0, 0.5, 0)
+        #    self.add_sleep_time(main_seq_name, 1)
+        #    self.add_command_action(main_seq_name, 162, 0.015, 0, 0, 0.1, 0, 0)
         self.add_sleep_time(main_seq_name, 2)
-
-        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
-
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
-        #self.add_command_action(main_seq_name, 224, 1) # collision avoidance
+        self.add_command_action(main_seq_name, 224, 1) # collision avoidance
         self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.57, 0)
 
     def time_checker(self, parent_name, time):
