@@ -23,6 +23,7 @@ MANIPULATOR_JOBS = [0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xc1, 0xc2, 0xc3]
 IMMEDIATE_FINISHED = [0xc4, 0xb6, 0xe0]
 UNLOAD_TOWER = 0xb1
 ODOMETRY_MOVEMENT = 0xa2
+CMD_VEL = 0x08
 REQUEST_RF_DATA = 0xd0
 REQUEST_RF_DATA_SECONDARY = 0xd1
 BAUD_RATE = {"main_robot": 250000,
@@ -140,7 +141,8 @@ class stm_node(STMprotocol):
         self.mutex.release()
 
         # high-level commands handling
-        if action_type == ODOMETRY_MOVEMENT:
+        if action_type == ODOMETRY_MOVEMENT or \
+                (action_type == CMD_VEL and args == [.0, .0, .0]):
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / RATE), self.odometry_movement_timer)
 
