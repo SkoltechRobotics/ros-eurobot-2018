@@ -11,15 +11,15 @@ import time
 PF_RATE = 20
 
 PF_PARAMS = {"sense_noise": 5,
-             "distance_noise": 6,
-             "angle_noise": 0.2,
+             "distance_noise": 2,
+             "angle_noise": 0.15,
              "min_intens": 3000,
              "max_dist": 3700,
              "back_side_cost": 10,
              "k_angle": 5000,
-             "particles_num": 400,
+             "particles_num": 500,
              "beac_dist_thresh": 700,
-             "k_mult": 0.3}
+             "k_mult": 0.5}
 
 
 class PFNode(object):
@@ -54,16 +54,19 @@ class PFNode(object):
     def localisation(self, event):
         time1 = time.time()
         robot_odom_point = self.get_odom()
+	time2 = time.time()
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         delta = cvt_global2local(lidar_odom_point, self.prev_lidar_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point.copy()
 
         lidar_pf_point = self.pf.localisation(delta, self.scan)
         # rospy.loginfo("cost_function " + str(self.pf.min_cost_function))
-
+	
         robot_pf_point = find_src(lidar_pf_point, self.lidar_point)
-        self.pub_pf(find_src(robot_pf_point, robot_odom_point))
-        rospy.loginfo("PF RATE: " + str(1 / (time.time() - time1)))
+        time3 = time.time()
+	self.pub_pf(find_src(robot_pf_point, robot_odom_point))
+        time4 = time.time()
+	rospy.loginfo("PF RATE: " + str(1 / (time4 - time1)) + " " + str(1 / (time3 - time2)))
 
     def get_odom(self):
         t = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
