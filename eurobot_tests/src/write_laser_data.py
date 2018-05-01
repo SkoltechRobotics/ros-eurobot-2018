@@ -25,13 +25,13 @@ if __name__ == '__main__':
     rospy.loginfo("start write data")
     lidar_data_full = []
     odom_data_full = []
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(20)
     listener = tf.TransformListener()
-    for i in range(100):
+    for i in range(400):
         rate.sleep()
         lidar_data_full.append(lidar_data)
         odom_data_full.append(get_coords())
-        rospy.loginfo("add line %d" % i)
+#        rospy.loginfo("add line %d" % i)
 
-    np.save("laser_scans2.npy", np.array(lidar_data_full))
-    np.save("odom_coords2.npy", np.array(odom_data_full))
+    np.save("laser_scans4.npy", np.array(lidar_data_full))
+    np.save("odom_coords4.npy", np.array(odom_data_full))
