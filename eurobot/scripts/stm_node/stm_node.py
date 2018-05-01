@@ -24,6 +24,7 @@ ODOMETRY_MOVEMENT = [0xa2]
 DEBUG_COMMANDS = [0x0c]
 
 UNLOAD_TOWER = 0xb1
+CMD_VEL = 0x08
 REQUEST_RF_DATA = 0xd0
 REQUEST_RF_DATA_SECONDARY = 0xd1
 BAUD_RATE = {"main_robot": 250000,
@@ -108,7 +109,8 @@ class StmNode(STMprotocol):
         if action_type in DEBUG_COMMANDS:
             rospy.loginfo(action_name + ' ' + str(action_type) + ' ' + str(args) + ' ' + "successfully? :" +
                           str(successfully) + ' ' + str(responses))
-        if action_type in ODOMETRY_MOVEMENT:
+        if action_type in ODOMETRY_MOVEMENT or \
+                (action_type == CMD_VEL and args == [.0, .0, .0]):
             rospy.loginfo("start odometry movement " + action_name + " " + str(action_type) + " " + str(args))
             self.odometry_movement_id = action_name
             self.timer_odom_move = rospy.Timer(rospy.Duration(1.0 / STATUS_RATE), self.odometry_movement_timer)
