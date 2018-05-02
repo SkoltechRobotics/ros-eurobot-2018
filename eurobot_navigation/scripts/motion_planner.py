@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import numpy as np
-from tf import TransformListener, LookupException, ConnectivityException, ExtrapolationException
+import tf2_ros
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
@@ -11,6 +11,9 @@ from threading import Lock
 class MotionPlanner:
     def __init__(self):
         rospy.init_node("motion_planner", anonymous=True)
+
+        self.tfBuffer = tf2_ros.Buffer()
+        self.tfListener = tf2_ros.TransformListener(self.tfBuffer)
 
         self.robot_name = rospy.get_param("robot_name")
         self.team_color = rospy.get_param("/field/color")
@@ -57,7 +60,6 @@ class MotionPlanner:
         self.pub_twist = rospy.Publisher("cmd_vel", Twist, queue_size=1)
         self.pub_response = rospy.Publisher("response", String, queue_size=10)
         self.pub_cmd = rospy.Publisher("stm_command", String, queue_size=1)
-        self.listener = TransformListener()
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
         rospy.Subscriber("response", String, self.response_callback, queue_size=1)
 
@@ -73,14 +75,7 @@ class MotionPlanner:
 
         rospy.loginfo("-------NEW MOTION PLANNING ITERATION-------")
 
-        try:
-            (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
-            angle = euler_from_quaternion(rot)[2] % (2 * np.pi)
-            self.coords = np.array([trans[0], trans[1], angle])
-            rospy.loginfo("Robot coords:\t" + str(self.coords))
-            rospy.loginfo("Goal coords:\t" + str(self.goal))
-        except (LookupException, ConnectivityException, ExtrapolationException):
-            rospy.loginfo("MotionPlanner failed to lookup tf.")
+        if not self.update_coords():
             self.mutex.release()
             return
 
@@ -156,10 +151,12 @@ class MotionPlanner:
         rospy.loginfo("Setting robot speed to zero.")
         self.stop_robot()
         rospy.loginfo("Robot has stopped. Starting correction by odometry movement.")
-        self.move_odometry(self.cmd_id, *self.goal)
+        if self.mode == "move":
+            self.move_odometry(self.cmd_id, *self.goal)
+        else:
+            self.pub_response.publish(self.cmd_id + " finished")
         #self.rotate_odometry(self.goal[2])
         #self.translate_odometry(self.goal)
-        #self.pub_response.publish(self.cmd_id + " finished")
         self.cmd_id = None
         self.t_prev = None
         self.goal = None
@@ -213,7 +210,14 @@ class MotionPlanner:
         cmd_args = data_splitted[2:]
 
         if cmd_type == "move":
+            self.mode = cmd_type
             goal = np.array(cmd_args).astype('float') #.reshape((len(cmd_args) / 3,3))
+            goal[2] %= (2 * np.pi)
+            self.set_goal(goal, cmd_id)
+
+        if cmd_type == "move_fast":
+            self.mode = cmd_type
+            goal = np.array(cmd_args).astype('float')
             goal[2] %= (2 * np.pi)
             self.set_goal(goal, cmd_id)
 
@@ -310,13 +314,14 @@ class MotionPlanner:
 
     def update_coords(self):
         try:
-            (trans, rot) = self.listener.lookupTransform('/map', '/' + self.robot_name, rospy.Time(0))
-            angle = euler_from_quaternion(rot)[2] % (2 * np.pi)
-            self.coords = np.array([trans[0], trans[1], angle])
+            trans = self.tfBuffer.lookup_transform('map', self.robot_name, rospy.Time())
+            q = [trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w]
+            angle = euler_from_quaternion(q)[2] % (2 * np.pi)
+            self.coords = np.array([trans.transform.translation.x, trans.transform.translation.y, angle])
             rospy.loginfo("Robot coords:\t" + str(self.coords))
             return True
-        except (LookupException, ConnectivityException, ExtrapolationException):
-            rospy.loginfo("MotionPlanner failed to lookup tf.")
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.loginfo("MotionPlanner failed to lookup tf2.")
             return False
 
     def response_callback(self, data):
