@@ -316,15 +316,15 @@ class BehaviorTreeBuilder:
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.8, 1.1, -0.7, 0.57, 1.0)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.8, 1.1, -0.7, 0.35, 1.0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.15, 0.15, 0)
             #self.add_command_action(main_seq_name, 182, 2) # manipulator
-            self.add_command_action(main_seq_name, 162, 0.2, 0.02, 0, 0.57, 0.08, 0)
+            self.add_command_action(main_seq_name, 162, 0.2, 0.02, 0, 0.35, 0.04, 0)
             #self.add_command_action(main_seq_name, 182, 0) # manipulator
 
-            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.57, 0)
+            self.add_command_action(main_seq_name, 162, 0, -0.2, 0, 0, 0.35, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
             #self.add_command_action(main_seq_name, 162, 0, 0.2, 0, 0, 0.57, 0)
 
@@ -1134,7 +1134,7 @@ class BehaviorTreeBuilder:
         #    self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move_odometry", 2.844, .62, 2, .3, 1.0)
         self.add_shooting_motor_action(main_seq_name, to, "on")
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .230, .700, 4.71, .57, 1.0)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .230, .700, 4.71, .35, 1.0)
             self.add_sleep_time(main_seq_name, .5)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .156, .823, 4.71, 0.1, .2)
             #self.add_sleep_time(main_seq_name, 1)
