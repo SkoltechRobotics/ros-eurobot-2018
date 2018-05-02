@@ -19,8 +19,7 @@ PF_PARAMS = {"sense_noise": 2,
              "k_angle": 200,
              "particles_num": 500,
              "beac_dist_thresh": 200,
-             "k_mult": 0,
-             "k_num": 0}
+             "k_mult": 0}
 
 
 class PFNode(object):
