@@ -52,7 +52,6 @@ class MotionPlanner:
         self.t_prev = None
         self.goal = None
         self.mode = None
-        self.heap_n = None
 
         self.cmd_stop_robot_id = None
         self.stop_id = 0
@@ -88,7 +87,7 @@ class MotionPlanner:
         rospy.loginfo('Goal d:\t' + str(goal_d))
 
         # stop and publish response if we have reached the goal with the given tolerance
-        if (self.mode == 'normal' and goal_d < self.XY_GOAL_TOLERANCE and goal_distance[2] < self.YAW_GOAL_TOLERANCE) or (self.mode == 'accurate' and goal_d < self.XY_ACCURATE_GOAL_TOLERANCE and goal_distance[2] < self.YAW_ACCURATE_GOAL_TOLERANCE):
+        if ((self.mode == 'move' or self.mode == 'move_fast') and goal_d < self.XY_GOAL_TOLERANCE and goal_distance[2] < self.YAW_GOAL_TOLERANCE) or (self.mode == 'move_heap' and goal_d < self.XY_ACCURATE_GOAL_TOLERANCE and goal_distance[2] < self.YAW_ACCURATE_GOAL_TOLERANCE):
             rospy.loginfo(self.cmd_id + " finished, reached the goal")
             self.terminate_following()
             self.mutex.release()
@@ -104,7 +103,7 @@ class MotionPlanner:
         speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
         rospy.loginfo('Acceleration Speed Limit:\t' + str(speed_limit_acs))
 
-        speed_limit_dec = goal_d / self.D_DECELERATION * self.V_MAX
+        speed_limit_dec = goal_d / (self.D_ACCURATE_DECELERATION if self.mode == "move_heap" else self.D_DECELERATION) * self.V_MAX
         rospy.loginfo('Deceleration Speed Limit:\t' + str(speed_limit_dec))
 
         speed_limit = min(speed_limit_dec, speed_limit_acs)
@@ -150,18 +149,22 @@ class MotionPlanner:
     def terminate_following(self):
         rospy.loginfo("Setting robot speed to zero.")
         self.stop_robot()
-        rospy.loginfo("Robot has stopped. Starting correction by odometry movement.")
+        rospy.loginfo("Robot has stopped.")
         if self.mode == "move":
+            rospy.loginfo("Starting correction by odometry movement.")
             self.move_odometry(self.cmd_id, *self.goal)
         else:
+        #elif self.mode == "move_fast":
             self.pub_response.publish(self.cmd_id + " finished")
+        #elif self.mode == "move_heap":
+        #    self.translate_odometry(self.cmd_id, *self.goal)
+        
         #self.rotate_odometry(self.goal[2])
         #self.translate_odometry(self.goal)
         self.cmd_id = None
         self.t_prev = None
         self.goal = None
         self.mode = None
-        self.heap_n = None
 
     def stop_robot(self):
         self.cmd_stop_robot_id = "stop_" + self.robot_name + str(self.stop_id)
@@ -180,14 +183,13 @@ class MotionPlanner:
         rospy.loginfo("Have been waiting for response for .5 sec. Stopped waiting.")
         self.cmd_stop_robot_id = None
 
-    def set_goal(self, goal, cmd_id, mode='normal', heap_n=0):
+    def set_goal(self, goal, cmd_id, mode='move'):
         rospy.loginfo("Setting a new goal:\t" + str(goal))
+        rospy.loginfo("Mode:\t" + str(mode))
         self.cmd_id = cmd_id
         self.t_prev = rospy.get_time()
         self.goal = goal
         self.mode = mode
-        if mode == "heap":
-            self.heap_n = heap_n
 
     def set_speed(self, vel):
         vx, vy, wz = vel
@@ -210,20 +212,19 @@ class MotionPlanner:
         cmd_args = data_splitted[2:]
 
         if cmd_type == "move":
-            self.mode = cmd_type
             goal = np.array(cmd_args).astype('float') #.reshape((len(cmd_args) / 3,3))
             goal[2] %= (2 * np.pi)
-            self.set_goal(goal, cmd_id)
+            self.set_goal(goal, cmd_id, cmd_type)
 
         if cmd_type == "move_fast":
             self.mode = cmd_type
             goal = np.array(cmd_args).astype('float')
             goal[2] %= (2 * np.pi)
-            self.set_goal(goal, cmd_id)
+            self.set_goal(goal, cmd_id, cmd_type)
 
-        elif cmd_type == "move_heap":  # approach heap
+        elif cmd_type == "move_heap":
+            self.mode = cmd_type
             n = int(cmd_args[0])
-            #final_angle = float(cmd_args[1]) TODO
             self.move_heap(cmd_id, n)
 
         elif cmd_type == "move_odometry":  # simple movement by odometry
@@ -244,12 +245,16 @@ class MotionPlanner:
         self.mutex.release()
 
     def move_heap(self, cmd_id, n):
+        rospy.loginfo("-------NEW HEAP MOVEMENT-------")
+        rospy.loginfo("Goal: heap #" + str(n) + " with coords: " + str(self.heap_coords[n]))
         if not self.update_coords():
             return
-        angle = np.arctan2(self.heap_coords[1] - self.coords[1], self.heap_coords[0] - self.coords[0])
-        self.rotate_odometry(cmd_id, angle)
-        goal_coords = np.append(self.heap_coords[heap_n], angle)
-        self.set_goal(goal, cmd_id, mode="accurate") 
+        angle = (np.arctan2(self.heap_coords[n][1] - self.coords[1], self.heap_coords[n][0] - self.coords[0]) - np.pi / 2) % (2 * np.pi)
+        rospy.loginfo("Goal angle: " + str(angle))
+        goal_angle = self.coords[2] + angle
+        self.rotate_odometry(cmd_id, angle, 1.0)
+        goal = np.append(self.heap_coords[n], angle)
+        self.set_goal(goal, cmd_id, mode="move_heap") 
 
 
     def move_odometry(self, cmd_id, goal_x, goal_y, goal_a, vel=0.3, w=1.5):

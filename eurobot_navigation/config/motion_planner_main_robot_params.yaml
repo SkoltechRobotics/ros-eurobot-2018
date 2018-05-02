@@ -4,13 +4,13 @@ RATE: 25
 XY_GOAL_TOLERANCE: 0.02
 YAW_GOAL_TOLERANCE: 0.1
 # maximum speed
-V_MAX: 0.3
+V_MAX: 0.35
 W_MAX: 1.5
 # acceleration at beginning of movements
 ACCELERATION: 1.0
 # goal distance for deceleration
-D_DECELERATION: 0.05
+D_DECELERATION: 0.15
 # params for accurate movements to water towers or cube heaps
 XY_ACCURATE_GOAL_TOLERANCE: 0.005
 YAW_ACCURATE_GOAL_TOLERANCE: 0.05
-D_ACCURATE_DECELERATION: 0.25
+D_ACCURATE_DECELERATION: 0.35
