@@ -120,10 +120,10 @@ class ParticleFilter:
         noise = np.array([x_noise, y_noise, angle_noise]).T
         move_point = delta + noise
         self.particles = cvt_local2global(move_point, self.particles)
-        self.particles[self.particles[:, 0] > 2000 - 120, 0] = 2000 - 120
-        self.particles[self.particles[:, 0] < 120, 0] = 120
-        self.particles[self.particles[:, 1] > 3000 - 120, 1] = 3000 - 120
+        self.particles[self.particles[:, 1] > 2000 - 120, 1] = 2000 - 120
         self.particles[self.particles[:, 1] < 120, 1] = 120
+        self.particles[self.particles[:, 0] > 3000 - 120, 0] = 3000 - 120
+        self.particles[self.particles[:, 0] < 120, 0] = 120
 
     def resample(self, weights):
         """ according to weights """

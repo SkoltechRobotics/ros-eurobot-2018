@@ -16,9 +16,9 @@ PF_PARAMS = {"sense_noise": 2,
              "min_intens": 3000,
              "max_dist": 3700,
              "back_side_cost": 10,
-             "k_angle": 10000,
+             "k_angle": 200,
              "particles_num": 500,
-             "beac_dist_thresh": 700,
+             "beac_dist_thresh": 200,
              "k_mult": 0}
 
 
