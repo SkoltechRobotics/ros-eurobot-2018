@@ -182,9 +182,10 @@ class ParticleFilter:
         is_near_or = (is_near_sum != 0)
         num_good_landmarks = np.sum(is_near_or)
         sum_errors = np.sum(errors * is_near_or[np.newaxis, :], axis=1)
-
-        self.cost_function = np.sqrt(sum_errors) / num_good_landmarks
-
+        if num_good_landmarks:
+            self.cost_function = np.sqrt(sum_errors) / num_good_landmarks
+        else:
+            self.cost_function = np.ones(sum_errors.shape[0]) * 1000
         weights = self.gaus(self.cost_function, mu=0, sigma=self.sense_noise)
         if np.sum(weights) > 0:
             weights /= np.sum(weights)
