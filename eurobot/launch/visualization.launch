@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  <include file="$(find eurobot_sim)/launch/visualization.launch"/>
-</launch>
