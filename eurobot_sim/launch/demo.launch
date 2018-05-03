@@ -7,6 +7,7 @@
   <include file="$(find eurobot)/launch/params.launch"/>
   <include file="$(find eurobot_sim)/launch/visualization.launch"/>
   <include file="$(find eurobot_sim)/launch/simulation.launch"/>
-  <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
+  <include file="$(find eurobot_navigation)/launch/navigation_main.launch"/>
+  <include file="$(find eurobot_navigation)/launch/navigation_secondary.launch"/>
 
 </launch>
