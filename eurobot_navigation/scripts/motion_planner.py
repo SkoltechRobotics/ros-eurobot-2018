@@ -239,21 +239,38 @@ class MotionPlanner:
             inp = np.array(cmd_args).astype('float')
             self.rotate_odometry(cmd_id, *inp)
 
+        elif cmd_type == "face_heap":  # rotation (odom) to face cubes
+            n = int(cmd_args[0])
+            if len(cmd_args) > 1:
+                w = np.array(cmd_args).astype('float')
+                self.face_heap(cmd_id, n, w)
+            else:
+                self.face_heap(cmd_id, n)
+
         elif cmd_type == "stop":
             self.terminate_following()
 
         self.mutex.release()
 
-    def move_heap(self, cmd_id, n):
-        rospy.loginfo("-------NEW HEAP MOVEMENT-------")
-        rospy.loginfo("Goal: heap #" + str(n) + " with coords: " + str(self.heap_coords[n]))
+    def face_heap(self, cmd_id, n, w=1.0):
+        rospy.loginfo("-------NEW ROTATION MOVEMENT TO FACE CUBES-------")
+        rospy.loginfo("Heap number: " + str(n) + ". Heap coords: " + str(self.heap_coords[n]))
         if not self.update_coords():
             return
         angle = (np.arctan2(self.heap_coords[n][1] - self.coords[1], self.heap_coords[n][0] - self.coords[0]) - np.pi / 2) % (2 * np.pi)
         rospy.loginfo("Goal angle: " + str(angle))
-        goal_angle = self.coords[2] + angle
-        self.rotate_odometry(cmd_id, angle, 1.0)
+        self.rotate_odometry(cmd_id, angle, w)
+
+
+    def move_heap(self, cmd_id, n):
+        rospy.loginfo("-------NEW HEAP MOVEMENT-------")
+        rospy.loginfo("Heap number: " + str(n) + ". Heap coords: " + str(self.heap_coords[n]))
+        if not self.update_coords():
+            return
+        angle = (np.arctan2(self.heap_coords[n][1] - self.coords[1], self.heap_coords[n][0] - self.coords[0]) - np.pi / 2) % (2 * np.pi)
         goal = np.append(self.heap_coords[n], angle)
+        goal[:2] -= self.rotation_transform(np.array([.0, .06]), angle)
+        rospy.loginfo("Goal:\t" + str(goal))
         self.set_goal(goal, cmd_id, mode="move_heap") 
 
 

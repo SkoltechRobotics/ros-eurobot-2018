@@ -1,6 +1,14 @@
 <?xml version="1.0"?>
 <launch>
+
+  <!-- PARAMS -->
+  <arg name="color" default="orange" />
+  <param name="/field/color" value="$(arg color)" />
+  <param name="/camera/corner_camera" value="0"/>
+  <include file="$(find eurobot)/launch/params.launch"/>
   
+  <!-- MULTYMASTER -->
+  <include file="$(find eurobot)/launch/multimaster.launch"/>
   <include file="$(find eurobot_navigation)/launch/navigation_secondary.launch"/>
 
   <group ns="secondary_robot">

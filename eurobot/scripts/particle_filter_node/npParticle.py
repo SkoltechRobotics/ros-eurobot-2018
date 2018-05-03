@@ -121,7 +121,7 @@ class ParticleFilter:
         move_point = delta + noise
         self.particles = cvt_local2global(move_point, self.particles)
         self.particles[self.particles[:, 1] > 2000 - 120, 1] = 2000 - 120
-        self.particles[self.particles[:, 1] < 120, 1] = 120
+        self.particles[self.particles[:, 1] < 0, 1] = 0
         self.particles[self.particles[:, 0] > 3000 - 120, 0] = 3000 - 120
         self.particles[self.particles[:, 0] < 120, 0] = 120
 
