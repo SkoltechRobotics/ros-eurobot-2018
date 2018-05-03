@@ -5,11 +5,12 @@
   <param name="/field/color" value="$(arg color)" />
   <param name="/camera/corner_camera" value="0"/>
   <include file="$(find eurobot)/launch/params.launch"/>
-  <include file="$(find eurobot_navigation)/launch/navigation.launch"/>
+  <!--include file="$(find eurobot_navigation)/launch/navigation.launch"/-->
+  
   <!--include file="$(find eurobot_navigation)/launch/spy.launch"/-->
   <!--include file="$(find eurobot_sim)/launch/visualization.launch"/-->
-  <include file="$(find eurobot_camera)/launch/corner_camera.launch" />
+  <!--include file="$(find eurobot_camera)/launch/corner_camera.launch" /-->
 
-  <node pkg="eurobot_decision_maker" name="bt_server" type="bt_server.py" output="screen"/>
+  <!--node pkg="eurobot_decision_maker" name="bt_server" type="bt_server.py"/-->
   <!--node pkg="eurobot" name="barrier_move_node" type="barrier_move_to_heap.py" respawn="true" output="screen"/-->
 </launch>

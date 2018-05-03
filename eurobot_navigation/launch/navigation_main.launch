@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node name="motion_planner" pkg="eurobot_navigation" type="motion_planner.py" ns="main_robot" respawn="true" output="screen">
+    <rosparam file="$(find eurobot_navigation)/config/motion_planner_main_robot_params.yaml" command="load" />
+  </node>
+
+</launch>

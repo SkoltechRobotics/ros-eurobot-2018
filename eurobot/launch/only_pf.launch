@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="secondary_robot">
+    <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" respawn="true" output="screen"/>
+  </group>
+</launch>
