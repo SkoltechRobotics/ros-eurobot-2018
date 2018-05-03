@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find eurobot_sim)/launch/visualization.launch"/>
+    <include file="$(find eurobot)/launch/params.launch"/>
+    <include file="$(find eurobot)/launch/multimaster.launch"/>
+</launch>
