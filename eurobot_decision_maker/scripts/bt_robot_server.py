@@ -336,8 +336,8 @@ if __name__ == "__main__":
     res_sub = SubscriberHandler("/server/response")
     rospy.Subscriber("/server/wire_status", String, wire_callback)
 
-    b = RobotBrain("main_robot", "/main_robot/")
-    # s = RobotBrain("secondary_robot")
+    b = RobotBrain()
+    #s = RobotBrain("secondary_robot")
     b.set_robot_server_strategy()
     b.start_server()
     r = rospy.Rate(10)
