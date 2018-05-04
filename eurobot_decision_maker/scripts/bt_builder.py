@@ -738,7 +738,8 @@ class BehaviorTreeBuilder:
                 self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
                 self.add_command_action(main_seq_name, 162, 0, -0.01, 0, 0, 0.1, 0)
 
-            self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
+            else:
+                self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords):
         self.add_action_node(parent_name, move_type, self.move_publisher_name, self.move_response, move_type, *coords)
@@ -1360,7 +1361,7 @@ if __name__ == "__main__":
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
 
-    btb.bt.root_node.start()
+    #btb.bt.root_node.start()
     # btb.man_load[0] = 3
     # btb.man_load[1] = 4
     # btb.man_load[2] = 3
