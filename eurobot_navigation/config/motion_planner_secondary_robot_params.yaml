@@ -10,6 +10,8 @@ W_MAX: 2.0
 ACCELERATION: 1.0
 # goal distance for deceleration
 D_DECELERATION: 0.15 #0.25
+# power of deceleration factor
+GAMMA: 0.75
 # params for accurate movements to water towers or cube heaps
 XY_ACCURATE_GOAL_TOLERANCE: 0.005
 YAW_ACCURATE_GOAL_TOLERANCE: 0.05
