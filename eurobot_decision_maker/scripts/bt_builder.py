@@ -487,7 +487,7 @@ class BehaviorTreeBuilder:
         self.man_load[m] += 1
 
     def add_cubes_pick(self, parent_name, heap_num, manipulators, colors, **kvargs):
-        delay = 0
+        delay = 0.5
         if "delay" in kvargs:
             delay = kvargs["delay"]
         new = False
@@ -689,6 +689,7 @@ class BehaviorTreeBuilder:
 
     def add_heap_rotation_no_rf(self, parent_name, heap_num, a):
         self.add_simple_move(parent_name, "move_odometry", *self.get_heap_position(heap_num, a))
+        self.add_sleep_time(parent_name, 0.3)
         self.add_simple_move(parent_name, "move_odometry", *self.get_heap_position(heap_num, a))
 
     def add_new_heap_pick_no_rf(self, parent_name, heap_num, heap_strat, next_heap_num, **kvargs):
@@ -699,6 +700,7 @@ class BehaviorTreeBuilder:
 
         #MOVE TO HEAP
 
+        self.add_command_action(main_seq_name, 224, 0)
         self.add_simple_move(main_seq_name, "face_heap", heap_num)
         self.add_simple_move(main_seq_name, "move_heap", heap_num)
 
@@ -716,9 +718,8 @@ class BehaviorTreeBuilder:
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
             if self.loginfo:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
-            if da != 0:
-                a += da
-                self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
+            a += da
+            self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
             if dx ** 2 + dy ** 2 > 0:
                 if self.loginfo:
                     rospy.loginfo("SHIFTS " + str(self.shifts.index((dx, dy))))
@@ -732,14 +733,14 @@ class BehaviorTreeBuilder:
 
                 if self.loginfo:
                     rospy.loginfo((ndx, ndy))
-                self.add_simple_move(parent_name, "move_odometry", x+dX, y+dY, angle)
+                self.add_simple_move(main_seq_name, "move_odometry", x + dX, y + dY, angle)
+                self.add_simple_move(main_seq_name, "move_odometry", x + dX, y + dY, angle)
 
-            self.add_sleep_time(main_seq_name, 0.5)
             if self.loginfo:
                 rospy.loginfo(a)
             if self.loginfo:
                 rospy.loginfo(mans)
-
+            self.add_sleep_time(main_seq_name, 5)
             self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords):
