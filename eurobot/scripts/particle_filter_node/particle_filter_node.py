@@ -40,7 +40,7 @@ class PFNode(object):
         rospy.sleep(1)
 
         f, robot_odom_point = self.get_odom()
-        while not f:
+        while not f and not rospy.is_shutdown():
             f, robot_odom_point = self.get_odom()
             rospy.sleep(0.2)
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
