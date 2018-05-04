@@ -733,8 +733,9 @@ class BehaviorTreeBuilder:
                             new_mans.append(m)
                             new_colors.append(c)
                     self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
+
                 self.add_command_action(main_seq_name, 162, 0, 0.01, 0, 0, 0.1, 0)
-                self.add_cubes_pick(main_seq_name, heap_num, [2], [0], new=True, doors=False)
+                self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
                 self.add_command_action(main_seq_name, 162, 0, -0.01, 0, 0, 0.1, 0)
 
             self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
