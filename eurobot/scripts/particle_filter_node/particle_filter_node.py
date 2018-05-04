@@ -10,16 +10,15 @@ import time
 
 PF_RATE = 20
 
-PF_PARAMS = {"sense_noise": 2,
+PF_PARAMS = {"particles_num": 1000,
+             "sense_noise": 2,
              "distance_noise": 8,
              "angle_noise": 0.1,
              "min_intens": 3000,
              "max_dist": 3700,
-             "back_side_cost": 10,
              "k_angle": 200,
-             "particles_num": 1000,
-             "beac_dist_thresh": 50,
-             "k_mult": 0}
+             "beac_dist_thresh": 100,
+             "num_is_near_thresh": 0.1}
 
 
 class PFNode(object):

@@ -41,3 +41,10 @@
 `Install Computer Vision libraries` <br/>
 `1. Install pip2` <br/>
 `2. Run sudo pip2 install scikit-image`
+
+`Disable sync time` <br/>
+`1. Run date to watch current datetime` <br/>
+`2. Run timedatectl to see settings` <br/>
+`3. Run sudo update-rc.d -f ntp remove` <br/>
+`4. Run systemctl disable --now systemd-timesyncd.service` <br/>
+`5. Reboot`

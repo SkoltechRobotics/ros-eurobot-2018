@@ -33,5 +33,5 @@ if __name__ == '__main__':
         odom_data_full.append(get_coords())
 #        rospy.loginfo("add line %d" % i)
 
-    np.save("laser_scans5.npy", np.array(lidar_data_full))
-    np.save("odom_coords5.npy", np.array(odom_data_full))
+    np.save("laser_scans6.npy", np.array(lidar_data_full))
+    np.save("odom_coords6.npy", np.array(odom_data_full))
