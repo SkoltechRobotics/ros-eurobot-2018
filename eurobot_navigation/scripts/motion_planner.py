@@ -29,6 +29,7 @@ class MotionPlanner:
         self.W_MAX = rospy.get_param("motion_planner/W_MAX")
         self.ACCELERATION = rospy.get_param("motion_planner/ACCELERATION")
         self.D_DECELERATION = rospy.get_param("motion_planner/D_DECELERATION")
+        self.GAMMA = rospy.get_param("motion_planner/GAMMA")
         # for movements to water towers or cube heaps
         self.XY_ACCURATE_GOAL_TOLERANCE = rospy.get_param("motion_planner/XY_ACCURATE_GOAL_TOLERANCE")
         self.YAW_ACCURATE_GOAL_TOLERANCE = rospy.get_param("motion_planner/YAW_ACCURATE_GOAL_TOLERANCE")
@@ -120,7 +121,7 @@ class MotionPlanner:
             speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
             rospy.loginfo('Acceleration Speed Limit:\t' + str(speed_limit_acs))
 
-            speed_limit_dec = goal_d / (self.D_ACCURATE_DECELERATION if self.mode == "move_heap" else self.D_DECELERATION) * self.V_MAX
+            speed_limit_dec = (goal_d / (self.D_ACCURATE_DECELERATION if self.mode == "move_heap" else self.D_DECELERATION)) ** self.GAMMA * self.V_MAX
             rospy.loginfo('Deceleration Speed Limit:\t' + str(speed_limit_dec))
 
             if self.collision_avoidance:
@@ -175,22 +176,22 @@ class MotionPlanner:
             d_robot_frame = self.rotation_transform(d_map_frame, -self.coords[2])
             rospy.loginfo("Choosing active rangefinders")
             goal_angle = (np.arctan2(d_robot_frame[1], d_robot_frame[0]) % (2 * np.pi))
-            rospy.loginfo("Goal angle in robot frame:\t" + str(goal_angle))
             k = int(round((-np.pi / 2 + goal_angle) / (np.pi / 4))) % 8
+            rospy.loginfo("Goal angle in robot frame:\t" + str(goal_angle) + "\t; k = " + str(k))
             if k == 0:
                 rospy.loginfo("Closest rangefinders: 9, 0")
                 return np.array([8, 9, 0, 1])
             elif k < 4:
-                n = int(round((np.pi / 2 - goal_angle) / (np.pi / 4))) % 8
+                n = k
                 rospy.loginfo("Closest rangefinder: " + str(n))
-                return np.array([n - 1, n, n + 1]) % 8
+                return np.array([n - 1, n, n + 1]) % 10
             elif k == 4:
                 rospy.loginfo("Closest rangefinders: 4, 5")
                 return np.array([3, 4, 5, 6])
             elif k > 4:
-                n = int(round((np.pi / 2 - goal_angle) / (np.pi / 4)) + 1) % 8
+                n = k + 1
                 rospy.loginfo("Closest rangefinder: " + str(n))
-                return np.array([n - 1, n, n + 1]) % 8
+                return np.array([n - 1, n, n + 1]) % 10
 
     @staticmethod
     def distance(coords1, coords2):
@@ -307,7 +308,7 @@ class MotionPlanner:
         elif cmd_type == "face_heap":  # rotation (odom) to face cubes
             n = int(cmd_args[0])
             if len(cmd_args) > 1:
-                w = np.array(cmd_args).astype('float')
+                w = np.array(cmd_args[1]).astype('float')
                 self.face_heap(cmd_id, n, w)
             else:
                 self.face_heap(cmd_id, n)
