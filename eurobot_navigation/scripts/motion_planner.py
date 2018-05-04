@@ -229,7 +229,7 @@ class MotionPlanner:
         self.mode = None
         self.rangefinder_data = np.zeros(self.NUM_RANGEFINDERS)
         self.rangefinder_status = np.zeros(self.NUM_RANGEFINDERS)
-        self.collision_avoidance = False
+        self.collision_avoidance = True
 
     def stop_robot(self):
         self.cmd_stop_robot_id = "stop_" + self.robot_name + str(self.stop_id)
@@ -291,7 +291,11 @@ class MotionPlanner:
         elif cmd_type == "move_heap":
             self.mode = cmd_type
             n = int(cmd_args[0])
-            self.move_heap(cmd_id, n)
+            if len(cmd_args) > 1:
+                collision_avoidance = bool(cmd_args[1])
+                self.move_heap(cmd_id, n, collision_avoidance)
+            else:
+                self.move_heap(cmd_id, n)
 
         elif cmd_type == "move_odometry":  # simple movement by odometry
             inp = np.array(cmd_args).astype('float')
@@ -328,7 +332,7 @@ class MotionPlanner:
         self.rotate_odometry(cmd_id, angle, w)
 
 
-    def move_heap(self, cmd_id, n):
+    def move_heap(self, cmd_id, n, collision_avoidance = True):
         rospy.loginfo("-------NEW HEAP MOVEMENT-------")
         rospy.loginfo("Heap number: " + str(n) + ". Heap coords: " + str(self.heap_coords[n]))
         if not self.update_coords():
@@ -337,7 +341,7 @@ class MotionPlanner:
         goal = np.append(self.heap_coords[n], angle)
         goal[:2] -= self.rotation_transform(np.array([.0, .06]), angle)
         rospy.loginfo("Goal:\t" + str(goal))
-        self.set_goal(goal, cmd_id, mode="move_heap") 
+        self.set_goal(goal, cmd_id, "move_heap", collision_avoidance) 
 
 
     def move_odometry(self, cmd_id, goal_x, goal_y, goal_a, vel=0.3, w=1.5):
