@@ -3,13 +3,16 @@
 
   <!-- PARAMS -->
   <param name="/field/color" value="orange" />
+  <param name="/camera/corner_camera" value="0"/>
   <include file="$(find eurobot)/launch/params.launch"/>
   
   <!-- MULTYMASTER -->
   <include file="$(find eurobot)/launch/multimaster.launch"/>
+
   <include file="$(find eurobot_navigation)/launch/navigation_main.launch"/>
 
   <group ns="main_robot">
+
     <!-- NODES -->
     <node pkg="eurobot" name="stm_node" type="stm_node.py" respawn="true"/>
     <node pkg="urg_node" name="lidar_node" type="urg_node" args="_ip_address:=192.168.0.10" respawn="true" output="screen">
