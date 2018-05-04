@@ -318,6 +318,7 @@ class BehaviorTreeBuilder:
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.8, 1.1, -0.7, 0.35, 1.0)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.25, 1.75, 0)
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 162, -0.3, 0.3, 0, 0.15, 0.15, 0)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
