@@ -17,7 +17,7 @@ SIDE = rospy.get_param("/field/color", "orange")
 IS_WASTEWATER_SHOOT = True
 HEAPS_ORDER = {
     'orange': '012',
-    'green':  '543'
+    'green': '543'
 }
 CUBES_STRATEGY_FILE = "cubes_paths_beta_3.bin"
 
@@ -25,26 +25,26 @@ CUBES_STRATEGY_FILE = "cubes_paths_beta_3.bin"
 if SIDE == "orange":
     # SIMPLE
     MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps", (0, 1)), ("alt_disposal", 0)]
-    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
+    # MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 else:
     # SIMPLE
-    #MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
+    # MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
     MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps", (5, 4)), ("alt_disposal", 0)]
-    #MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
+    # MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 
 # SECOND ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
-    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+    # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
 
     # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower',0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 else:
     # SIMPLE
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
 
     # MEDIUM
-    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
+    # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
@@ -70,20 +70,19 @@ POSSIBLE_PLANS = [
 INV_POSSIBLE_PLANS = [x[::-1] for x in POSSIBLE_PLANS]
 N_STR = 10
 
-
 MAIN_BRAIN = []
 
 
 class RobotBrain(object):
-    def __init__(self, default_name="server", add_str = "", server_strategy=None):
-        self.name = rospy.get_param(add_str+"robot_name", default_name)
-        self.move_pub = rospy.Publisher(add_str+"move_command", String, queue_size=100)
-        self.cmd_pub = rospy.Publisher(add_str+"stm_command", String, queue_size=100)
+    def __init__(self, default_name="server", add_str="", server_strategy=None):
+        self.name = rospy.get_param("robot_name", default_name)
+        self.move_pub = rospy.Publisher(add_str + "move_command", String, queue_size=100)
+        self.cmd_pub = rospy.Publisher(add_str + "stm_command", String, queue_size=100)
         self.map_pub = rospy.Publisher("/map_server/cmd", String, queue_size=10)
-        self.res_sub = SubscriberHandler(add_str+"response")
-        self.pf_cmd_pub = rospy.Publisher(add_str+"pf_cmd", String, queue_size=10)
-        self.points_pub = rospy.Publisher(add_str+"point", String, queue_size=100)
-        self.statuses_pub = rospy.Publisher(add_str+"action_statuses", String, queue_size=100)
+        self.res_sub = SubscriberHandler(add_str + "response")
+        self.pf_cmd_pub = rospy.Publisher(add_str + "pf_cmd", String, queue_size=10)
+        self.points_pub = rospy.Publisher(add_str + "point", String, queue_size=100)
+        self.statuses_pub = rospy.Publisher(add_str + "action_statuses", String, queue_size=100)
 
         self.rospack = rospkg.RosPack()
 
@@ -94,7 +93,7 @@ class RobotBrain(object):
         with open(self.rospack.get_path('eurobot_decision_maker') + "/scripts/" + CUBES_STRATEGY_FILE, "rb") as f:
             self.heap_strats = pickle.load(f)
 
-        self.statuses  = []
+        self.statuses = []
         # default, about robot
         self.strategy = []
         if self.name == "main_robot":
@@ -129,6 +128,7 @@ class RobotBrain(object):
     def refresh_points(self, whose):
         def cb(msg):
             self.points[whose] = int(msg.data)
+
         return cb
 
     def prepare_new_bt(self, new_strategy, new_plan_index, new_heaps_order):
@@ -137,7 +137,7 @@ class RobotBrain(object):
         self.heaps_order = new_heaps_order
         self.cubes_sequence = self.heap_strats[self.plan_index][self.heaps_order]
         self.new_btb = BehaviorTreeBuilder(self.name, self.move_pub, self.cmd_pub, self.map_pub,
-                                  self.res_sub, self.res_sub, move_type='standard')
+                                           self.res_sub, self.res_sub, move_type='standard')
         self.new_btb.add_strategy(self.strategy)
         self.new_btb.add_cubes_sequence_new(self.cubes_sequence)
         self.new_btb.create_tree_from_strategy(wire_start=False)
@@ -147,7 +147,6 @@ class RobotBrain(object):
         heaps_order = msg_splitted[0]
         strategy = json.loads(reduce(lambda a, b: a + ' ' + b, msg_splitted[1:]))
         self.prepare_new_bt(strategy, self.plan_index, heaps_order)
-
 
     def change_plan_callback(self, msg):
         plan_str = msg.data.split()
@@ -191,7 +190,6 @@ class RobotBrain(object):
                 self.new_btb = None
         return "finished"
 
-
     def fail_until_end(self):
         if self.is_finished:
             return "finished"
@@ -206,9 +204,8 @@ class RobotBrain(object):
         if statuses_str != prev_statuses_str:
             self.statuses_pub.publish(statuses_str)
 
-
     def calculate_points(self):
-        bts = self.done_bts + [self.current_bt]#+ brain_secondary.done_bts
+        bts = self.done_bts + [self.current_bt]  # + brain_secondary.done_bts
         is_disposal = False
         is_bee = False
         is_button = False
@@ -269,7 +266,7 @@ class RobotBrain(object):
         self.points[self.name] = points
         self.points_pub.publish(str(points))
         global_points_pub.publish(str(sum([v for k, v in self.points.items()])))
-        #rospy.loginfo("POINTS " + str(points))
+        # rospy.loginfo("POINTS " + str(points))
         return "finished"
 
     def set_robot_server_strategy(self):
@@ -313,9 +310,11 @@ class RobotBrain(object):
     def start_server(self):
         self.bt.root_node.start()
 
+
 def wire_callback(data):
     global wire_value
     wire_value = int(data.data)
+
 
 def wait_wire(value=1):
     global wire_value
@@ -338,7 +337,7 @@ if __name__ == "__main__":
     rospy.Subscriber("/server/wire_status", String, wire_callback)
 
     b = RobotBrain("main_robot", "/main_robot/")
-    #s = RobotBrain("secondary_robot")
+    # s = RobotBrain("secondary_robot")
     b.set_robot_server_strategy()
     b.start_server()
     r = rospy.Rate(10)
