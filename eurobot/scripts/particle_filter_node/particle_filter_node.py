@@ -39,7 +39,10 @@ class PFNode(object):
 
         rospy.sleep(1)
 
-        robot_odom_point = self.get_odom()
+        f, robot_odom_point = self.get_odom()
+        while not f:
+            f, robot_odom_point = self.get_odom()
+            rospy.sleep(0.2)
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point
         x, y, a = lidar_odom_point
@@ -60,28 +63,27 @@ class PFNode(object):
 
     # noinspection PyUnusedLocal
     def localisation(self, event):
-        time1 = time.time()
-        robot_odom_point = self.get_odom()
-        time2 = time.time()
-        lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
-        delta = cvt_global2local(lidar_odom_point, self.prev_lidar_odom_point)
-        self.prev_lidar_odom_point = lidar_odom_point.copy()
+        f, robot_odom_point = self.get_odom()
+        if f:
+            lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
+            delta = cvt_global2local(lidar_odom_point, self.prev_lidar_odom_point)
+            self.prev_lidar_odom_point = lidar_odom_point.copy()
 
-        lidar_pf_point = self.pf.localisation(delta, self.scan)
-        # rospy.loginfo("cost_function " + str(self.pf.min_cost_function))
+            lidar_pf_point = self.pf.localisation(delta, self.scan)
+            # rospy.loginfo("cost_function " + str(self.pf.min_cost_function))
 
-        robot_pf_point = find_src(lidar_pf_point, self.lidar_point)
-        time3 = time.time()
-
-        self.pub_pf(self.get_odom_frame(robot_pf_point, robot_odom_point))
-        time4 = time.time()
-        rospy.loginfo("PF RATE: " + str(1 / (time4 - time1)) + " " + str(1 / (time3 - time2)))
+            robot_pf_point = find_src(lidar_pf_point, self.lidar_point)
+            self.pub_pf(self.get_odom_frame(robot_pf_point, robot_odom_point))
 
     def get_odom(self):
-        t = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
-        q = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
-        yaw = tf_conversions.transformations.euler_from_quaternion(q)[2]
-        return np.array([t.transform.translation.x * 1000, t.transform.translation.y * 1000, yaw])
+        try:
+            t = self.buffer.lookup_transform('%s_odom' % self.robot_name, self.robot_name, rospy.Time(0))
+            q = [t.transform.rotation.x, t.transform.rotation.y, t.transform.rotation.z, t.transform.rotation.w]
+            yaw = tf_conversions.transformations.euler_from_quaternion(q)[2]
+            return True, np.array([t.transform.translation.x * 1000, t.transform.translation.y * 1000, yaw])
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logwarn("Transform for PF with error")
+            return False, np.array([0, 0, 0])
 
     def pub_pf(self, point):
         t = TransformStamped()

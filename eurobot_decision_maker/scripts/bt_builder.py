@@ -344,7 +344,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, -0.2, 0.07, 0, 0.2, 0.07, 0)
             # self.add_command_action(main_seq_name, 162, 0.05, 0.04, 0, 0.57, 0.45, 0)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.8, 0, 0, 1)
-            self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
+            #self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
             self.add_command_action(main_seq_name, 162, 0, -0.25, 0, 0, 0.3, 0)
             self.add_command_action(main_seq_name, 182, 0)  # manipulator
 
@@ -1021,7 +1021,7 @@ class BehaviorTreeBuilder:
         to_sorter = 0 if to == "left" else 1
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
-        self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
+        #self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
 
         self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3, 3)
 
@@ -1124,7 +1124,6 @@ class BehaviorTreeBuilder:
 
         self.add_shooting_motor_action(main_seq_name, to, "off")
         #self.add_command_action(main_seq_name, 224, 1) # collision avoidance
-        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.57, 0)
 
     def time_checker(self, parent_name, time):
         time_node_name = self.construct_string("time_checker", self.get_next_id())
