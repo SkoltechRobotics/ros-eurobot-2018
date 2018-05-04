@@ -35,6 +35,7 @@ class MotionPlanner:
         self.D_ACCURATE_DECELERATION = rospy.get_param("motion_planner/D_ACCURATE_DECELERATION")
         self.NUM_RANGEFINDERS = rospy.get_param("motion_planner/NUM_RANGEFINDERS")
         self.COLLISION_STOP_DISTANCE = rospy.get_param("motion_planner/COLLISION_STOP_DISTANCE")
+        self.COLLISION_STOP_NEIGHBOUR_DISTANCE = rospy.get_param("motion_planner/COLLISION_STOP_NEIGHBOUR_DISTANCE")
 
         if self.robot_name == "main_robot":
             # get initial cube heap coordinates
@@ -125,11 +126,11 @@ class MotionPlanner:
             if self.collision_avoidance:
                 speed_limit_collision = []
                 for i in range(active_rangefinders.shape[0]):
-                    k = 0.5 if i == 0 or i == active_rangefinders.shape[0] else 1.0
-                    if self.rangefinder_data[active_rangefinders[i]] < self.COLLISION_STOP_DISTANCE * k:
+                    stop_d = self.COLLISION_STOP_NEIGHBOUR_DISTANCE if i == 0 or i == active_rangefinders.shape[0] else self.COLLISION_STOP_DISTANCE
+                    if self.rangefinder_data[active_rangefinders[i]] < stop_d:
                         speed_limit_collision.append(0)
                     else:
-                        speed_limit_collision.append((self.rangefinder_data[active_rangefinders[i]] - self.COLLISION_STOP_DISTANCE * k) / (255 - self.COLLISION_STOP_DISTANCE * k) * self.V_MAX)
+                        speed_limit_collision.append((self.rangefinder_data[active_rangefinders[i]] - stop_d) / (255 - stop_d) * self.V_MAX)
                 rospy.loginfo('Collision Avoidance  Speed Limit:\t' + str(speed_limit_collision))
             else:
                 speed_limit_collision = [self.V_MAX]
