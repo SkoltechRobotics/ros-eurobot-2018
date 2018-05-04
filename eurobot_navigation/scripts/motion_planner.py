@@ -6,6 +6,7 @@ from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from threading import Lock
+from std_msgs.msg import Int32MultiArray
 
 
 class MotionPlanner:
@@ -32,6 +33,9 @@ class MotionPlanner:
         self.XY_ACCURATE_GOAL_TOLERANCE = rospy.get_param("motion_planner/XY_ACCURATE_GOAL_TOLERANCE")
         self.YAW_ACCURATE_GOAL_TOLERANCE = rospy.get_param("motion_planner/YAW_ACCURATE_GOAL_TOLERANCE")
         self.D_ACCURATE_DECELERATION = rospy.get_param("motion_planner/D_ACCURATE_DECELERATION")
+        self.NUM_RANGEFINDERS = rospy.get_param("motion_planner/NUM_RANGEFINDERS")
+        self.COLLISION_STOP_DISTANCE = rospy.get_param("motion_planner/COLLISION_STOP_DISTANCE")
+        self.COLLISION_STOP_NEIGHBOUR_DISTANCE = rospy.get_param("motion_planner/COLLISION_STOP_NEIGHBOUR_DISTANCE")
 
         if self.robot_name == "main_robot":
             # get initial cube heap coordinates
@@ -52,6 +56,9 @@ class MotionPlanner:
         self.t_prev = None
         self.goal = None
         self.mode = None
+        self.rangefinder_data = np.zeros(self.NUM_RANGEFINDERS)
+        self.rangefinder_status = np.zeros(self.NUM_RANGEFINDERS)
+        self.collision_avoidance = True
 
         self.cmd_stop_robot_id = None
         self.stop_id = 0
@@ -61,6 +68,7 @@ class MotionPlanner:
         self.pub_cmd = rospy.Publisher("stm_command", String, queue_size=1)
         rospy.Subscriber("move_command", String, self.cmd_callback, queue_size=1)
         rospy.Subscriber("response", String, self.response_callback, queue_size=1)
+        rospy.Subscriber("barrier_rangefinders_data", Int32MultiArray, self.rangefinder_data_callback, queue_size=1)
 
         # start the main timer that will follow given goal points
         rospy.Timer(rospy.Duration(1.0 / self.RATE), self.plan)
@@ -93,41 +101,96 @@ class MotionPlanner:
             self.mutex.release()
             return
 
+        if self.collision_avoidance:
+            active_rangefinders = self.choose_active_rangefinders()
+            rospy.loginfo("Active rangefinders: " + str(active_rangefinders))
+        
         # CHOOSE VELOCITY COMMAND.
 
-        t = rospy.get_time()
-        dt = t - self.t_prev
-        self.t_prev = t
+        if self.collision_avoidance and np.any(self.rangefinder_status[active_rangefinders]):
+            # collision avoidance
+            rospy.loginfo('EMMERGENCY STOP: collision avoidance. Active rangefinder error.')
+            vel_robot_frame = np.zeros(3)
+        else:
+            t = rospy.get_time()
+            dt = t - self.t_prev
+            self.t_prev = t
 
-        # set speed limit
-        speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
-        rospy.loginfo('Acceleration Speed Limit:\t' + str(speed_limit_acs))
+            # set speed limit
+            speed_limit_acs = min(self.V_MAX, np.linalg.norm(self.vel[:2]) + self.ACCELERATION * dt)
+            rospy.loginfo('Acceleration Speed Limit:\t' + str(speed_limit_acs))
 
-        speed_limit_dec = goal_d / (self.D_ACCURATE_DECELERATION if self.mode == "move_heap" else self.D_DECELERATION) * self.V_MAX
-        rospy.loginfo('Deceleration Speed Limit:\t' + str(speed_limit_dec))
+            speed_limit_dec = goal_d / (self.D_ACCURATE_DECELERATION if self.mode == "move_heap" else self.D_DECELERATION) * self.V_MAX
+            rospy.loginfo('Deceleration Speed Limit:\t' + str(speed_limit_dec))
 
-        speed_limit = min(speed_limit_dec, speed_limit_acs)
-        rospy.loginfo('Final Speed Limit:\t' + str(speed_limit))
+            if self.collision_avoidance:
+                speed_limit_collision = []
+                for i in range(active_rangefinders.shape[0]):
+                    stop_d = self.COLLISION_STOP_NEIGHBOUR_DISTANCE if i == 0 or i == active_rangefinders.shape[0] else self.COLLISION_STOP_DISTANCE
+                    if self.rangefinder_data[active_rangefinders[i]] < stop_d:
+                        speed_limit_collision.append(0)
+                    else:
+                        speed_limit_collision.append((self.rangefinder_data[active_rangefinders[i]] - stop_d) / (255 - stop_d) * self.V_MAX)
+                rospy.loginfo('Collision Avoidance  Speed Limit:\t' + str(speed_limit_collision))
+            else:
+                speed_limit_collision = [self.V_MAX]
+           
+            speed_limit = min(speed_limit_dec, speed_limit_acs, *speed_limit_collision)
+            rospy.loginfo('Final Speed Limit:\t' + str(speed_limit))
 
-        # maximum speed in goal distance proportion
-        vel = self.V_MAX * goal_distance / goal_d
-        if abs(vel[2]) > self.W_MAX:
-            vel *= self.W_MAX / abs(vel[2])
-        rospy.loginfo('Vel before speed limit\t:' + str(vel))
+            # maximum speed in goal distance proportion
+            vel = self.V_MAX * goal_distance / goal_d
+            if abs(vel[2]) > self.W_MAX:
+                vel *= self.W_MAX / abs(vel[2])
+            rospy.loginfo('Vel before speed limit\t:' + str(vel))
 
-        # apply speed limit
-        v_abs = np.linalg.norm(vel[:2])
-        rospy.loginfo('Vel abs before speed limit\t:' + str(vel))
-        if v_abs > speed_limit:
-            vel *= speed_limit / v_abs
-        rospy.loginfo('Vel after speed limit\t:' + str(vel))
+            # apply speed limit
+            v_abs = np.linalg.norm(vel[:2])
+            rospy.loginfo('Vel abs before speed limit\t:' + str(vel))
+            if v_abs > speed_limit:
+                vel *= speed_limit / v_abs
+            rospy.loginfo('Vel after speed limit\t:' + str(vel))
+            
+            # vel to robot frame
+            vel_robot_frame = self.rotation_transform(vel, -self.coords[2])
 
         # send cmd: vel in robot frame
-        vel_robot_frame = self.rotation_transform(vel, -self.coords[2])
         self.set_speed(vel_robot_frame)
         rospy.loginfo('Vel cmd\t:' + str(vel_robot_frame))
 
         self.mutex.release()
+
+    def choose_active_rangefinders(self):
+        if self.robot_name == "secondary_robot":
+            d_map_frame = self.goal[:2] - self.coords[:2]
+            d_robot_frame = self.rotation_transform(d_map_frame, -self.coords[2])
+            rospy.loginfo("Choosing active rangefinders")
+            goal_angle = (np.arctan2(d_robot_frame[1], d_robot_frame[0]) % (2 * np.pi))
+            rospy.loginfo("Goal angle in robot frame:\t" + str(goal_angle))
+            n = int(round((np.pi / 2 - goal_angle) / (np.pi / 4))) % 8
+            rospy.loginfo("Closest rangefinder: " + str(n))
+            return np.array([n - 1, n, n + 1]) % 8
+        else:
+            d_map_frame = self.goal[:2] - self.coords[:2]
+            d_robot_frame = self.rotation_transform(d_map_frame, -self.coords[2])
+            rospy.loginfo("Choosing active rangefinders")
+            goal_angle = (np.arctan2(d_robot_frame[1], d_robot_frame[0]) % (2 * np.pi))
+            rospy.loginfo("Goal angle in robot frame:\t" + str(goal_angle))
+            k = int(round((-np.pi / 2 + goal_angle) / (np.pi / 4))) % 8
+            if k == 0:
+                rospy.loginfo("Closest rangefinders: 9, 0")
+                return np.array([8, 9, 0, 1])
+            elif k < 4:
+                n = int(round((np.pi / 2 - goal_angle) / (np.pi / 4))) % 8
+                rospy.loginfo("Closest rangefinder: " + str(n))
+                return np.array([n - 1, n, n + 1]) % 8
+            elif k == 4:
+                rospy.loginfo("Closest rangefinders: 4, 5")
+                return np.array([3, 4, 5, 6])
+            elif k > 4:
+                n = int(round((np.pi / 2 - goal_angle) / (np.pi / 4)) + 1) % 8
+                rospy.loginfo("Closest rangefinder: " + str(n))
+                return np.array([n - 1, n, n + 1]) % 8
 
     @staticmethod
     def distance(coords1, coords2):
@@ -159,12 +222,13 @@ class MotionPlanner:
         #elif self.mode == "move_heap":
         #    self.translate_odometry(self.cmd_id, *self.goal)
         
-        #self.rotate_odometry(self.goal[2])
-        #self.translate_odometry(self.goal)
         self.cmd_id = None
         self.t_prev = None
         self.goal = None
         self.mode = None
+        self.rangefinder_data = np.zeros(self.NUM_RANGEFINDERS)
+        self.rangefinder_status = np.zeros(self.NUM_RANGEFINDERS)
+        self.collision_avoidance = False
 
     def stop_robot(self):
         self.cmd_stop_robot_id = "stop_" + self.robot_name + str(self.stop_id)
@@ -183,13 +247,15 @@ class MotionPlanner:
         rospy.loginfo("Have been waiting for response for .5 sec. Stopped waiting.")
         self.cmd_stop_robot_id = None
 
-    def set_goal(self, goal, cmd_id, mode='move'):
+    def set_goal(self, goal, cmd_id, mode='move', collision_avoidance = True):
         rospy.loginfo("Setting a new goal:\t" + str(goal))
         rospy.loginfo("Mode:\t" + str(mode))
         self.cmd_id = cmd_id
+        self.mode = mode
+        self.collision_avoidance = collision_avoidance
+        rospy.loginfo("Collision Avoidance Mode: " + str(collision_avoidance))
         self.t_prev = rospy.get_time()
         self.goal = goal
-        self.mode = mode
 
     def set_speed(self, vel):
         vx, vy, wz = vel
@@ -202,7 +268,7 @@ class MotionPlanner:
 
     def cmd_callback(self, data):
         self.mutex.acquire()
-        rospy.loginfo("----------------------------------")
+        rospy.loginfo("========================================================================================================")
         rospy.loginfo("NEW CMD:\t" + str(data.data))
 
         # parse name,type
@@ -211,16 +277,15 @@ class MotionPlanner:
         cmd_type = data_splitted[1]
         cmd_args = data_splitted[2:]
 
-        if cmd_type == "move":
-            goal = np.array(cmd_args).astype('float') #.reshape((len(cmd_args) / 3,3))
+        if cmd_type == "move" or cmd_type == "move_fast":
+            args = np.array(cmd_args).astype('float')
+            goal = args[:3]
             goal[2] %= (2 * np.pi)
-            self.set_goal(goal, cmd_id, cmd_type)
-
-        if cmd_type == "move_fast":
-            self.mode = cmd_type
-            goal = np.array(cmd_args).astype('float')
-            goal[2] %= (2 * np.pi)
-            self.set_goal(goal, cmd_id, cmd_type)
+            if len(cmd_args) > 3:
+                collision_avoidance = bool(cmd_args[3])
+                self.set_goal(goal, cmd_id, cmd_type, collision_avoidance)
+            else:
+                self.set_goal(goal, cmd_id, cmd_type)
 
         elif cmd_type == "move_heap":
             self.mode = cmd_type
@@ -353,6 +418,11 @@ class MotionPlanner:
         if data_splitted[0] == self.cmd_stop_robot_id and data_splitted[1] == "finished":
             self.robot_stopped = True
             rospy.loginfo(data.data)
+
+    def rangefinder_data_callback(self, data):
+        self.rangefinder_data = np.array(data.data[:self.NUM_RANGEFINDERS])
+        self.rangefinder_status = np.array(data.data[-self.NUM_RANGEFINDERS:])
+
 
 if __name__ == "__main__":
     planner = MotionPlanner()
