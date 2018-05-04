@@ -44,10 +44,12 @@ class TreeNode:
     def reset(self):
         self.status = "not started"
 
+
     def start(self):
         if self.name != "wait_wire_1" and self.name != "init_main_robot_from_plan":
             rospy.loginfo(self.name + ' started!')
         self.time_start = rospy.get_time()
+        self.time_finish = 0
 
     def finish(self):
         self.time_finish = rospy.get_time()
@@ -233,8 +235,7 @@ class ActionFunctionNode(TreeNode):
         if self.status == "not started":
             self.start()
         if self.function:
-            status = self.function()
-            self.status = ["finished", "active", "error"][status]
+            self.status = self.function()
             if self.status in ["finished", "error"]:
                 self.finish()
 
@@ -249,12 +250,14 @@ class ParallelNode(ControlMultiChildrenNode):
 
         children_status = [child.tick() for child in self.children_list]
 
-        if not "active" in children_status and not "running" in children_status:
-            N_failed = sum([1 if ch_status == "error" else 0 for ch_status in children_status])
+        if "active" not in children_status and "running" not in children_status or \
+                "error" in children_status or "failed" in children_status:
+            N_failed = sum([1 if ch_status in ["error", "failed"] else 0 for ch_status in children_status])
             if N_failed <= self.maximum_failed:
                 self.status = "finished"
             else:
-                self.status = "error"
+                self.status = "failed"
+            self.finish()
 
         return self.status
 

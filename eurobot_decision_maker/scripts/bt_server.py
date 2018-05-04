@@ -13,6 +13,10 @@ print(os.getcwd())
 # MAIN STRATEGY FOR EUROBOT MOSCOW
 SIDE = rospy.get_param("/field/color")
 IS_WASTEWATER_SHOOT = True
+CUBES_ORDER = {
+    'orange': '012',
+    'green':  '543'
+}
 # MAIN ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
@@ -111,7 +115,7 @@ class MainRobotBrain(object):
         #                           "/main_robot/response", "/main_robot/response", move_type='standard')
         # btb.add_strategy(MAIN_ROBOT_STRATEGY)
         # btb.create_tree_from_strategy(wire_start=False)
-        return 0
+        return "finished"
 
     def start_strategy(self):
         for i in range(3):
@@ -120,25 +124,25 @@ class MainRobotBrain(object):
         # self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
-        return 0
+        return "finished"
 
     def emergency_strategy(self):
         if not self.is_active:
-            return 0
+            return "finished"
         else:
             if self.current_bt.root_node.status == "failed" and not self.is_emerge:
                 self.done_bts.append(self.current_bt)
                 self.current_bt = self.emerge_bt
                 self.current_bt.root_node.start()
                 self.is_emerge = True
-        return 1
+        return "active"
 
     def stop_strategy(self):
         self.is_active = False
         self.move_pub.publish("stop_main_cmd stop")
         self.current_bt.root_node.finish()
         self.done_bts.append(self.current_bt)
-        return 0
+        return "finished"
 
 
 class SecondaryRobotBrain(object):
@@ -167,7 +171,7 @@ class SecondaryRobotBrain(object):
         self.is_emerge = False
 
     def init_strategy(self):
-        return 0
+        return "finished"
 
     def start_strategy(self):
         for i in range(3):
@@ -176,25 +180,25 @@ class SecondaryRobotBrain(object):
         # self.pf_cmd_pub.publish("reset")
         self.is_active = True
         self.current_bt.root_node.start()
-        return 0
+        return "finished"
 
     def emergency_strategy(self):
         if not self.is_active:
-            return 0
+            return "finished"
         else:
             if self.current_bt.root_node.status in ["failed", "error"] and not self.is_emerge:
                 self.done_bts.append(self.current_bt)
                 self.current_bt = self.emerge_bt
                 self.current_bt.root_node.start()
                 self.is_emerge = True
-        return 1
+        return "active"
 
     def stop_strategy(self):
         self.is_active = False
         self.move_pub.publish("stop_secondary_cmd stop")
         self.current_bt.root_node.finish()
         self.done_bts.append(self.current_bt)
-        return 0
+        return "finished"
 
 
 def calculate_points():
@@ -260,7 +264,7 @@ def calculate_points():
         is_move_cleanwater_tower * 10
     points_pub.publish(str(points))
     rospy.loginfo("POINTS " + str(points))
-    return 0
+    return "finished"
 
 
 def wire_callback(data):
@@ -276,9 +280,9 @@ def plan_callback(data):
 def wait_wire(value):
     global wire_value
     if wire_value == value:
-        return 0
+        return "finished"
     else:
-        return 1
+        return "failed"
 
 
 def init_main_robot_from_plan():
@@ -317,7 +321,7 @@ if __name__ == "__main__":
     main_cycle_if.set_child(main_cycle)
     bt.nodes[main_cycle.name] = main_cycle
     bt.add_node(ActionFunctionNode("init_main_robot_from_plan", init_main_robot_from_plan), "main_cycle")
-    bt.add_node(ActionFunctionNode("wait_wire_1", lambda: 0 if not wait_wire(1) else 2), "main_cycle")
+    bt.add_node(ActionFunctionNode("wait_wire_1", lambda: "finished" if not wait_wire(1) else "error"), "main_cycle")
     bt.add_node(TimeoutNode("half_sec_wait", 0.5), "main_cycle")
 
     # The main sequence after start
