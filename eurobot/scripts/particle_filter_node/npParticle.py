@@ -52,9 +52,9 @@ LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 
 
 class ParticleFilter:
-    def __init__(self, particles_num=500, sense_noise=50, distance_noise=5, angle_noise=0.02, back_side_cost=10,
+    def __init__(self, particles_num=500, sense_noise=50, distance_noise=5, angle_noise=0.02,
                  start_x=293, start_y=425, start_angle=3 * np.pi / 2, color='orange', min_intens=3500.0,
-                 max_dist=3700.0, beac_dist_thresh=200, k_angle=2, k_mult=0.2):
+                 max_dist=3700.0, beac_dist_thresh=200, k_angle=2, num_is_near_thresh=0.1):
 
         self.start_coords = np.array([start_x, start_y, start_angle])
         self.color = color
@@ -70,10 +70,9 @@ class ParticleFilter:
         self.min_intens = min_intens
         self.max_dist = max_dist
         self.last = (start_x, start_y, start_angle)
-        self.back_side_cost = back_side_cost
         self.beac_dist_thresh = beac_dist_thresh
         self.k_angle = k_angle
-        self.k_mult = k_mult
+        self.num_is_near_thresh = num_is_near_thresh
 
         # Create Particles
         x = np.random.normal(start_x, distance_noise, particles_num)
@@ -114,9 +113,9 @@ class ParticleFilter:
         return particles
 
     def move_particles(self, delta):  # delta = [dx,dy,d_rot]
-        x_noise = np.random.normal(0, self.distance_noise + np.abs(delta[0]) * self.k_mult, self.particles_num)
-        y_noise = np.random.normal(0, self.distance_noise + np.abs(delta[1]) * self.k_mult, self.particles_num)
-        angle_noise = np.random.normal(0, self.angle_noise + np.abs(delta[2]) * self.k_mult, self.particles_num)
+        x_noise = np.random.normal(0, self.distance_noise, self.particles_num)
+        y_noise = np.random.normal(0, self.distance_noise, self.particles_num)
+        angle_noise = np.random.normal(0, self.angle_noise, self.particles_num)
         noise = np.array([x_noise, y_noise, angle_noise]).T
         move_point = delta + noise
         self.particles = cvt_local2global(move_point, self.particles)
@@ -179,7 +178,7 @@ class ParticleFilter:
         # too far real beacons go away: non valid
         is_near = dist_from_closest_beacon_to_landmark < self.beac_dist_thresh
         is_near_sum = np.sum(is_near, axis=0)
-        is_near_or = (is_near_sum != 0)
+        is_near_or = (is_near_sum > is_near.shape[0] * self.num_is_near_thresh)
         num_good_landmarks = np.sum(is_near_or)
         sum_errors = np.sum(errors * is_near_or[np.newaxis, :], axis=1)
         if num_good_landmarks:
