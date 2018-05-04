@@ -722,7 +722,20 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(a)
             if self.loginfo:
                 rospy.loginfo(mans)
-            self.add_sleep_time(main_seq_name, 5)
+            # self.add_sleep_time(main_seq_name, 5)
+            if 1 in mans:
+                if len(mans) != 1:
+                    new_mans = []
+                    new_colors = []
+                    for m,c in zip(mans, colors):
+                        if m != 1:
+                            new_mans.append(m)
+                            new_colors.append(c)
+                    self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
+                self.add_command_action(main_seq_name, 162, 0, 0.01, 0, 0, 0.1, 0)
+                self.add_cubes_pick(main_seq_name, heap_num, [2], [0], new=True, doors=False)
+                self.add_command_action(main_seq_name, 162, 0, -0.01, 0, 0, 0.1, 0)
+
             self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords):
