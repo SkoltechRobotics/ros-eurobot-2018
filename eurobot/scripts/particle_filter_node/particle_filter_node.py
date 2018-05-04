@@ -16,8 +16,8 @@ PF_PARAMS = {"particles_num": 1000,
              "angle_noise": 0.1,
              "min_intens": 3000,
              "max_dist": 3700,
-             "k_angle": 200,
-             "beac_dist_thresh": 100,
+             "k_angle": 120,
+             "beac_dist_thresh": 120,
              "num_is_near_thresh": 0.1}
 
 

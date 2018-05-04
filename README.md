@@ -47,4 +47,5 @@
 `2. Run timedatectl to see settings` <br/>
 `3. Run sudo update-rc.d -f ntp remove` <br/>
 `4. Run systemctl disable --now systemd-timesyncd.service` <br/>
-`5. Reboot`
+`5. Reboot` <br/>
+`6. To start ntp Run sudo service ntp start`
