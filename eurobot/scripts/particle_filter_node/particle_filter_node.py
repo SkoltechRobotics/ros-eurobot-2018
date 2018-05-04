@@ -6,7 +6,6 @@ import numpy as np
 from npParticle import ParticleFilter, cvt_global2local, cvt_local2global, find_src
 import tf2_ros
 import tf_conversions
-import time
 
 PF_RATE = 20
 
@@ -18,7 +17,8 @@ PF_PARAMS = {"particles_num": 1000,
              "max_dist": 3700,
              "k_angle": 120,
              "beac_dist_thresh": 120,
-             "num_is_near_thresh": 0.1}
+             "num_is_near_thresh": 0.1,
+             "dist_offset": 15}
 
 
 class PFNode(object):
