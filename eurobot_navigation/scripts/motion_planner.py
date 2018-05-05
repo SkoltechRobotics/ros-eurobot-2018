@@ -106,6 +106,7 @@ class MotionPlanner:
 
         active_rangefinders, stop_ranges = self.choose_active_rangefinders()
         rospy.loginfo("Active rangefinders: " + str(active_rangefinders) + "\t with ranges: " + str(stop_ranges))
+        rospy.loginfo("Active rangefinders data: " + str(self.rangefinder_data[active_rangefinders]) + ". Status: " + str(self.rangefinder_status[active_rangefinders]))
         
         # CHOOSE VELOCITY COMMAND.
 
@@ -131,7 +132,7 @@ class MotionPlanner:
                     if self.rangefinder_data[active_rangefinders[i]] < stop_ranges[i]:
                         speed_limit_collision.append(0)
                     else:
-                        speed_limit_collision.append(((self.rangefinder_data[active_rangefinders[i]] - stop_ranges[i]) / (255 - stop_ranges[i])) ** self.COLLISION_GAMMA * self.V_MAX)
+                        speed_limit_collision.append(((self.rangefinder_data[active_rangefinders[i]] - stop_ranges[i]) / (255.0 - stop_ranges[i])) ** self.COLLISION_GAMMA * self.V_MAX)
                 rospy.loginfo('Collision Avoidance  Speed Limit:\t' + str(speed_limit_collision))
             else:
                 speed_limit_collision = [self.V_MAX]
