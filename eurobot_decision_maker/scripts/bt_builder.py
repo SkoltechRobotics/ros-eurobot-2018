@@ -398,6 +398,29 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.150, 1.880, 0, 0, 0, 1)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.150, 1.700, 0, 0, 1, 1)
 
+    def add_cubes_secondary(self, parent_name):
+        main_seq_name = self.construct_string("cubes_secondary", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
+
+        if self.side == "orange":
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", np.pi - 0.53, 2)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1, 1.2, np.pi -0.53)
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
+        else:
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", np.pi + 0.53, 2)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2, 1.2, np.pi + 0.53)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.300, 1.500, np.pi + 0.53)
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", np.pi / 2, 2)
+
+            self.add_command_action(main_seq_name, 194, 2) # manipulators
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast",
+                                 1.000, 1500, np.pi / 2)
+            self.add_command_action(main_seq_name, 194, 1) # manipulators
+
+
+    def add_wastewater_tower_after_cubes(self, parent_name):
+        main_seq_name = self.construct_string("wastewater_after_cubes", self.get_next_id())
+        self.add_sequence_node(parent_name, main_seq_name)
 
     def add_bee_main(self, parent_name):
         main_seq_name = self.construct_string("bee", self.get_next_id())
@@ -1257,6 +1280,10 @@ class BehaviorTreeBuilder:
                 self.add_switch_secondary(self.root_seq_name)
             elif name in ['bee_secondary']:
                 self.add_bee_secondary(self.root_seq_name)
+            elif name == "cubes_secondary":
+                self.add_cubes_secondary(self.root_seq_name)
+            elif name == "wastewater_tower_after_cubes":
+                self.add_wastewater_tower_after_cubes(self.root_seq_name)
             elif name == "start_switch_main":
                 self.add_start_switch_main_new(self.root_seq_name)
             elif name in ['switch_main']:
