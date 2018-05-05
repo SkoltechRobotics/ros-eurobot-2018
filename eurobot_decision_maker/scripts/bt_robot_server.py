@@ -273,6 +273,7 @@ class RobotBrain(object):
         self.bt = BehaviorTree("server_" + self.name)
         general = SequenceNode("general")
         self.bt.add_node(general, self.bt.root_node.name)
+        self.bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", None, True), "general")
         main_cycle_if = TryUntilSuccessNode("main_cycle_if")
         self.bt.add_node(main_cycle_if, "general")
 
