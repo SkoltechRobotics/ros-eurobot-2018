@@ -85,6 +85,8 @@ class MotionPlanner:
         rospy.loginfo("-------NEW MOTION PLANNING ITERATION-------")
 
         if not self.update_coords():
+            self.set_speed(np.zeros(3))
+            rospy.loginfo('Stopping because of tf2 lookup failure.')
             self.mutex.release()
             return
 
@@ -254,7 +256,6 @@ class MotionPlanner:
             if self.robot_stopped:
                 self.cmd_stop_robot_id = None
                 rospy.loginfo("Robot stopped.")
-                rospy.sleep(0.5)
                 return
             rospy.sleep(1.0 / 40)
         rospy.loginfo("Have been waiting for response for .5 sec. Stopped waiting.")
@@ -311,6 +312,7 @@ class MotionPlanner:
 
         elif cmd_type == "move_odometry":  # simple movement by odometry
             inp = np.array(cmd_args).astype('float')
+            inp[2] %= 2 * np.pi
             self.move_odometry(cmd_id, *inp)
         
         elif cmd_type == "translate_odometry":  # simple liner movement by odometry
@@ -319,6 +321,7 @@ class MotionPlanner:
 
         elif cmd_type == "rotate_odometry":  # simple rotation by odometry
             inp = np.array(cmd_args).astype('float')
+            inp[0] %= 2 * np.pi
             self.rotate_odometry(cmd_id, *inp)
 
         elif cmd_type == "face_heap":  # rotation (odom) to face cubes
@@ -338,8 +341,8 @@ class MotionPlanner:
     def face_heap(self, cmd_id, n, w=1.0):
         rospy.loginfo("-------NEW ROTATION MOVEMENT TO FACE CUBES-------")
         rospy.loginfo("Heap number: " + str(n) + ". Heap coords: " + str(self.heap_coords[n]))
-        if not self.update_coords():
-            return
+        while not self.update_coords():
+            rospy.sleep(0.05)
         angle = (np.arctan2(self.heap_coords[n][1] - self.coords[1], self.heap_coords[n][0] - self.coords[0]) - np.pi / 2) % (2 * np.pi)
         rospy.loginfo("Goal angle: " + str(angle))
         self.rotate_odometry(cmd_id, angle, w)
@@ -348,8 +351,8 @@ class MotionPlanner:
     def move_heap(self, cmd_id, n, active_rangefinder_zones = np.ones(3, dtype="int")):
         rospy.loginfo("-------NEW HEAP MOVEMENT-------")
         rospy.loginfo("Heap number: " + str(n) + ". Heap coords: " + str(self.heap_coords[n]))
-        if not self.update_coords():
-            return
+        while not self.update_coords():
+            rospy.sleep(0.05)
         angle = (np.arctan2(self.heap_coords[n][1] - self.coords[1], self.heap_coords[n][0] - self.coords[0]) - np.pi / 2) % (2 * np.pi)
         goal = np.append(self.heap_coords[n], angle)
         goal[:2] -= self.rotation_transform(np.array([.0, .06]), angle)
@@ -361,8 +364,8 @@ class MotionPlanner:
         goal = np.array([goal_x, goal_y, goal_a])
         rospy.loginfo("-------NEW ODOMETRY MOVEMENT-------")
         rospy.loginfo("Goal:\t" + str(goal))
-        if not self.update_coords():
-            return
+        while not self.update_coords():
+            rospy.sleep(0.05)
 
         d_map_frame = self.distance(self.coords, goal)
         rospy.loginfo("Distance in map frame:\t" + str(d_map_frame))
@@ -393,8 +396,8 @@ class MotionPlanner:
         goal = np.array([goal_x, goal_y])
         rospy.loginfo("-------NEW LINEAR ODOMETRY MOVEMENT-------")
         rospy.loginfo("Goal:\t" + str(goal))
-        if not self.update_coords():
-            return
+        while not self.update_coords():
+            rospy.sleep(0.05)
 
         d_map_frame = goal[:2] - self.coords[:2]
         rospy.loginfo("Distance in map frame:\t" + str(d_map_frame))
@@ -408,8 +411,8 @@ class MotionPlanner:
     def rotate_odometry(self, cmd_id, goal_angle, w=1.0):
         rospy.loginfo("-------NEW ROTATIONAL ODOMETRY MOVEMENT-------")
         rospy.loginfo("Goal angle:\t" + str(goal_angle))
-        if not self.update_coords():
-            return
+        while not self.update_coords():
+            rospy.sleep(0.05)
 
         delta_angle = goal_angle - self.coords[2]
         rospy.loginfo("Delta angle:\t" + str(delta_angle))
