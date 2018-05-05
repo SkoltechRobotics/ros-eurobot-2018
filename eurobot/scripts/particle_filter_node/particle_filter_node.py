@@ -16,9 +16,10 @@ PF_PARAMS = {"particles_num": 1000,
              "min_intens": 3000,
              "max_dist": 3700,
              "k_angle": 120,
-             "beac_dist_thresh": 120,
+             "beac_dist_thresh": 150,
              "num_is_near_thresh": 0.1,
-             "dist_offset": 0}
+             "distance_noise_1_beacon": 1,
+             "angle_noise_1_beacon": 0.05}
 
 
 class PFNode(object):
