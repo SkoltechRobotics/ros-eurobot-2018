@@ -35,16 +35,16 @@ else:
 # SECOND ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
-    # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 
     # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0), ('cubes_secondary, 0')]
 else:
     # SIMPLE
-    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 
     # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0), ('cubes_secondary, 0')]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
