@@ -381,8 +381,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.250, 1.880, 0, 0, 1, 1)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.400, 1.880, 0, 0, 1, 1)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.150, 1.880, 0, 1, 0, 0)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.150, 1.700, 0, 1, 1, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.160, 1.880, 0, 1, 0, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.160, 1.700, 0, 1, 1, 0)
         else:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.550, 0.840, 1.57)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.550, 1.450, 1.57)
@@ -395,8 +395,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.250, 1.880, 0, 1, 1, 0)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.400, 1.880, 0, 1, 1, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.150, 1.880, 0, 0, 0, 1)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.150, 1.700, 0, 0, 1, 1)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.160, 1.880, 0, 0, 0, 1)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 3 - 0.160, 1.700, 0, 0, 1, 1)
 
     def add_cubes_secondary(self, parent_name):
         main_seq_name = self.construct_string("cubes_secondary", self.get_next_id())
@@ -409,14 +409,11 @@ class BehaviorTreeBuilder:
         else:
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", np.pi + 0.53, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2, 1.2, np.pi + 0.53)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.300, 1.500, np.pi + 0.53)
-            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", np.pi / 2, 2)
-
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0, 2)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.2, 0)
             self.add_command_action(main_seq_name, 194, 2) # manipulators
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast",
-                                 1.000, 1500, np.pi / 2)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.35, 0)
             self.add_command_action(main_seq_name, 194, 1) # manipulators
-
 
     def add_wastewater_tower_after_cubes(self, parent_name):
         main_seq_name = self.construct_string("wastewater_after_cubes", self.get_next_id())
@@ -437,7 +434,7 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 182, 0) # manipulator
 
-        else: # TODO: change coords
+        else:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2.75, 1.63, 4.71)
             self.add_command_action(main_seq_name, 224, 0) # collision avoidance
             self.add_command_action(main_seq_name, 182, 1) # manipulator
