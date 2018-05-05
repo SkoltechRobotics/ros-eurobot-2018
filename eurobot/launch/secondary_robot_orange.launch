@@ -21,4 +21,6 @@
     <node pkg="eurobot_decision_maker" name="bt_robot_server" type="bt_robot_server.py" respawn="true"/>
   </group>
 
+  <node pkg="rosbag" type="record" name="rosbag_record_secondary_robot" args="record -o $(find eurobot)/bag/secondary_robot /tf /secondary_robot/scan" />
+
 </launch>

@@ -374,10 +374,10 @@ class BehaviorTreeBuilder:
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.550, 0.840, 4.71)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.550, 1.450, 4.71)
-            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0, 1.5)
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.320, 1.450, 0)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.320, 1.680, 0)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_odometry", 0.100, 1.900, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_odometry", 0.090, 1.910, 0)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.250, 1.880, 0, 0, 1, 1)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.400, 1.880, 0, 0, 1, 1)
@@ -1089,35 +1089,31 @@ class BehaviorTreeBuilder:
         to_sorter = 0 if to == "left" else 1
         main_seq_name = self.construct_string("wastewater_tower", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
-        #self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
-
-        self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3, 3)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1, 1.2, 3.14)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2, 1.2, 3.14)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move", 2.6, 1.7, 3.14)
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 2 * np.pi - 0.53, 2)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1, 1.2, -0.53)
+            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.2, 3.14)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.8, 3.14, 0, 1, 1)
         else:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 2, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 0.4, 1.7, 3.14)
 
-        self.add_command_action(main_seq_name, 224, 0)  # collision avoidance
         self.add_shooting_motor_action(main_seq_name, to, "slow")
         self.add_sleep_time(main_seq_name, .5)
 
         if self.side == "orange":
-            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.34, 1.83, 3.14, 0.1, 0.2)
-            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.39, 1.85, 3.14, 0.1, 0.2)
-            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.39, 1.85, 3.14, 0.05, 0.2)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.1, .2)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
         else:
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.593, 1.85, 3.14, 0.1, 0.2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.593, 1.85, 3.14, 0.05, 0.2)
+
         self.add_sleep_time(main_seq_name, 3)
         self.add_shooting_motor_action(main_seq_name, to, "off")
-
-        #self.add_command_action(main_seq_name, 224, 1)  # collision avoidance
-        self.add_command_action(main_seq_name, 162, 0, 0.2, 0, 0, 0.2, 0)
+        self.add_command_action(main_seq_name, 162, 0, 0.1, 0, 0, 0.2, 0)
 
 
     def add_wastewater_reservoir(self, parent_name):
@@ -1179,7 +1175,6 @@ class BehaviorTreeBuilder:
         self.add_shooting_motor_action(main_seq_name, to, "on")
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .200, .700, 4.71, .35, 1.0)
-            self.add_sleep_time(main_seq_name, .5)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .156, .840, 4.71, 0.1, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .156, .840, 4.71, 0.05, .2)
         else:

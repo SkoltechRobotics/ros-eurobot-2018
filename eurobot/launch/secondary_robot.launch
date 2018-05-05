@@ -21,7 +21,10 @@
       <param name="skip" value="2"/>
     </node>
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" respawn="true"/>
+    <node pkg="eurobot_decision_maker" name="bt_robot_server" type="bt_robot_server.py" respawn="true"/>
 
   </group>
+
+  <node pkg="rosbag" type="record" name="rosbag_record_secondary_robot" args="-o $(find eurobot)/bag/secondary_robot /tf /secondary_robot/scan" />  
 
 </launch>

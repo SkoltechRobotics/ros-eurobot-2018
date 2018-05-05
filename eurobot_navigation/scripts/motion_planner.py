@@ -37,6 +37,7 @@ class MotionPlanner:
         self.NUM_RANGEFINDERS = rospy.get_param("motion_planner/NUM_RANGEFINDERS")
         self.COLLISION_STOP_DISTANCE = rospy.get_param("motion_planner/COLLISION_STOP_DISTANCE")
         self.COLLISION_STOP_NEIGHBOUR_DISTANCE = rospy.get_param("motion_planner/COLLISION_STOP_NEIGHBOUR_DISTANCE")
+        self.COLLISION_GAMMA = rospy.get_param("motion_planner/COLLISION_GAMMA")
 
         if self.robot_name == "main_robot":
             # get initial cube heap coordinates
@@ -128,7 +129,7 @@ class MotionPlanner:
                     if self.rangefinder_data[active_rangefinders[i]] < stop_ranges[i]:
                         speed_limit_collision.append(0)
                     else:
-                        speed_limit_collision.append((self.rangefinder_data[active_rangefinders[i]] - stop_ranges[i]) / (255 - stop_ranges[i]) * self.V_MAX)
+                        speed_limit_collision.append(((self.rangefinder_data[active_rangefinders[i]] - stop_ranges[i]) / (255 - stop_ranges[i])) ** self.COLLISION_GAMMA * self.V_MAX)
                 rospy.loginfo('Collision Avoidance  Speed Limit:\t' + str(speed_limit_collision))
             else:
                 speed_limit_collision = [self.V_MAX]
@@ -329,6 +330,7 @@ class MotionPlanner:
                 self.face_heap(cmd_id, n)
 
         elif cmd_type == "stop":
+            self.cmd_id = cmd_id
             self.terminate_following()
 
         self.mutex.release()

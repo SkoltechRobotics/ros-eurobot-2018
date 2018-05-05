@@ -25,4 +25,6 @@
     <!--node pkg="eurobot" name="barrier_move_node" type="test_barrier_move_to_heap.py" respawn="true" output="screen"/-->
   </group>
 
+  <node pkg="rosbag" type="record" name="rosbag_record_main_robot" args="record -o $(rospack find eurobot)/main_robot /tf /main_robot/scan" />
+
 </launch>
