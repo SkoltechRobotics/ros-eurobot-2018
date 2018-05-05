@@ -94,8 +94,8 @@ if __name__ == '__main__':
     rospy.Subscriber("/server/point", String, app.points_callback)
     rospy.Subscriber("/server/plan", String, app.plan_callback)
     rospy.Subscriber("/server/wire_status", String, app.wire_status_callback)
-    rospy.Subscriber("/secondary_robot/odom", Odometry, app.secondary_robot_callback)
-    rospy.Subscriber("/main_robot/odom", Odometry, app.main_robot_callback)
+    rospy.Subscriber("/secondary_robot/barrier_rangefinders_data", Odometry, app.secondary_robot_callback)
+    rospy.Subscriber("/main_robot/barrier_rangefinders_data", Odometry, app.main_robot_callback)
     rate = rospy.Rate(100)
     rospy.loginfo("Start display")
 
