@@ -75,6 +75,7 @@ def cmd_callback(data):
         is_active = True
     if data_splitted[1] == "finish":
         is_active = False
+    rospy.loginfo("Receive command " + data_splitted[1])
 
 
 if __name__ == '__main__':
@@ -85,7 +86,7 @@ if __name__ == '__main__':
     pub_plan = rospy.Publisher("/server/plan", String, queue_size=3)
     rospy.Subscriber("/server/camera_command", String, cmd_callback)
     bridge = cv_bridge.CvBridge()
-    rate = rospy.Rate(100)
+    rate = rospy.Rate(10)
 
     rospy.loginfo("Start camera node")
     is_active = False
