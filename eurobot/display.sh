@@ -1,1 +1,0 @@
-ssh pi@192.168.88.250 "~/catkin_ws/src/ros-eurobot-2018/scripts/main_robot/display.sh"
