@@ -3,6 +3,9 @@ import struct
 import datetime
 import time
 
+NOT_LOG_CMD = [8, 15, 208, 209]
+
+
 class STMprotocol(object):
     def __init__(self, serial_port, baudrate=64000):
         self.ser = serial.Serial(serial_port, baudrate=baudrate, timeout=0.2)
@@ -80,13 +83,11 @@ class STMprotocol(object):
             0xa4: "=BB"
         }
 
-        self.log_file = open("stm_log_file%s" % str(datetime.datetime.today()), "w")
-
-
     def pure_send_command(self, cmd, args):
-        self.log_file.write("-------------------------\n")
-        self.log_file.write("New response " + str(time.time()) + "\n")
-        self.log_file.write("cmd: " + str(cmd) + " " + str(args) + "\n")
+        if cmd not in NOT_LOG_CMD:
+            print "-------------------------"
+            print "New response " + str(time.time())
+            print "cmd: " + str(cmd) + " " + str(args)
         # Clear buffer
         self.ser.reset_output_buffer()
         self.ser.reset_input_buffer()
@@ -99,7 +100,7 @@ class STMprotocol(object):
         self.ser.write(msg)
         if cmd == 176 or cmd == 162:
             print cmd, args
-        #Receiving data
+        # Receiving data
         data = self.ser.read()
         if len(data) == 0:
             raise Exception("No data received")
@@ -107,32 +108,32 @@ class STMprotocol(object):
         sync = ord(data[0])
         if sync != 0xfa:
             raise Exception("Incorrect byte of syncronization", sync)
-        
+
         data = self.ser.read()
         if len(data) == 0:
             raise Exception("No adress received")
         adr = ord(data[0])
-        
+
         if adr != 0xfa:
             raise Exception("Incorrect adress", adr)
         answer_len = ord(self.ser.read()[0])
         answer = bytearray(self.ser.read(answer_len - 3))
-        
+
         if (sync + adr + answer_len + sum(answer[:-1])) % 256 != answer[-1]:
             raise Exception("Error with check sum", sync, adr, answer_len, answer)
         args = struct.unpack(self.unpack_format[cmd], answer[1:-1])
 
-        self.log_file.write("return " + str(args) + "\n")
+        if cmd not in NOT_LOG_CMD:
+            print "return " + str(args)
         return True, args
 
-
-    def send_command(self, cmd, args, n_repeats = 5):
+    def send_command(self, cmd, args, n_repeats=5):
         # print (cmd, args)
         for i in range(n_repeats):
             try:
                 return self.pure_send_command(cmd, args)
             except Exception as exc:
-                if i == n_repeats-1:
+                if i == n_repeats - 1:
                     print('Exception:\t', exc)
                     print('At time:\t', datetime.datetime.now())
                     print('cmd:', cmd, 'args:', args)
