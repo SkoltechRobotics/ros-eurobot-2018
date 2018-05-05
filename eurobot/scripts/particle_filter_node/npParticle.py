@@ -74,7 +74,7 @@ class ParticleFilter:
         self.k_angle = k_angle
         self.num_is_near_thresh = num_is_near_thresh
         self.dist_offset = dist_offset
-        
+
         # Create Particles
         x = np.random.normal(start_x, distance_noise, particles_num)
         y = np.random.normal(start_y, distance_noise, particles_num)
