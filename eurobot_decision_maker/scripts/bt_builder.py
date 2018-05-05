@@ -273,18 +273,20 @@ class BehaviorTreeBuilder:
     def add_start_switch_main_new(self, parent_name):
         main_seq_name = self.construct_string("switch", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
-
+        x_dist = 1.00
         if self.side == "orange":
             self.add_command_action(main_seq_name, 224, 0)
-            self.add_simple_move(main_seq_name, "move", 1.03, 0.2, np.pi)
-            self.add_simple_move(main_seq_name, "move_odometry", 1.03, 0.0, np.pi)
-            self.add_simple_move(main_seq_name, "move_odometry", 1.03, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 0.4, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move", x_dist, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", x_dist, 0.0, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", x_dist, 0.25, np.pi)
             self.add_command_action(main_seq_name, 224, 1)
         else:
             self.add_command_action(main_seq_name, 224, 0)
-            self.add_simple_move(main_seq_name, "move", 3-1.03, 0.2, np.pi)
-            self.add_simple_move(main_seq_name, "move_odometry", 3-1.03, 0.0, np.pi)
-            self.add_simple_move(main_seq_name, "move_odometry", 3-1.03, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 3 - 0.4, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move", 3 - x_dist, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.0, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.25, np.pi)
             self.add_command_action(main_seq_name, 224, 1)
 
     def add_start_switch_main(self, parent_name):
@@ -685,10 +687,9 @@ class BehaviorTreeBuilder:
         angle = a * np.pi / 2
         return x, y, angle
 
+
     def add_heap_rotation_no_rf(self, parent_name, heap_num, a):
-        self.add_simple_move(parent_name, "move_odometry", *self.get_heap_position(heap_num, a))
-        self.add_sleep_time(parent_name, 0.3)
-        self.add_simple_move(parent_name, "move_odometry", *self.get_heap_position(heap_num, a))
+        self.add_simple_move(parent_name, "move_odometry", *self.get_heap_position(heap_num, a), repeat=2)
 
     def add_new_heap_pick_no_rf(self, parent_name, heap_num, heap_strat, next_heap_num, **kvargs):
         main_seq_name = self.construct_string(parent_name, heap_strat[-1], heap_num)
@@ -731,20 +732,41 @@ class BehaviorTreeBuilder:
 
                 if self.loginfo:
                     rospy.loginfo((ndx, ndy))
-                self.add_simple_move(main_seq_name, "move_odometry", x + dX, y + dY, angle)
-                self.add_simple_move(main_seq_name, "move_odometry", x + dX, y + dY, angle)
+                self.add_simple_move(main_seq_name, "move_odometry", x + dX, y + dY, angle, repeat=2)
 
             if self.loginfo:
                 rospy.loginfo(a)
             if self.loginfo:
                 rospy.loginfo(mans)
             self.add_sleep_time(main_seq_name, 5)
+            
             if 1 in mans:
-                self.add_command_action(main_seq_name, 162, 0, 0.005, 0, 0, 0.1, 0)
-            self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
+                if len(mans) != 1:
+                    new_mans = []
+                    new_colors = []
+                    for m,c in zip(mans, colors):
+                        if m != 1:
+                            new_mans.append(m)
+                            new_colors.append(c)
+                    self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
 
-    def add_simple_move(self, parent_name, move_type,  *coords):
+                self.add_command_action(main_seq_name, 162, 0, 0.02, 0, 0, 0.1, 0)
+                self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
+                self.add_command_action(main_seq_name, 162, 0, -0.02, 0, 0, 0.1, 0)
+
+            else:
+                self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
+
+    def add_simple_move(self, parent_name, move_type,  *coords, **kvargs):
+        delay = 0.6
+        repeat = 1
+        if 'repeat' in kvargs:
+            repeat = kvargs['repeat']
         self.add_action_node(parent_name, move_type, self.move_publisher_name, self.move_response, move_type, *coords)
+        for _ in range(repeat-1):
+            self.add_sleep_time(parent_name, delay)
+            self.add_action_node(parent_name, move_type, self.move_publisher_name, self.move_response, move_type,
+                                 *coords)
 
     def add_move(self, parent_name, action1_name, action2_name):
         main_seq_name = self.construct_string(parent_name, action1_name, action2_name)
@@ -906,6 +928,7 @@ class BehaviorTreeBuilder:
         else:
             coordinates_first = np.array([225.0, 30.0, 3.14])
 
+        self.add_simple_move(main_seq_name, "rotate_odometry", 3.14)
         self.add_move_action(main_seq_name, *coordinates_first)
 
         parallel_magic = self.construct_string("parallel", "release_magic", self.get_next_id())
@@ -1375,7 +1398,7 @@ if __name__ == "__main__":
     #print(heap_strats[1]['001'])
     rospy.sleep(1)
 
-    btb.bt.root_node.start()
+    #btb.bt.root_node.start()
     # btb.man_load[0] = 3
     # btb.man_load[1] = 4
     # btb.man_load[2] = 3
