@@ -54,7 +54,7 @@ LIDAR_START_ANGLE = -(np.pi / 2 + np.pi / 4)
 class ParticleFilter:
     def __init__(self, particles_num=500, sense_noise=50, distance_noise=5, angle_noise=0.02,
                  start_x=293, start_y=425, start_angle=3 * np.pi / 2, color='orange', min_intens=3500.0,
-                 max_dist=3700.0, beac_dist_thresh=200, k_angle=2, num_is_near_thresh=0.1):
+                 max_dist=3700.0, beac_dist_thresh=200, k_angle=2, num_is_near_thresh=0.1, dist_offset=15):
 
         self.start_coords = np.array([start_x, start_y, start_angle])
         self.color = color
@@ -73,6 +73,7 @@ class ParticleFilter:
         self.beac_dist_thresh = beac_dist_thresh
         self.k_angle = k_angle
         self.num_is_near_thresh = num_is_near_thresh
+        self.dist_offset = dist_offset
 
         # Create Particles
         x = np.random.normal(start_x, distance_noise, particles_num)
@@ -204,4 +205,4 @@ class ParticleFilter:
         ind = np.where(np.logical_and(scan[:, 1] > self.min_intens, scan[:, 0] < self.max_dist))[0]
         angles = (LIDAR_DELTA_ANGLE * ind + LIDAR_START_ANGLE) % (2 * np.pi)
         distances = scan[ind, 0]
-        return angles, distances
+        return angles, distances - self.dist_offset

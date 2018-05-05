@@ -7,6 +7,7 @@
   
   <!-- MULTYMASTER -->
   <include file="$(find eurobot)/launch/multimaster.launch"/>
+  
   <include file="$(find eurobot_navigation)/launch/navigation_main.launch"/>
 
   <group ns="main_robot">

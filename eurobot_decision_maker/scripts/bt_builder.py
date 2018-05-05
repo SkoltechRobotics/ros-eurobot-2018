@@ -734,9 +734,9 @@ class BehaviorTreeBuilder:
                             new_colors.append(c)
                     self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
 
-                self.add_command_action(main_seq_name, 162, 0, 0.01, 0, 0, 0.1, 0)
+                self.add_command_action(main_seq_name, 162, 0, 0.02, 0, 0, 0.1, 0)
                 self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
-                self.add_command_action(main_seq_name, 162, 0, -0.01, 0, 0, 0.1, 0)
+                self.add_command_action(main_seq_name, 162, 0, -0.02, 0, 0, 0.1, 0)
 
             else:
                 self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
@@ -912,6 +912,7 @@ class BehaviorTreeBuilder:
         else:
             coordinates_first = np.array([225.0, 30.0, 3.14])
 
+        self.add_simple_move(main_seq_name, "rotate_odometry", 3.14)
         self.add_move_action(main_seq_name, *coordinates_first)
 
         parallel_magic = self.construct_string("parallel", "release_magic", self.get_next_id())
