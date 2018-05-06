@@ -35,16 +35,16 @@ else:
 # SECOND ROBOT STRATEGY
 if SIDE == "orange":
     # SIMPLE
-    # SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 
     # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0)]
 else:
     # SIMPLE
-    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0)]
+    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 
     # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste",0), ("bee_secondary", 0), ('wastewater_tower',0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0)]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
@@ -273,6 +273,7 @@ class RobotBrain(object):
         self.bt = BehaviorTree("server_" + self.name)
         general = SequenceNode("general")
         self.bt.add_node(general, self.bt.root_node.name)
+        self.bt.add_node(ActionNode("start_plan_recognition", camera_cmd_pub, "start", None, True), "general")
         main_cycle_if = TryUntilSuccessNode("main_cycle_if")
         self.bt.add_node(main_cycle_if, "general")
 
