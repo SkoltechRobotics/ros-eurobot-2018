@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
-import sys
-import time
-import random
 import numpy as np
 from Tkinter import *
-import rosnode
-from nav_msgs.msg import Odometry
+from std_msgs.msg import Int32MultiArray
+
 COLORS = np.array([[0, 123, 176], [208, 90, 40], [28, 28, 32], [96, 153, 59], [247, 181, 0], [255, 0, 0]],
                   dtype=np.uint8)
 COLORS_NAME = ["blue", "orange", "black", "green", "yellow", "red"]
@@ -94,8 +91,8 @@ if __name__ == '__main__':
     rospy.Subscriber("/server/point", String, app.points_callback)
     rospy.Subscriber("/server/plan", String, app.plan_callback)
     rospy.Subscriber("/server/wire_status", String, app.wire_status_callback)
-    rospy.Subscriber("/secondary_robot/odom", Odometry, app.secondary_robot_callback)
-    rospy.Subscriber("/main_robot/odom", Odometry, app.main_robot_callback)
+    rospy.Subscriber("/secondary_robot/barrier_rangefinders_data", Int32MultiArray, app.secondary_robot_callback)
+    rospy.Subscriber("/main_robot/barrier_rangefinders_data", Int32MultiArray, app.main_robot_callback)
     rate = rospy.Rate(100)
     rospy.loginfo("Start display")
 

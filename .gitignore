@@ -1,4 +1,6 @@
 *.pyc
 *.idea
 *.log
+*.bag.active
 the_fucking_map_bug.bag
+eurobot/bag
