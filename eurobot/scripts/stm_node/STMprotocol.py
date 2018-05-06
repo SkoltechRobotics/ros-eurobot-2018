@@ -40,7 +40,8 @@ class STMprotocol(object):
             0xa3: "=",
             0xe0: "=B",
             256: "=H",
-            0xa4: ""
+            0xa4: "",
+            0xb7: "=B"
         }
 
         self.unpack_format = {
@@ -77,7 +78,8 @@ class STMprotocol(object):
             # 0xd0: "=BBBBBB",
             0xa3: "=B",
             0xe0: "=BB",
-            0xa4: "=BB"
+            0xa4: "=BB",
+            0xb7: "=BB"
         }
 
         self.log_file = open("stm_log_file%s" % str(datetime.datetime.today()), "w")
