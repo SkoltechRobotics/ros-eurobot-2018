@@ -284,7 +284,8 @@ class BehaviorTreeBuilder:
         else:
             self.add_command_action(main_seq_name, 224, 0)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - 0.4, 0.2, np.pi)
-            self.add_simple_move(main_seq_name, "move", 3 - x_dist, 0.2, np.pi)
+            # self.add_simple_move(main_seq_name, "move", 3 - x_dist, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.2, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.0, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.25, np.pi)
             self.add_command_action(main_seq_name, 224, 1)
@@ -570,6 +571,12 @@ class BehaviorTreeBuilder:
             rospy.loginfo(ss)
         self.bt.add_node_by_string(ss)
 
+    def add_parallel_node(self, parent_name, new_name):
+        ss = self.construct_string(parent_name, "parallel", new_name, sep=' ')
+        if self.loginfo:
+            rospy.loginfo(ss)
+        self.bt.add_node_by_string(ss)
+
     def add_rf_move(self, parent_name, heap_status, colors=[], mans=[]):
         # add heap_status
         if self.loginfo:
@@ -732,6 +739,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 224, 0)
         self.add_simple_move(main_seq_name, "face_heap", heap_num)
         self.add_simple_move(main_seq_name, "move_heap", heap_num)
+        # self.add_simple_move(main_seq_name, "move_odometry")
 
 
         self.colors_left = {0, 1, 2, 3, 4}
@@ -744,6 +752,10 @@ class BehaviorTreeBuilder:
         dX = 0
         dY = 0
         a = 0
+        form_par_name = self.construct_string("form_cubes", heap_num)
+        self.add_parallel_node(main_seq_name, form_par_name)
+        for i in range(3):
+            self.add_command_action(form_par_name, 0xb7, i)
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
             if self.loginfo:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
