@@ -2,7 +2,7 @@
 
 source /opt/ros/kinetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
-export ROS_IP=192.168.88.244
+#export ROS_IP=192.168.88.244
 export DISPLAY=:0.0
 sleep 1s
 while true; do
