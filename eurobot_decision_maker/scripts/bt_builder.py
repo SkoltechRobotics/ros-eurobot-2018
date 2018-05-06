@@ -752,15 +752,18 @@ class BehaviorTreeBuilder:
         dX = 0
         dY = 0
         a = 0
-        form_par_name = self.construct_string("form_cubes", heap_num)
-        self.add_parallel_node(main_seq_name, form_par_name)
-        for i in range(3):
-            self.add_command_action(form_par_name, 0xb7, i)
         for i, (dx, dy, da, (colors, mans)) in enumerate(heap_strat):
             if self.loginfo:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
             a += da
             self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
+            if i == 0:
+                form_par_name = self.construct_string("form_cubes", heap_num)
+                self.add_parallel_node(main_seq_name, form_par_name)
+                for i in range(3):
+                    self.add_command_action(form_par_name, 0xb7, i)
+
+        
             if dx ** 2 + dy ** 2 > 0:
                 if self.loginfo:
                     rospy.loginfo("SHIFTS " + str(self.shifts.index((dx, dy))))
@@ -780,7 +783,7 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(a)
             if self.loginfo:
                 rospy.loginfo(mans)
-            self.add_sleep_time(main_seq_name, 5)
+            #self.add_sleep_time(main_seq_name, 5)
             
             if 1 in mans:
                 if len(mans) != 1:
@@ -800,7 +803,7 @@ class BehaviorTreeBuilder:
                 self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords, **kvargs):
-        delay = 0.6
+        delay = 0.3
         repeat = 1
         if 'repeat' in kvargs:
             repeat = kvargs['repeat']
