@@ -8,7 +8,7 @@
   <include file="$(find eurobot)/launch/params.launch"/>
   
   <!-- MULTYMASTER -->
-  <include file="$(find eurobot)/launch/multimaster.launch"/>
+  <include file="$(find eurobot)/launch/main_multimaster.launch"/>
   
   <include file="$(find eurobot_navigation)/launch/navigation_main.launch"/>
 

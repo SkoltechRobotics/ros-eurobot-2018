@@ -80,7 +80,7 @@ class BehaviorTreeBuilder:
         self.track_units = "m"
         self.move_action_name = str(0x0E)
         self.move_publisher_name = "cmd_publisher"
-        self.side = rospy.get_param("/field/color", "orange")
+        self.side = rospy.get_param("/field/color", "green")
         rospy.loginfo(self.side)
         self.action_places = self.action_places_both_sides[self.side]
 
@@ -161,6 +161,121 @@ class BehaviorTreeBuilder:
                     (0.5, 1.19, 3.14),
                     (0.84, 0.13, 3.14)
                 ]
+            }
+        }
+
+        self.heap_fixes = {
+            'green': {
+                5: {
+                    0: {
+                        'x' : 0,
+                        'y' : 0.01
+                    },
+                    1: {
+                        'x': 0,
+                        'y': 0.01
+                    },
+                    2: {
+                        'x': 0.003,
+                        'y': -0.005
+                    },
+                    3: {
+                        'x': 0.005,
+                        'y': 0.020
+                    }
+                },
+                4: {
+                    0: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    1: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    2: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    3: {
+                        'x': 0,
+                        'y': 0
+                    }
+                },
+                3: {
+                    0: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    1: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    2: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    3: {
+                        'x': 0,
+                        'y': 0
+                    }
+                }
+            },
+            'orange': {
+                0: {
+                    0: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    1: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    2: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    3: {
+                        'x': 0,
+                        'y': 0
+                    }
+                },
+                1: {
+                    0: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    1: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    2: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    3: {
+                        'x': 0,
+                        'y': 0
+                    }
+                },
+                2: {
+                    0: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    1: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    2: {
+                        'x': 0,
+                        'y': 0
+                    },
+                    3: {
+                        'x': 0,
+                        'y': 0
+                    }
+                }
             }
         }
 
@@ -733,8 +848,9 @@ class BehaviorTreeBuilder:
 
     def get_heap_position(self, heap_num, a):
         shift = self.shifts[(a + 1) % 4]
-        x = shift[0] * 0.06 + self.heap_coords[heap_num, 0]
-        y = shift[1] * 0.06 + self.heap_coords[heap_num, 1]
+        self.heap_fixes[self.side][heap_num]
+        x = shift[0] * 0.06 + self.heap_coords[heap_num, 0] + self.heap_fixes[self.side][heap_num][a%4]['x']
+        y = shift[1] * 0.06 + self.heap_coords[heap_num, 1] + self.heap_fixes[self.side][heap_num][a%4]['y']
         angle = a * np.pi / 2
         return x, y, angle
 
@@ -771,11 +887,11 @@ class BehaviorTreeBuilder:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
             a += da
             self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
-            if i == 0:
-                form_par_name = self.construct_string("form_cubes", heap_num)
-                self.add_parallel_node(main_seq_name, form_par_name)
-                for i in range(3):
-                    self.add_command_action(form_par_name, 0xb7, i)
+            # if i == 0:
+            #     form_par_name = self.construct_string("form_cubes", heap_num)
+            #     self.add_parallel_node(main_seq_name, form_par_name)
+            #     for i in range(3):
+            #         self.add_command_action(form_par_name, 0xb7, i)
 
         
             if dx ** 2 + dy ** 2 > 0:
@@ -784,7 +900,7 @@ class BehaviorTreeBuilder:
                 if self.loginfo:
                     rospy.loginfo(a)
                 # ndx, ndy = self.rotate((dx, dy), a).tolist()
-                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a + 1) % 4]
+                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) + 1) % 4]
                 dX += ndx*0.06
                 dY += ndy*0.06
                 x, y, angle = self.get_heap_position(heap_num, a)
@@ -799,22 +915,24 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(mans)
             #self.add_sleep_time(main_seq_name, 5)
             
-            if 1 in mans:
-                if len(mans) != 1:
-                    new_mans = []
-                    new_colors = []
-                    for m,c in zip(mans, colors):
-                        if m != 1:
-                            new_mans.append(m)
-                            new_colors.append(c)
-                    self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
+            # if 1 in mans:
+            #     if len(mans) != 1:
+            #         new_mans = []
+            #         new_colors = []
+            #         for m,c in zip(mans, colors):
+            #             if m != 1:
+            #                 new_mans.append(m)
+            #                 new_colors.append(c)
+            #         self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
+            #
+            #     self.add_command_action(main_seq_name, 162, 0, 0.02, 0, 0, 0.1, 0)
+            #     self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
+            #     self.add_command_action(main_seq_name, 162, 0, -0.02, 0, 0, 0.1, 0)
+            #
+            # else:
+            #     self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
+            self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
-                self.add_command_action(main_seq_name, 162, 0, 0.02, 0, 0, 0.1, 0)
-                self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
-                self.add_command_action(main_seq_name, 162, 0, -0.02, 0, 0, 0.1, 0)
-
-            else:
-                self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords, **kvargs):
         delay = 0.3
@@ -1438,7 +1556,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    btb.add_strategy([("start_switch_main", 0), ("heaps", (0, None))])
+    btb.add_strategy([("start_switch_main", 0), ("heaps", (5, None))])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
     # btb.add_strategy([("bee_main", 0), ("switch_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
@@ -1458,8 +1576,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[3]['543'])
-    btb.add_cubes_sequence_new(heap_strats[3]['543'])
+    rospy.loginfo(heap_strats[0]['543'])
+    btb.add_cubes_sequence_new(heap_strats[0]['543'])
     btb.pick_one_by_one = True
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
