@@ -46,7 +46,13 @@ class PFNode(object):
         lidar_odom_point = cvt_local2global(self.lidar_point, robot_odom_point)
         self.prev_lidar_odom_point = lidar_odom_point
         x, y, a = lidar_odom_point
-        self.pf = ParticleFilter(color=self.color, start_x=x, start_y=y, start_angle=a, **PF_PARAMS)
+
+        if self.robot_name == "secondary_robot":
+            k_bad = 0
+        else:
+            k_bad = 2
+
+        self.pf = ParticleFilter(color=self.color, start_x=x, start_y=y, start_angle=a, k_bad=k_bad, **PF_PARAMS)
         self.last_odom = np.zeros(3)
         self.alpha = 1
 

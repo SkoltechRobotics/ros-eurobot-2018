@@ -55,7 +55,7 @@ class ParticleFilter:
     def __init__(self, particles_num=500, sense_noise=50, distance_noise=5, angle_noise=0.02,
                  start_x=293, start_y=425, start_angle=3 * np.pi / 2, color='orange', min_intens=3500.0,
                  max_dist=3700.0, beac_dist_thresh=200, k_angle=2, num_is_near_thresh=0.1, distance_noise_1_beacon=1,
-                 angle_noise_1_beacon=0.05):
+                 angle_noise_1_beacon=0.05, k_bad=1):
 
         self.start_coords = np.array([start_x, start_y, start_angle])
         self.color = color
@@ -73,6 +73,7 @@ class ParticleFilter:
         self.last = (start_x, start_y, start_angle)
         self.beac_dist_thresh = beac_dist_thresh
         self.k_angle = k_angle
+        self.k_bad = k_bad
         self.num_is_near_thresh = num_is_near_thresh
         self.distance_noise_1_beacon = distance_noise_1_beacon
         self.angle_noise_1_beacon = angle_noise_1_beacon
@@ -182,8 +183,33 @@ class ParticleFilter:
                                                   dist_from_closest_beacon_to_landmark, 1) / np.where(
             dist_from_closest_beacon_to_particle, dist_from_closest_beacon_to_particle, 1)
 
+        # From local minimum
+        res = closest_beacons - landmarks[np.newaxis, :, :2]
+        X = (res[:, :, 0] * np.cos(particles[:, 2])[:, np.newaxis]
+             - res[:, :, 1] * np.sin(particles[:, 2])[:, np.newaxis])
+        Y = (res[:, :, 0] * np.sin(particles[:, 2])[:, np.newaxis]
+             + res[:, :, 1] * np.cos(particles[:, 2])[:, np.newaxis])
+        delta_beacon_landmark = np.concatenate((X[:, :, np.newaxis], Y[:, :, np.newaxis]), axis=2)
+
+        if self.color == "orange":
+            is_bad_beacon_landmark_x = \
+                (ind_closest_beacon == 0) * (delta_beacon_landmark[:, :, 0] < 0) + \
+                (ind_closest_beacon == 1) * (delta_beacon_landmark[:, :, 0] > 0) + \
+                (ind_closest_beacon == 2) * (delta_beacon_landmark[:, :, 0] > 0)
+        else:
+            is_bad_beacon_landmark_x = \
+                (ind_closest_beacon == 0) * (delta_beacon_landmark[:, :, 0] > 0) + \
+                (ind_closest_beacon == 1) * (delta_beacon_landmark[:, :, 0] < 0) + \
+                (ind_closest_beacon == 2) * (delta_beacon_landmark[:, :, 0] < 0)
+        is_bad_beacon_landmark_y = \
+            (ind_closest_beacon == 1) * (delta_beacon_landmark[:, :, 1] < 0) + \
+            (ind_closest_beacon == 2) * (delta_beacon_landmark[:, :, 1] > 0)
+
         # Calculate errors of position of landmarks
-        errors = (dist_from_closest_beacon_to_landmark - BEAC_R) ** 2 + self.k_angle * (1 - cos_landmarks) ** 2
+        errors = np.abs(dist_from_closest_beacon_to_landmark - BEAC_R) ** 2 + \
+                 self.k_angle * np.abs(1 - cos_landmarks) ** 2 + \
+                 self.k_bad * is_bad_beacon_landmark_x * delta_beacon_landmark[:, :, 0] ** 2 + \
+                 self.k_bad * is_bad_beacon_landmark_y * delta_beacon_landmark[:, :, 1] ** 2
 
         # too far real beacons go away: non valid
         is_near = dist_from_closest_beacon_to_landmark < self.beac_dist_thresh

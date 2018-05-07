@@ -75,7 +75,7 @@ def cmd_callback(data):
         is_active = True
     if data_splitted[1] == "finish":
         is_active = False
-    rospy.loginfo("Receive command " + data_splitted[1])
+    rospy.loginfo("Receive command: " + data.data)
 
 
 if __name__ == '__main__':
