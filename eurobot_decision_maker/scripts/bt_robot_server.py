@@ -261,7 +261,7 @@ class RobotBrain(object):
                  is_bee * 50 + \
                  is_button * 25 + \
                  is_move_wastewater_tower * 10 + \
-                 is_move_cleanwater_tower * 10
+                 is_move_cleanwater_tower * 10 + \
                  is_disposal_secondary * 4
         self.points[self.name] = points
         self.points_pub.publish(str(points))
