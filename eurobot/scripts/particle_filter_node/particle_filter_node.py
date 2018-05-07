@@ -10,7 +10,7 @@ import tf_conversions
 PF_RATE = 20
 
 PF_PARAMS = {"particles_num": 1000,
-             "sense_noise": 2,
+             "sense_noise": 0.75,
              "distance_noise": 8,
              "angle_noise": 0.1,
              "min_intens": 3000,

@@ -13,7 +13,7 @@ def scan_callback(scan):
 
 
 def get_coords():
-    (trans, rot) = listener.lookupTransform('/secondary_robot_odom', '/secondary_robot', rospy.Time(0))
+    (trans, rot) = listener.lookupTransform('/main_robot_odom', '/main_robot', rospy.Time(0))
     yaw = tf.transformations.euler_from_quaternion(rot)[2]
     return np.array([trans[0], trans[1], yaw])
 
@@ -21,7 +21,7 @@ def get_coords():
 if __name__ == '__main__':
     lidar_data = None
     rospy.init_node("write_laser_data")
-    rospy.Subscriber("/secondary_robot/scan", LaserScan, scan_callback)
+    rospy.Subscriber("/main_robot/scan", LaserScan, scan_callback)
 
     rospy.loginfo("start write data")
     lidar_data_full = []
