@@ -3,7 +3,5 @@
   <arg name="color" default="orange" />
   <param name="/field/color" value="$(arg color)" />
   <include file="$(find eurobot_camera)/launch/corner_camera.launch" />
-
-  <node pkg="master_discovery_fkie" type="master_discovery" name="master_discovery" />
-  <node pkg="master_sync_fkie" type="master_sync" name="master_sync" />
+  <include file="$(find eurobot)/launch/ctd_multimaster.launch" />
 </launch>

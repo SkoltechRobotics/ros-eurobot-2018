@@ -33,18 +33,14 @@ else:
     # MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 
 # SECOND ROBOT STRATEGY
-if SIDE == "orange":
-    # SIMPLE
-    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
+# SIMPLE
+#SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 
-    # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0)]
-else:
-    # SIMPLE
-    #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
+# MEDIUM
+#SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0), ('after_wastewater_simple', 0)]
 
-    # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0), ('switch_secondary', 0), ('disposal_secondary', 0)]
+# HARDCORE
+SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0), ('switch_secondary', 0), ('disposal_secondary', 0)]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]
@@ -214,6 +210,7 @@ class RobotBrain(object):
         is_move_wastewater_tower = False
         is_move_cleanwater_tower = False
         is_cleanwater_tower = False
+        is_disposal_secondary = False
 
         heap_points = 0
         balls = 0
@@ -226,7 +223,7 @@ class RobotBrain(object):
                         is_disposal = True
                     elif child.name.find("bee") != -1:
                         is_bee = True
-                    elif child.name.find("switch") != -1:
+                    elif child.name.find("switch_main") != -1:
                         is_button = True
                     elif child.name.find("strategy") != -1:
                         ind = child.name.find("strategy")
@@ -236,6 +233,8 @@ class RobotBrain(object):
                         is_wastewater_tower = True
                     elif child.name.find("wastewater_reservoir") != -1:
                         is_wastewater_reservoir = True
+                    elif child.name.find("disposal_secondary") != -1:
+                        is_disposal_secondary = True
                 if child.name.find("wastewater_tower") != -1:
                     for child1 in child.children_list:
                         if child1.name.find("move") != -1 and child1.status == "finished":
@@ -263,6 +262,7 @@ class RobotBrain(object):
                  is_button * 25 + \
                  is_move_wastewater_tower * 10 + \
                  is_move_cleanwater_tower * 10
+                 is_disposal_secondary * 4
         self.points[self.name] = points
         self.points_pub.publish(str(points))
         global_points_pub.publish(str(sum([v for k, v in self.points.items()])))

@@ -20,7 +20,7 @@
       <param name="frame_id" value="/secondary_robot_laser"/>
     </node>
     <node pkg="eurobot" name="particle_filter_node" type="particle_filter_node.py" respawn="true"/>
-    <!--node pkg="eurobot_decision_maker" name="bt_robot_server" type="bt_robot_server.py" respawn="true"/-->
+    <node pkg="eurobot_decision_maker" name="bt_robot_server" type="bt_robot_server.py" respawn="true"/>
 
   </group>
 

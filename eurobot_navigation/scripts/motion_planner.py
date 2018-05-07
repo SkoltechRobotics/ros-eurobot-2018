@@ -335,6 +335,7 @@ class MotionPlanner:
 
         elif cmd_type == "stop":
             self.cmd_id = cmd_id
+            self.mode = cmd_type 
             self.terminate_following()
 
         self.mutex.release()
