@@ -394,7 +394,7 @@ class BehaviorTreeBuilder:
             self.add_simple_move(main_seq_name, "move_odometry", 0.4, 0.2, np.pi)
             self.add_simple_move(main_seq_name, "move", x_dist, 0.2, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", x_dist, 0.0, np.pi)
-            self.add_simple_move(main_seq_name, "move_odometry", x_dist, 0.25, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", x_dist, 0.22, np.pi)
             self.add_command_action(main_seq_name, 224, 1)
         else:
             self.add_command_action(main_seq_name, 224, 0)
@@ -402,7 +402,7 @@ class BehaviorTreeBuilder:
             # self.add_simple_move(main_seq_name, "move", 3 - x_dist, 0.2, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.2, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.0, np.pi)
-            self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.25, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.22, np.pi)
             self.add_command_action(main_seq_name, 224, 1)
 
     def add_start_switch_main(self, parent_name):
