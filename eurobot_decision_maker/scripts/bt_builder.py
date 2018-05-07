@@ -258,8 +258,8 @@ class BehaviorTreeBuilder:
             self.add_command_action(main_seq_name, 162, 0.2, 0, 0, 0.57, 0, 0)
             self.add_command_action(main_seq_name, 224, 1) # collision avoidance
             self.add_command_action(main_seq_name, 182, 0) # manipulator
-        else: # TODO: change coords
-            self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.947, 0.25,
+        else:
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.947, 0.25,
                                  0.79)
             self.add_command_action(main_seq_name, 162, 0, 0, 0.75, 0, 0, 6)
             self.add_command_action(main_seq_name, 182, 1) # manipulator
@@ -284,7 +284,8 @@ class BehaviorTreeBuilder:
         else:
             self.add_command_action(main_seq_name, 224, 0)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - 0.4, 0.2, np.pi)
-            self.add_simple_move(main_seq_name, "move", 3 - x_dist, 0.2, np.pi)
+            # self.add_simple_move(main_seq_name, "move", 3 - x_dist, 0.2, np.pi)
+            self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.2, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.0, np.pi)
             self.add_simple_move(main_seq_name, "move_odometry", 3 - x_dist, 0.25, np.pi)
             self.add_command_action(main_seq_name, 224, 1)
@@ -414,24 +415,27 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.2, 0)
             self.add_command_action(main_seq_name, 194, 2) # manipulators
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.45, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.4, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_odometry", 1.1, 1.47, 0)
             self.add_command_action(main_seq_name, 194, 1) # manipulators
 
     def add_wastewater_tower_after_cubes(self, parent_name):
-        main_seq_name = self.construct_string("wastewater_after_cubes", self.get_next_id())
+        to = "left" if self.side == "orange" else "right"
+        to_sorter = 0 if to == "left" else 1
+        main_seq_name = self.construct_string("wastewater_tower_after_cubes", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 2 * np.pi - 0.53, 2)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1, 1.2, -0.53)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1, 1.2, 2 * np.pi - 0.53)
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.8, 3.14, 0, 1, 1)
         else:
-            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 4.71, 2)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.45, 0) #
-            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.8, 3.14, 1, 1, 0)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.95, 1.55, 4.71)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.55, 4.71)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.7, 1.65, 4.71)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.8, 2.9, 1, 1, 0)
 
         self.add_shooting_motor_action(main_seq_name, to, "slow")
         self.add_sleep_time(main_seq_name, .5)
@@ -441,11 +445,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
         else:
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.1, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
 
         self.add_sleep_time(main_seq_name, 3)
@@ -564,6 +565,12 @@ class BehaviorTreeBuilder:
 
     def add_sequence_node(self, parent_name, new_name):
         ss = self.construct_string(parent_name, "sequence", new_name, sep=' ')
+        if self.loginfo:
+            rospy.loginfo(ss)
+        self.bt.add_node_by_string(ss)
+
+    def add_parallel_node(self, parent_name, new_name):
+        ss = self.construct_string(parent_name, "parallel", new_name, sep=' ')
         if self.loginfo:
             rospy.loginfo(ss)
         self.bt.add_node_by_string(ss)
@@ -730,6 +737,7 @@ class BehaviorTreeBuilder:
         self.add_command_action(main_seq_name, 224, 0)
         self.add_simple_move(main_seq_name, "face_heap", heap_num)
         self.add_simple_move(main_seq_name, "move_heap", heap_num)
+        # self.add_simple_move(main_seq_name, "move_odometry")
 
 
         self.colors_left = {0, 1, 2, 3, 4}
@@ -747,6 +755,13 @@ class BehaviorTreeBuilder:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
             a += da
             self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
+            if i == 0:
+                form_par_name = self.construct_string("form_cubes", heap_num)
+                self.add_parallel_node(main_seq_name, form_par_name)
+                for i in range(3):
+                    self.add_command_action(form_par_name, 0xb7, i)
+
+        
             if dx ** 2 + dy ** 2 > 0:
                 if self.loginfo:
                     rospy.loginfo("SHIFTS " + str(self.shifts.index((dx, dy))))
@@ -766,7 +781,7 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(a)
             if self.loginfo:
                 rospy.loginfo(mans)
-            self.add_sleep_time(main_seq_name, 5)
+            #self.add_sleep_time(main_seq_name, 5)
             
             if 1 in mans:
                 if len(mans) != 1:
@@ -786,7 +801,7 @@ class BehaviorTreeBuilder:
                 self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords, **kvargs):
-        delay = 0.6
+        delay = 0.3
         repeat = 1
         if 'repeat' in kvargs:
             repeat = kvargs['repeat']
@@ -1163,10 +1178,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.8, 3.14, 0, 1, 1)
         else:
-            self.add_sleep_time(main_seq_name, 0.5)
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0.53, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2, 1.2, 0.53)
-            self.add_sleep_time(main_seq_name, 0.5)
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.8, 3.14, 1, 1, 0)
@@ -1179,11 +1192,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
         else:
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.1, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
 
         self.add_sleep_time(main_seq_name, 3)
@@ -1246,15 +1256,19 @@ class BehaviorTreeBuilder:
 
         self.add_command_action(main_seq_name, 224, 0) # collision avoidance
         self.add_shoot_sort_action(main_seq_name, "release " + to) 
-        self.add_shooting_motor_action(main_seq_name, to, "on")
 
         if self.side == "orange":
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .200, .700, 4.71, .35, 1.0)
+        else:
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - .200, .700, 1.57, .35, 1.0)
+        
+        self.add_shooting_motor_action(main_seq_name, to, "on")
+
+        if self.side == "orange":
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .156, .840, 4.71, 0.1, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .156, .840, 4.71, 0.05, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", .156, .840, 4.71, 0.05, .2)
         else:
-            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - .200, .700, 1.57, .35, 1.0)
             self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - .156, .840, 1.57, 0.1, .2)
             self.add_sleep_time(main_seq_name, 0.3)
