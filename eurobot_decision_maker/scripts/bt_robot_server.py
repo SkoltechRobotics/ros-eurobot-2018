@@ -29,7 +29,7 @@ if SIDE == "orange":
 else:
     # SIMPLE
     # MAIN_ROBOT_STRATEGY = [('bee_main', 0), ("heaps",(5,4)), ("alt_disposal", 0)]
-    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps", (5, 4)), ("alt_disposal", 0)]
+    MAIN_ROBOT_STRATEGY = [('start_switch_main', 0), ("heaps", (5, 4)),("heaps", (4,3)), ("alt_disposal", 0)]
     # MAIN_ROBOT_STRATEGY = [('start_switch_main', 0)]
 
 # SECOND ROBOT STRATEGY
@@ -282,6 +282,7 @@ class RobotBrain(object):
         main_cycle_if.set_child(main_cycle)
         self.bt.nodes[main_cycle.name] = main_cycle
         self.bt.add_node(TimeoutNode("half_sec_wait", 0.1), "main_cycle")
+        self.bt.add_node(ActionNode("start_plan_recognition_cycle", camera_cmd_pub, "start", None, True), "main_cycle")
         self.bt.add_node(ActionFunctionNode("init_robot", self.change_bt), "main_cycle")
         self.bt.add_node(ActionFunctionNode("wait_wire", wait_wire), "main_cycle")
 
