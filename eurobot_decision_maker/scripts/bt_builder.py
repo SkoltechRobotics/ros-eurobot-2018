@@ -530,7 +530,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.2, 0)
             self.add_command_action(main_seq_name, 194, 2) # manipulators
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.45, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 1.1, 1.4, 0)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_odometry", 1.1, 1.47, 0)
             self.add_command_action(main_seq_name, 194, 1) # manipulators
 
     def add_wastewater_tower_after_cubes(self, parent_name):
@@ -546,10 +547,10 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.8, 3.14, 0, 1, 1)
         else:
-            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 4.71, 2)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.45, 4.71)
-            self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
-            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.8, 3.14, 1, 1, 0)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.95, 1.55, 4.71)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.55, 4.71)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 0.7, 1.65, 4.71)
+            self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.8, 2.9, 1, 1, 0)
 
         self.add_shooting_motor_action(main_seq_name, to, "slow")
         self.add_sleep_time(main_seq_name, .5)
@@ -559,11 +560,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
         else:
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.1, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
 
         self.add_sleep_time(main_seq_name, 3)
@@ -834,6 +832,7 @@ class BehaviorTreeBuilder:
 
     def get_heap_position(self, heap_num, a):
         shift = self.shifts[(a + 1) % 4]
+        self.heap_fixes[self.side][heap_num]
         x = shift[0] * 0.06 + self.heap_coords[heap_num, 0] + self.heap_fixes[self.side][heap_num][a%4]['x']
         y = shift[1] * 0.06 + self.heap_coords[heap_num, 1] + self.heap_fixes[self.side][heap_num][a%4]['y']
         angle = a * np.pi / 2
@@ -872,11 +871,11 @@ class BehaviorTreeBuilder:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
             a += da
             self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
-            if i == 0:
-                form_par_name = self.construct_string("form_cubes", heap_num)
-                self.add_parallel_node(main_seq_name, form_par_name)
-                for i in range(3):
-                    self.add_command_action(form_par_name, 0xb7, i)
+            # if i == 0:
+            #     form_par_name = self.construct_string("form_cubes", heap_num)
+            #     self.add_parallel_node(main_seq_name, form_par_name)
+            #     for i in range(3):
+            #         self.add_command_action(form_par_name, 0xb7, i)
 
         
             if dx ** 2 + dy ** 2 > 0:
@@ -885,7 +884,7 @@ class BehaviorTreeBuilder:
                 if self.loginfo:
                     rospy.loginfo(a)
                 # ndx, ndy = self.rotate((dx, dy), a).tolist()
-                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) - a + 1) % 4]
+                ndx, ndy = self.shifts[(self.shifts.index((dx, dy)) + 1) % 4]
                 dX += ndx*0.06
                 dY += ndy*0.06
                 x, y, angle = self.get_heap_position(heap_num, a)
@@ -900,22 +899,24 @@ class BehaviorTreeBuilder:
                 rospy.loginfo(mans)
             #self.add_sleep_time(main_seq_name, 5)
             
-            if 1 in mans:
-                if len(mans) != 1:
-                    new_mans = []
-                    new_colors = []
-                    for m,c in zip(mans, colors):
-                        if m != 1:
-                            new_mans.append(m)
-                            new_colors.append(c)
-                    self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
+            # if 1 in mans:
+            #     if len(mans) != 1:
+            #         new_mans = []
+            #         new_colors = []
+            #         for m,c in zip(mans, colors):
+            #             if m != 1:
+            #                 new_mans.append(m)
+            #                 new_colors.append(c)
+            #         self.add_cubes_pick(main_seq_name, heap_num, new_mans, new_colors, new=True, doors=False)
+            #
+            #     self.add_command_action(main_seq_name, 162, 0, 0.02, 0, 0, 0.1, 0)
+            #     self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
+            #     self.add_command_action(main_seq_name, 162, 0, -0.02, 0, 0, 0.1, 0)
+            #
+            # else:
+            #     self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
+            self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
-                self.add_command_action(main_seq_name, 162, 0, 0.02, 0, 0, 0.1, 0)
-                self.add_cubes_pick(main_seq_name, heap_num, [1], [colors[mans.index(1)]], new=True, doors=False)
-                self.add_command_action(main_seq_name, 162, 0, -0.02, 0, 0, 0.1, 0)
-
-            else:
-                self.add_cubes_pick(main_seq_name, heap_num, mans, colors, new=True, doors=False)
 
     def add_simple_move(self, parent_name, move_type,  *coords, **kvargs):
         delay = 0.3
@@ -1295,10 +1296,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2.25, 1.8, 3.14, 0, 1, 1)
         else:
-            self.add_sleep_time(main_seq_name, 0.5)
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 0.53, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 2, 1.2, 0.53)
-            self.add_sleep_time(main_seq_name, 0.5)
             self.add_action_node(main_seq_name, "rotate_odometry", self.move_publisher_name, self.move_response, "rotate_odometry", 3.14, 2)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.2, 3.14)
             self.add_action_node(main_seq_name, "move_fast", self.move_publisher_name, self.move_response, "move_fast", 0.7, 1.8, 3.14, 1, 1, 0)
@@ -1311,11 +1310,8 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 2.390, 1.844, 3.14, 0.05, .2)
         else:
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.1, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
-            self.add_sleep_time(main_seq_name, 0.3)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 3 - 2.390, 1.844, 3.14, 0.05, .2)
 
         self.add_sleep_time(main_seq_name, 3)
@@ -1535,7 +1531,7 @@ if __name__ == "__main__":
     # btb.add_strategy([("bee_main",0), ("switch_main",0), ("heaps", (1,0)), ("heaps", (0,2)), ("heaps", (2,None))])
     # btb.add_strategy([("heaps", 0)])
     # btb.add_strategy([("heaps", 0),("heaps", 1),("heaps", 2)])
-    btb.add_strategy([("start_switch_main", 0), ("heaps", (0, None))])
+    btb.add_strategy([("start_switch_main", 0), ("heaps", (5, None))])
     # btb.add_strategy([("heaps", 0),("heaps", 1)])
     # btb.add_strategy([("bee_main", 0), ("switch_main", 0)])
     # so = StrategyOperator(file='first_bank.txt')
@@ -1555,8 +1551,8 @@ if __name__ == "__main__":
     #                         [[], [4], []]])
     # # [[], [], [4]],
     # [[], [], [3]]])
-    rospy.loginfo(heap_strats[3]['543'])
-    btb.add_cubes_sequence_new(heap_strats[3]['543'])
+    rospy.loginfo(heap_strats[0]['543'])
+    btb.add_cubes_sequence_new(heap_strats[0]['543'])
     btb.pick_one_by_one = True
     btb.create_tree_from_strategy(wire_start=False)
     #print(heap_strats[1]['001'])
