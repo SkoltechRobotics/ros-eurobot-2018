@@ -183,7 +183,14 @@ class ParticleFilter:
                                                   dist_from_closest_beacon_to_landmark, 1) / np.where(
             dist_from_closest_beacon_to_particle, dist_from_closest_beacon_to_particle, 1)
 
-        delta_beacon_landmark = closest_beacons - landmarks[np.newaxis, :, :2]
+        # From local minimum
+        res = closest_beacons - landmarks[np.newaxis, :, :2]
+        X = (res[:, :, 0] * np.cos(particles[:, 2])[:, np.newaxis]
+             - res[:, :, 1] * np.sin(particles[:, 2])[:, np.newaxis])
+        Y = (res[:, :, 0] * np.sin(particles[:, 2])[:, np.newaxis]
+             + res[:, :, 1] * np.cos(particles[:, 2])[:, np.newaxis])
+        delta_beacon_landmark = np.concatenate((X[:, :, np.newaxis], Y[:, :, np.newaxis]), axis=2)
+
         if self.color == "orange":
             is_bad_beacon_landmark_x = \
                 (ind_closest_beacon == 0) * (delta_beacon_landmark[:, :, 0] < 0) + \
