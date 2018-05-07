@@ -281,7 +281,7 @@ class BehaviorTreeBuilder:
 
 
     def add_switch_secondary(self, parent_name):
-        main_seq_name = self.construct_string("switch", self.get_next_id())
+        main_seq_name = self.construct_string("switch_secondary", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
@@ -621,7 +621,7 @@ class BehaviorTreeBuilder:
         self.add_move_action(main_seq_name, *place)
 
     def add_start_switch_main_new(self, parent_name):
-        main_seq_name = self.construct_string("switch", self.get_next_id())
+        main_seq_name = self.construct_string("switch_main", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
         x_dist = 1.00
         if self.side == "orange":
@@ -668,7 +668,7 @@ class BehaviorTreeBuilder:
 
 
     def add_switch_main(self, parent_name):
-        main_seq_name = self.construct_string("switch", self.get_next_id())
+        main_seq_name = self.construct_string("switch_main", self.get_next_id())
         self.add_sequence_node(parent_name, main_seq_name)
 
         if self.side == "orange":
