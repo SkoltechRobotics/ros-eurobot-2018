@@ -872,11 +872,11 @@ class BehaviorTreeBuilder:
                 rospy.loginfo("--------COLORS MANS  " + str(colors) +' '+ str(mans))
             a += da
             self.add_heap_rotation_no_rf(main_seq_name, heap_num, a)
-            if i == 0:
-                form_par_name = self.construct_string("form_cubes", heap_num)
-                self.add_parallel_node(main_seq_name, form_par_name)
-                for i in range(3):
-                    self.add_command_action(form_par_name, 0xb7, i)
+            # if i == 0:
+            #     form_par_name = self.construct_string("form_cubes", heap_num)
+            #     self.add_parallel_node(main_seq_name, form_par_name)
+            #     for i in range(3):
+            #         self.add_command_action(form_par_name, 0xb7, i)
 
         
             if dx ** 2 + dy ** 2 > 0:
