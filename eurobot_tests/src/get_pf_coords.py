@@ -8,7 +8,7 @@ import sys
 
 
 def get_coords():
-    (trans, rot) = listener.lookupTransform('/map', '/%s' % robot_name, rospy.Time(0))
+    (trans, rot) = listener.lookupTransform('map', robot_name, rospy.Time(0))
     yaw = tf.transformations.euler_from_quaternion(rot)[2]
     return np.array([trans[0], trans[1], yaw])
 
@@ -26,7 +26,7 @@ def calculate_main(points):
 if __name__ == '__main__':
     lidar_data = None
     rospy.init_node("get_coords")
-    robot_name = sys.argv[3]
+    robot_name = sys.argv[2]
 
     rospy.loginfo("start get data")
     coords_full = []
@@ -38,4 +38,3 @@ if __name__ == '__main__':
         coords_full.append(get_coords())
 
     print calculate_main(np.array(coords_full))
-    
