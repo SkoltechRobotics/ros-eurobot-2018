@@ -26,7 +26,7 @@ def calculate_main(points):
 if __name__ == '__main__':
     lidar_data = None
     rospy.init_node("get_coords")
-    robot_name = sys.argv[3]
+    robot_name = sys.argv[2]
 
     rospy.loginfo("start get data")
     coords_full = []
