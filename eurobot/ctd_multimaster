@@ -1,0 +1,8 @@
+#!/bin/bash
+source /opt/ros/kinetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+sleep 1s
+while true; do
+    roslaunch eurobot central_tracking_device.launch color:=$1
+    sleep 1s
+done

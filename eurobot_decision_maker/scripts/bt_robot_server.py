@@ -44,7 +44,7 @@ else:
     #SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('wastewater_tower', 0)]
 
     # MEDIUM
-    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0)]
+    SMALL_ROBOT_STRATEGY = [("cleanwater_tower_before_waste", 0), ("bee_secondary", 0), ('cubes_secondary', 0), ('wastewater_tower_after_cubes', 0), ('switch_secondary', 0), ('disposal_secondary', 0)]
 
 EMERGENCY_MAIN_ROBOT_STRATEGY = [("alt_disposal", 0)]
 # EMERGENCY_MAIN_ROBOT_STRATEGY = [("switch_main", 0)]

@@ -3,6 +3,9 @@
 *.log
 *.bag.active
 *.bag
+*.bag.orig.active
+*.bag.orig.orig.active
+
 the_fucking_map_bug.bag
 eurobot/bag
 last_time
