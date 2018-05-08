@@ -114,7 +114,7 @@ class RobotBrain(object):
                 self.server_strategy = [""]
 
         # points
-        self.points = {'secondary_robot': 0, 'main_robot': 0}
+        self.points = {'secondary_robot': 145, 'main_robot': 0}
         self.sub_points = {name: rospy.Subscriber("/" + name + "/point", String, self.refresh_points(name))
                            for name in self.points}
 
@@ -254,7 +254,7 @@ class RobotBrain(object):
                             if child1.status == "finished":
                                 is_move_cleanwater_tower = True
         is_wastewater_reservoir = IS_WASTEWATER_SHOOT
-        points = 10 + \
+        points = 5 + \
                  is_disposal * heap_points + \
                  is_cleanwater_tower * 40 + \
                  is_wastewater_tower * is_wastewater_reservoir * 30 + \
