@@ -315,6 +315,7 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.05, 0.11, 0, 0, 0, 0)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.13, 0.13, 0)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.13, 0.08, 0)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.13, 0.2, 0)
         else:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.9, 0.21, 4.71, 1, 1, 0)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.9, 0.28, 3.14)
@@ -327,6 +328,7 @@ class BehaviorTreeBuilder:
             self.add_action_node(main_seq_name, "move", self.move_publisher_name, self.move_response, "move", 1.95, 0.11, 0, 0, 0, 0)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.885, 0.13, 0)
             self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.885, 0.08, 0)
+            self.add_action_node(main_seq_name, "move_odometry", self.move_publisher_name, self.move_response, "move_odometry", 1.885, 0.2, 0)
 
 
     def add_bee_secondary(self, parent_name):
